@@ -27,7 +27,6 @@ public:
     virtual void* GetWindow1() = 0;
     virtual void* GetWindow2() = 0;
     virtual bool SetTopmostWindow() = 0;
-    virtual ~ViEAutoTestWindowManagerInterface() {}
 };
 
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_WINDOW_MANAGER_INTERFACE_H_

@@ -21,7 +21,10 @@
 
 #include "voe_codec.h"
 
-class ViEAutotestFileObserver: public webrtc::ViEFileObserver
+// TODO: remove using ...
+using namespace std;
+
+class ViEAutotestFileObserver: public ViEFileObserver
 {
 public:
     ViEAutotestFileObserver() {};
@@ -53,13 +56,13 @@ int ViEAutoTest::ViEFileStandardTest()
         tbInterfaces interfaces = tbInterfaces("ViEFileStandardTest",
                                                numberOfErrors);
 
-        webrtc::VideoEngine* ptrViE = interfaces.ptrViE;
-        webrtc::ViEBase* ptrViEBase = interfaces.ptrViEBase;
-        webrtc::ViECapture* ptrViECapture = interfaces.ptrViECapture;
-        webrtc::ViERender* ptrViERender = interfaces.ptrViERender;
-        webrtc::ViECodec* ptrViECodec = interfaces.ptrViECodec;
-        webrtc::ViERTP_RTCP* ptrViERtpRtcp = interfaces.ptrViERtpRtcp;
-        webrtc::ViENetwork* ptrViENetwork = interfaces.ptrViENetwork;
+        VideoEngine* ptrViE = interfaces.ptrViE;
+        ViEBase* ptrViEBase = interfaces.ptrViEBase;
+        ViECapture* ptrViECapture = interfaces.ptrViECapture;
+        ViERender* ptrViERender = interfaces.ptrViERender;
+        ViECodec* ptrViECodec = interfaces.ptrViECodec;
+        ViERTP_RTCP* ptrViERtpRtcp = interfaces.ptrViERtpRtcp;
+        ViENetwork* ptrViENetwork = interfaces.ptrViENetwork;
 
         tbCaptureDevice captureDevice = tbCaptureDevice(interfaces,
                                                         numberOfErrors);
@@ -79,14 +82,14 @@ int ViEAutoTest::ViEFileStandardTest()
                                              __FUNCTION__, __LINE__);
 
         error = ptrViERtpRtcp->SetRTCPStatus(videoChannel,
-                                             webrtc::kRtcpCompound_RFC4585);
+                                             kRtcpCompound_RFC4585);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR:%d %s at line %d",
                                              ptrViEBase->LastError(),
                                              __FUNCTION__, __LINE__);
 
         error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
-            videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
+            videoChannel, kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR:%d %s at line %d",
                                              ptrViEBase->LastError(),
@@ -201,14 +204,14 @@ int ViEAutoTest::ViEFileStandardTest()
                                              ptrViEBase->LastError(),
                                              __FUNCTION__, __LINE__);
 
-        webrtc::ViEFile* ptrViEFile = webrtc::ViEFile::GetInterface(ptrViE);
+        ViEFile* ptrViEFile = ViEFile::GetInterface(ptrViE);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR:%d %s at line %d",
                                              ptrViEBase->LastError(),
                                              __FUNCTION__, __LINE__);
 
-        webrtc::VoiceEngine* ptrVEEngine = webrtc::VoiceEngine::Create();
-        webrtc::VoEBase* ptrVEBase = webrtc::VoEBase::GetInterface(ptrVEEngine);
+        VoiceEngine* ptrVEEngine = VoiceEngine::Create();
+        VoEBase* ptrVEBase = VoEBase::GetInterface(ptrVEEngine);
         ptrVEBase->Init();
 
         int audioChannel = ptrVEBase->CreateChannel();
@@ -253,9 +256,9 @@ int ViEAutoTest::ViEFileStandardTest()
         const char outgoingVideo[1024] = VIE_TEST_FILES_ROOT "outgoingVideo.avi";
         char snapshotRenderFileName[256] = VIE_TEST_FILES_ROOT "snapshotRenderer.jpg";
 
-        webrtc::ViEPicture capturePicture;
-        webrtc::ViEPicture renderPicture;
-        webrtc::ViEPicture renderTimeoutPicture; // TODO: init with and image
+        ViEPicture capturePicture;
+        ViEPicture renderPicture;
+        ViEPicture renderTimeoutPicture; // TODO: init with and image
 
         ViEAutotestFileObserver fileObserver;
         int fileId;
@@ -269,8 +272,7 @@ int ViEAutoTest::ViEFileStandardTest()
 
             error = ptrViEFile->StartRecordIncomingVideo(videoChannel,
                                                          incomingVideo,
-                                                         webrtc::NO_AUDIO,
-                                                         audioCodec2,
+                                                         NO_AUDIO, audioCodec2,
                                                          videoCodec);
             numberOfErrors += ViETest::TestError(error == 0,
                                                  "ERROR:%d %s at line %d",
@@ -391,8 +393,7 @@ int ViEAutoTest::ViEFileStandardTest()
                          "seconds", VIDEO_LENGTH);
             error = ptrViEFile->StartRecordOutgoingVideo(videoChannel,
                                                          outgoingVideo,
-                                                         webrtc::NO_AUDIO,
-                                                         audioCodec2,
+                                                         NO_AUDIO, audioCodec2,
                                                          videoCodec);
             numberOfErrors += ViETest::TestError(error == 0,
                                                  "ERROR:%d %s at line %d",

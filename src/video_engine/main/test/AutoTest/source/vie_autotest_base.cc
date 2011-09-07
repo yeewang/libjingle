@@ -32,8 +32,8 @@ int ViEAutoTest::ViEBaseStandardTest()
 
     ViETest::Log("Starting a loopback call...");
 
-    webrtc::VideoEngine* ptrViE = NULL;
-    ptrViE = webrtc::VideoEngine::Create();
+    VideoEngine* ptrViE = NULL;
+    ptrViE = VideoEngine::Create();
     numberOfErrors += ViETest::TestError(ptrViE != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -47,7 +47,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 #endif
-    webrtc::ViEBase* ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
+    ViEBase* ptrViEBase = ViEBase::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViEBase != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -65,12 +65,12 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViECapture* ptrViECapture = webrtc::ViECapture::GetInterface(ptrViE);
+    ViECapture* ptrViECapture = ViECapture::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViECapture != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    webrtc::VideoCaptureModule* vcpm(NULL);
+    VideoCaptureModule* vcpm(NULL);
 
     const unsigned int KMaxDeviceNameLength = 128;
     const unsigned int KMaxUniqueIdLength = 256;
@@ -81,8 +81,8 @@ int ViEAutoTest::ViEBaseStandardTest()
 
     bool captureDeviceSet = false;
     int captureId = 0;
-    webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::VideoCaptureModule::CreateDeviceInfo(0);
+    VideoCaptureModule::DeviceInfo* devInfo =
+        VideoCaptureModule::CreateDeviceInfo(0);
 
     for (unsigned int captureIdx = 0;
          captureIdx < devInfo->NumberOfDevices();
@@ -95,7 +95,7 @@ int ViEAutoTest::ViEBaseStandardTest()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        vcpm = webrtc::VideoCaptureModule::Create(4571, uniqueId);
+        vcpm = VideoCaptureModule::Create(4571, uniqueId);
         numberOfErrors += ViETest::TestError(vcpm != NULL,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -110,11 +110,11 @@ int ViEAutoTest::ViEBaseStandardTest()
         }
         else
         {
-            webrtc::VideoCaptureModule::Destroy(vcpm);
+            VideoCaptureModule::Destroy(vcpm);
             vcpm = NULL;
         }
     }
-    webrtc::VideoCaptureModule::DestroyDeviceInfo(devInfo);
+    VideoCaptureModule::DestroyDeviceInfo(devInfo);
 
     numberOfErrors+= ViETest::TestError(
         captureDeviceSet,
@@ -129,19 +129,17 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViERTP_RTCP* ptrViERtpRtcp =
-        webrtc::ViERTP_RTCP::GetInterface(ptrViE);
+    ViERTP_RTCP* ptrViERtpRtcp = ViERTP_RTCP::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViE != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    error = ptrViERtpRtcp->SetRTCPStatus(videoChannel,
-                                         webrtc::kRtcpCompound_RFC4585);
+    error = ptrViERtpRtcp->SetRTCPStatus(videoChannel, kRtcpCompound_RFC4585);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
-        videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
+    error = ptrViERtpRtcp->SetKeyFrameRequestMethod(videoChannel,
+                                                    kViEKeyFrameRequestPliRtcp);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -149,7 +147,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViERender* ptrViERender = webrtc::ViERender::GetInterface(ptrViE);
+    ViERender* ptrViERender = ViERender::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViERender != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -181,7 +179,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViECodec* ptrViECodec = webrtc::ViECodec::GetInterface(ptrViE);
+    ViECodec* ptrViECodec = ViECodec::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViECodec != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -212,8 +210,7 @@ int ViEAutoTest::ViEBaseStandardTest()
                                              __FUNCTION__, __LINE__);
     }
 
-    webrtc::ViENetwork* ptrViENetwork =
-        webrtc::ViENetwork::GetInterface(ptrViE);
+    ViENetwork* ptrViENetwork = ViENetwork::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViENetwork != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -314,7 +311,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::VideoCaptureModule::Destroy(vcpm);
+    VideoCaptureModule::Destroy(vcpm);
     vcpm = NULL;
 
     remainingInterfaces = ptrViECapture->Release();
@@ -351,7 +348,7 @@ int ViEAutoTest::ViEBaseStandardTest()
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    bool deleted = webrtc::VideoEngine::Delete(ptrViE);
+    bool deleted = VideoEngine::Delete(ptrViE);
     numberOfErrors += ViETest::TestError(deleted == true,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -406,14 +403,14 @@ int ViEAutoTest::ViEBaseAPITest()
     int error = 0;
     int numberOfErrors = 0;
 
-    webrtc::VideoEngine* ptrViE = NULL;
-    webrtc::ViEBase* ptrViEBase = NULL;
+    VideoEngine* ptrViE = NULL;
+    ViEBase* ptrViEBase = NULL;
 
     // Get the ViEBase API
-    ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
+    ptrViEBase = ViEBase::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViEBase == NULL);
 
-    ptrViE = webrtc::VideoEngine::Create();
+    ptrViE = VideoEngine::Create();
     numberOfErrors += ViETest::TestError(ptrViE != NULL, "VideoEngine::Create");
 
 #ifdef WEBRTC_ANDROID
@@ -428,7 +425,7 @@ int ViEAutoTest::ViEBaseAPITest()
     numberOfErrors += ViETest::TestError(error == 0, "SetTraceFile error");
 #endif
 
-    ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
+    ptrViEBase = ViEBase::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViEBase != NULL);
 
     //***************************************************************
@@ -481,16 +478,16 @@ int ViEAutoTest::ViEBaseAPITest()
                                          __FUNCTION__, __LINE__);
 
     // VoiceEngine
-    webrtc::VoiceEngine* ptrVoE = NULL;
-    webrtc::VoEBase* ptrVoEBase = NULL;
+    VoiceEngine* ptrVoE = NULL;
+    VoEBase* ptrVoEBase = NULL;
     int audioChannel = -1;
 
-    ptrVoE = webrtc::VoiceEngine::Create();
+    ptrVoE = VoiceEngine::Create();
     numberOfErrors += ViETest::TestError(ptrVoE != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrVoEBase = webrtc::VoEBase::GetInterface(ptrVoE);
+    ptrVoEBase = VoEBase::GetInterface(ptrVoE);
     numberOfErrors += ViETest::TestError(ptrVoEBase != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -533,7 +530,7 @@ int ViEAutoTest::ViEBaseAPITest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViEBase* ptrViEBase2 = webrtc::ViEBase::GetInterface(ptrViE);
+    ViEBase* ptrViEBase2 = ViEBase::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViEBase2 != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -543,7 +540,7 @@ int ViEAutoTest::ViEBaseAPITest()
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    bool vieDeleted = webrtc::VideoEngine::Delete(ptrViE);
+    bool vieDeleted = VideoEngine::Delete(ptrViE);
     numberOfErrors += ViETest::TestError(vieDeleted == false,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -553,7 +550,7 @@ int ViEAutoTest::ViEBaseAPITest()
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    vieDeleted = webrtc::VideoEngine::Delete(ptrViE);
+    vieDeleted = VideoEngine::Delete(ptrViE);
     numberOfErrors += ViETest::TestError(vieDeleted == true,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);

@@ -53,29 +53,26 @@ class DataLog {
   // CreateLog or memory leak will occur.
   static void ReturnLog();
 
-  // Combines the string table_name and the integer table_id into a new string
-  // table_name + _ + table_id. The new string will be lower-case.
-  static std::string Combine(const std::string& table_name, int table_id);
-
-  // Adds a new table, with the name table_name, and creates the file, with the
-  // name table_name + ".txt", to which the table will be written.
-  // table_name is treated in a case sensitive way.
-  static int AddTable(const std::string& table_name);
+  // Adds a new table, with the name table_name, and creates the file, with
+  // the name file_name, to which the table will be written.
+  // table_name is case sensitive.
+  static int AddTable(const std::string& table_name,
+                      const std::string& file_name);
 
   // Adds a new column to a table. The column will be a multi-value-column
   // if multi_value_length is greater than 1.
-  // table_name and column_name are treated in a case sensitive way.
+  // Both table_name and column_name are case sensitive.
   static int AddColumn(const std::string& table_name,
                        const std::string& column_name,
                        int multi_value_length);
 
-  // Inserts a single value into a table with name table_name at the column with
-  // name column_name.
+  // Inserts a single value into a table with name table_name at the column
+  // with name column_name.
   // Note that the ValueContainer makes use of the copy constructor,
   // operator= and operator<< of the type T, and that the template type must
   // implement a deep copy copy constructor and operator=.
   // Copy constructor and operator= must not be disabled for the type T.
-  // table_name and column_name are treated in a case sensitive way.
+  // Both table_name and column_name are case sensitive.
   template<class T>
   static int InsertCell(const std::string& table_name,
                         const std::string& column_name,
@@ -95,7 +92,7 @@ class DataLog {
   // operator= and operator<< of the type T, and that the template type
   // must implement a deep copy copy constructor and operator=.
   // Copy constructor and operator= must not be disabled for the type T.
-  // table_name and column_name are treated in a case sensitive way.
+  // Both table_name and column_name are case sensitive.
   template<class T>
   static int InsertCell(const std::string& table_name,
                         const std::string& column_name,
@@ -110,9 +107,9 @@ class DataLog {
              new MultiValueContainer<T>(array, length));
   }
 
-  // For the table with name table_name: Writes the current row to file.
-  // Starts a new empty row.
-  // table_name is treated in a case-sensitive way.
+  // For the table table_name: Writes the current row to file. Starts a new
+  // empty row.
+  // table_name is case sensitive.
   static int NextRow(const std::string& table_name);
 };
 

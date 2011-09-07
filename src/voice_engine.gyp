@@ -46,8 +46,6 @@
       ],
       'include_dirs': [
         'voice_engine/main/test/auto_test',
-        'modules/interface',
-        'modules/audio_device/main/interface',
       ],
       'sources': [
         'voice_engine/main/test/auto_test/voe_cpu_test.cc',
@@ -76,7 +74,6 @@
       'target_name': 'voe_cmd_test',
       'type': 'executable',
       'dependencies': [
-        '../testing/gtest.gyp:gtest',
         'voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
         'system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],

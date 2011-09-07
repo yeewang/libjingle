@@ -12,7 +12,6 @@
 
 #include <assert.h>
 
-#include <algorithm>
 #include <list>
 
 #include "critical_section_wrapper.h"
@@ -29,7 +28,7 @@ DataLogImpl::CritSectScopedPtr DataLogImpl::crit_sect_(
 DataLogImpl* DataLogImpl::instance_ = NULL;
 
 // A Row contains cells, which are indexed by the column names as std::string.
-// The string index is treated in a case sensitive way.
+// The string index is case sensitive.
 class Row {
  public:
   Row();
@@ -37,13 +36,13 @@ class Row {
 
   // Inserts a Container into the cell of the column specified with
   // column_name.
-  // column_name is treated in a case sensitive way.
+  // column_name is case sensitive.
   int InsertCell(const std::string& column_name,
                  const Container* value_container);
 
   // Converts the value at the column specified by column_name to a string
   // stored in value_string.
-  // column_name is treated in a case sensitive way.
+  // column_name is case sensitive.
   void ToString(const std::string& column_name, std::string* value_string);
 
  private:
@@ -65,7 +64,7 @@ class LogTable {
 
   // Adds the column with name column_name to the table. The column will be a
   // multi-value-column if multi_value_length is greater than 1.
-  // column_name is treated in a case sensitive way.
+  // column_name is case sensitive.
   int AddColumn(const std::string& column_name, int multi_value_length);
 
   // Buffers the current row while it is waiting to be written to file,
@@ -75,7 +74,7 @@ class LogTable {
 
   // Inserts a Container into the cell of the column specified with
   // column_name.
-  // column_name is treated in a case sensitive way.
+  // column_name is case sensitive.
   int InsertCell(const std::string& column_name,
                  const Container* value_container);
 
@@ -281,21 +280,12 @@ void DataLog::ReturnLog() {
   return DataLogImpl::ReturnLog();
 }
 
-std::string DataLog::Combine(const std::string& table_name, int table_id) {
-  std::stringstream ss;
-  std::string combined_id;
-  ss << table_name << "_" << table_id;
-  ss >> combined_id;
-  std::transform(combined_id.begin(), combined_id.end(), combined_id.begin(),
-                 ::tolower);
-  return combined_id;
-}
-
-int DataLog::AddTable(const std::string& table_name) {
+int DataLog::AddTable(const std::string& table_name,
+                      const std::string& file_name) {
   DataLogImpl* data_log = DataLogImpl::StaticInstance();
   if (data_log == NULL)
     return -1;
-  return data_log->AddTable(table_name);
+  return data_log->AddTable(table_name, file_name);
 }
 
 int DataLog::AddColumn(const std::string& table_name,
@@ -377,13 +367,14 @@ void DataLogImpl::ReturnLog() {
   instance_ = NULL;
 }
 
-int DataLogImpl::AddTable(const std::string& table_name) {
+int DataLogImpl::AddTable(const std::string& table_name,
+                          const std::string& file_name) {
   WriteLockScoped synchronize(*tables_lock_);
   // Make sure we don't add a table which already exists
   if (tables_.count(table_name) > 0)
     return -1;
   tables_[table_name] = new LogTable();
-  if (tables_[table_name]->CreateLogFile(table_name + ".txt") == -1)
+  if (tables_[table_name]->CreateLogFile(file_name) == -1)
     return -1;
   return 0;
 }

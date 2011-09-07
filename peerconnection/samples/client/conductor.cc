@@ -11,7 +11,6 @@
 #include "peerconnection/samples/client/conductor.h"
 
 #include "peerconnection/samples/client/defaults.h"
-#include "talk/base/common.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/phone/videorendererfactory.h"
@@ -271,7 +270,6 @@ bool Conductor::AddStream(const std::string& id, bool video) {
     bool ok = peer_connection_->SetVideoRenderer(id,
         main_wnd_->remote_renderer());
     ASSERT(ok);
-    UNUSED(ok);
   }
   return ret;
 }

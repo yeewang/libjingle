@@ -13,20 +13,22 @@
 
 #include <string>
 
+using namespace std;
+
 class ViEAutoTestMain
 {
 public:
     ViEAutoTestMain();
     bool BeginOSIndependentTesting();
-    bool GetAnswer(int index, std::string& answer);
+    bool GetAnswer(int index, string& answer);
     int GetClassTestSelection();
-    bool GetNextAnswer(std::string& answer);
+    bool GetNextAnswer(string& answer);
     bool IsUsingAnswerFile();
     bool UseAnswerFile(const char* fileName);
 
 private:
 
-    std::string _answers[1024];
+    string _answers[1024];
     int _answersCount;
     int _answersIndex;
     bool _useAnswerFile;

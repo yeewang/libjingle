@@ -281,8 +281,8 @@ int VoEUnitTest::MenuSelection()
     while ((selection < 0) || (selection > maxMenuSelection))
     {
         printf("\n: ");
-        int retval = scanf("%d", &selection);
-        if ((retval != 1) || (selection < 0) || (selection > maxMenuSelection))
+        scanf("%d", &selection);
+        if ((selection < 0) || (selection > maxMenuSelection))
         {
             printf("Invalid selection!\n");
         }

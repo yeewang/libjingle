@@ -331,18 +331,17 @@ int ViEAutoTestMain::GetClassTestSelection()
         ViETest::Log("\t 11. Go back to previous menu");
         ViETest::Log("Select type of test: ");
 
-        int items_read = 0;
         if (_useAnswerFile)
         {
             //GetNextAnswer(answer);
         }
         else
         {
-            items_read = scanf("%d", &testType);
+            scanf("%d", &testType);
             getchar();
         }
         ViETest::Log("\n");
-        if (items_read == 1 && testType >= 1 && testType <= 13)
+        if (testType >= 1 && testType <= 13)
         {
             return testType;
         }
@@ -352,7 +351,7 @@ int ViEAutoTestMain::GetClassTestSelection()
     return -1;
 }
 
-bool ViEAutoTestMain::GetAnswer(int index, std::string& answer)
+bool ViEAutoTestMain::GetAnswer(int index, string& answer)
 {
     if (!_useAnswerFile || index > _answersCount)
     {

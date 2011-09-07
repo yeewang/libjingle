@@ -39,6 +39,7 @@ protected:
     CriticalSectionWrapper* _apiCritPtr;
     ChannelManager _channelManager;
     Statistics _engineStatistics;
+    bool _usingExternalAudioDevice;
     AudioDeviceModule* _audioDevicePtr;
     OutputMixer* _outputMixerPtr;
     TransmitMixer* _transmitMixerPtr;

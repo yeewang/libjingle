@@ -19,7 +19,8 @@ int DataLog::CreateLog() {
 void DataLog::ReturnLog() {
 }
 
-int DataLog::AddTable(const std::string& /*table_name*/) {
+int DataLog::AddTable(const std::string& /*table_name*/,
+                      const std::string& /*file_name*/) {
   return 0;
 }
 
@@ -46,7 +47,8 @@ DataLogImpl* DataLogImpl::StaticInstance() {
 void DataLogImpl::ReturnLog() {
 }
 
-int DataLogImpl::AddTable(const std::string& /*table_name*/) {
+int DataLogImpl::AddTable(const std::string& /*table_name*/,
+                          const std::string& /*file_name*/) {
   return 0;
 }
 

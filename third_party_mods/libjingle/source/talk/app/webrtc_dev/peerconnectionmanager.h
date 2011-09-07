@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011, Google Inc.
+ * Copyright 2004--2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,43 +24,61 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_IMPL_H_
-#define TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_IMPL_H_
-
-#include <string>
+#ifndef TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_H_
+#define TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_H_
 
 #include "talk/base/scoped_ptr.h"
-#include "talk/app/webrtc_dev/peerconnection_dev.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
 #include "talk/session/phone/channelmanager.h"
+
+namespace talk_base {
+class Thread;
+}
+
+namespace cricket {
+class ChannelManager;
+class DeviceManager;
+class MediaEngine;
+class PeerConnection;
+class PortAllocator;
+}
 
 namespace webrtc {
 
-class PeerConnectionManagerImpl : public PeerConnectionManager {
+class PeerConnection;
+
+class PeerConnectionManager {
  public:
-  scoped_refptr<PeerConnection> CreatePeerConnection(const std::string& config);
-  bool Initialize();
+  static PeerConnectionManager* Create(
+      cricket::MediaEngine* media_engine,
+      cricket::DeviceManager* device_manager,
+      cricket::PortAllocator* port_allocator,
+      talk_base::Thread* worker_thread);
+  static PeerConnectionManager* Create(
+      cricket::PortAllocator* port_allocator,
+      talk_base::Thread* worker_thread);
+
+  PeerConnection* CreatePeerConnection();
+  void DestroyPeerConnection(PeerConnection* pc);
 
  protected:
-  PeerConnectionManagerImpl();
-  PeerConnectionManagerImpl(talk_base::Thread* worker_thread,
-                            PcNetworkManager* network_manager,
-                            PcPacketSocketFactory* socket_factory,
-                            AudioDevice* default_adm);
-  virtual ~PeerConnectionManagerImpl();
+  PeerConnectionManager();
+  virtual ~PeerConnectionManager() {};
 
  private:
-  // Channel manager worker thread. Only used if the external thread is not set.
-  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
-  talk_base::Thread* worker_thread_ptr_;
-  scoped_refptr<PcNetworkManager> network_manager_;
-  scoped_refptr<PcPacketSocketFactory> socket_factory_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  bool Initialize(cricket::MediaEngine* media_engine,
+                  cricket::DeviceManager* device_manager,
+                  cricket::PortAllocator* port_allocator,
+                  talk_base::Thread* worker_thread);
 
-  // External Audio device used for audio playback.
-  scoped_refptr<AudioDevice> default_adm_;
+  bool Initialize(cricket::PortAllocator* port_allocator,
+                  talk_base::Thread* worker_thread);
+
+  bool initialized_;
+  talk_base::scoped_ptr<talk_base::Thread> signal_thread_;
+  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
 };
 
-}  // namespace webrtc
+} // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_IMPL_H_
+#endif // TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_H_

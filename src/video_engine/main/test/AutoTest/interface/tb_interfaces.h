@@ -24,6 +24,8 @@
 #include "vie_encryption.h"
 #include "vie_defines.h"
 
+//using namespace webrtc;
+
 class tbInterfaces
 {
 public:

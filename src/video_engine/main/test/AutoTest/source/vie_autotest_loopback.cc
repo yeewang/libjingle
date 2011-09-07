@@ -47,8 +47,8 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // Create a VideoEngine instance
     //
-    webrtc::VideoEngine* ptrViE = NULL;
-    ptrViE = webrtc::VideoEngine::Create();
+    VideoEngine* ptrViE = NULL;
+    ptrViE = VideoEngine::Create();
     if (ptrViE == NULL)
     {
         printf("ERROR in VideoEngine::Create\n");
@@ -89,7 +89,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // Init VideoEngine and create a channel
     //
-    webrtc::ViEBase* ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
+    ViEBase* ptrViEBase = ViEBase::GetInterface(ptrViE);
     if (ptrViEBase == NULL)
     {
         printf("ERROR in ViEBase::GetInterface\n");
@@ -114,8 +114,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // List available capture devices, allocate and connect.
     //
-    webrtc::ViECapture* ptrViECapture =
-        webrtc::ViECapture::GetInterface(ptrViE);
+    ViECapture* ptrViECapture = ViECapture::GetInterface(ptrViE);
     if (ptrViEBase == NULL)
     {
         printf("ERROR in ViECapture::GetInterface\n");
@@ -153,11 +152,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     captureIdx = 0;
     printf("0\n");
 #else
-    if (scanf("%d", &captureIdx) != 1)
-    {
-        printf("Error in scanf()\n");
-        return -1;
-    }
+    scanf("%d", &captureIdx);
     getchar();
     captureIdx = captureIdx - 1; // Compensate for idx start at 1.
 #endif
@@ -196,24 +191,22 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // RTP/RTCP settings
     //
-    webrtc::ViERTP_RTCP* ptrViERtpRtcp =
-        webrtc::ViERTP_RTCP::GetInterface(ptrViE);
+    ViERTP_RTCP* ptrViERtpRtcp = ViERTP_RTCP::GetInterface(ptrViE);
     if (ptrViERtpRtcp == NULL)
     {
         printf("ERROR in ViERTP_RTCP::GetInterface\n");
         return -1;
     }
 
-    error = ptrViERtpRtcp->SetRTCPStatus(videoChannel,
-                                         webrtc::kRtcpCompound_RFC4585);
+    error = ptrViERtpRtcp->SetRTCPStatus(videoChannel, kRtcpCompound_RFC4585);
     if (error == -1)
     {
         printf("ERROR in ViERTP_RTCP::SetRTCPStatus\n");
         return -1;
     }
 
-    error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
-        videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
+    error = ptrViERtpRtcp->SetKeyFrameRequestMethod(videoChannel,
+                                                    kViEKeyFrameRequestPliRtcp);
     if (error == -1)
     {
         printf("ERROR in ViERTP_RTCP::SetKeyFrameRequestMethod\n");
@@ -230,7 +223,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // Set up rendering
     //
-    webrtc::ViERender* ptrViERender = webrtc::ViERender::GetInterface(ptrViE);
+    ViERender* ptrViERender = ViERender::GetInterface(ptrViE);
     if (ptrViERender == NULL)
     {
         printf("ERROR in ViERender::GetInterface\n");
@@ -270,7 +263,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // Setup codecs
     //
-    webrtc::ViECodec* ptrViECodec = webrtc::ViECodec::GetInterface(ptrViE);
+    ViECodec* ptrViECodec = ViECodec::GetInterface(ptrViE);
     if (ptrViECodec == NULL)
     {
         printf("ERROR in ViECodec::GetInterface\n");
@@ -315,11 +308,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     codecIdx = 0;
     printf("0\n");
 #else
-    if (scanf("%d", &codecIdx) != 1)
-    {
-        printf("Error in scanf()\n");
-        return -1;
-    }
+    scanf("%d", &codecIdx);
     getchar();
     codecIdx = codecIdx - 1; // Compensate for idx start at 1.
 #endif
@@ -436,8 +425,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // Address settings
     //
-    webrtc::ViENetwork* ptrViENetwork =
-        webrtc::ViENetwork::GetInterface(ptrViE);
+    ViENetwork* ptrViENetwork = ViENetwork::GetInterface(ptrViE);
     if (ptrViENetwork == NULL)
     {
         printf("ERROR in ViENetwork::GetInterface\n");
@@ -612,7 +600,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-    bool deleted = webrtc::VideoEngine::Delete(ptrViE);
+    bool deleted = VideoEngine::Delete(ptrViE);
     if (deleted == false)
     {
         printf("ERROR in VideoEngine::Delete\n");

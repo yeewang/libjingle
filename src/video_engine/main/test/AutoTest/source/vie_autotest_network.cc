@@ -27,7 +27,7 @@
 
 #endif
 
-class ViEAutoTestNetworkObserver: public webrtc::ViENetworkObserver
+class ViEAutoTestNetworkObserver: public ViENetworkObserver
 {
 public:
     ViEAutoTestNetworkObserver()
@@ -40,7 +40,7 @@ public:
     {
     }
     virtual void PacketTimeout(const int videoChannel,
-                               const webrtc::ViEPacketTimeout timeout)
+                               const ViEPacketTimeout timeout)
     {
     }
 };
@@ -98,8 +98,8 @@ int ViEAutoTest::ViENetworkStandardTest()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error= ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
-            tbChannel.videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
+        error= ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(tbChannel.videoChannel,
+                                                           kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
                                                      "ERROR: %s at line %d",
                                                      __FUNCTION__, __LINE__);

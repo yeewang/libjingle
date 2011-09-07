@@ -28,6 +28,7 @@ SharedData::SharedData() :
     _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _channelManager(_gInstanceCounter),
     _engineStatistics(_gInstanceCounter),
+    _usingExternalAudioDevice(false),
     _audioDevicePtr(NULL),
     _audioProcessingModulePtr(NULL),
     _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
@@ -53,8 +54,9 @@ SharedData::~SharedData()
 {
     OutputMixer::Destroy(_outputMixerPtr);
     TransmitMixer::Destroy(_transmitMixerPtr);
-    if (_audioDevicePtr) {
-        _audioDevicePtr->Release();
+    if (!_usingExternalAudioDevice)
+    {
+        AudioDeviceModule::Destroy(_audioDevicePtr);
     }
     AudioProcessing::Destroy(_audioProcessingModulePtr);
     delete _apiCritPtr;

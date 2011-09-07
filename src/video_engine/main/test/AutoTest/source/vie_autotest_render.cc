@@ -39,7 +39,7 @@
 #elif defined(WEBRTC_MAC)
 #endif
 
-class ViEAutoTestExternalRenderer: public webrtc::ExternalRenderer
+class ViEAutoTestExternalRenderer: public ExternalRenderer
 {
 public:
     ViEAutoTestExternalRenderer() :
@@ -169,10 +169,9 @@ int ViEAutoTest::ViERenderStandardTest()
                                          __FUNCTION__, __LINE__);
 
     // Destroy render module and create new in full screen mode
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(
-        4563, _window1, true, _renderType);
+    _vrm1 = VideoRender::CreateVideoRender(4563, _window1, true, _renderType);
     numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -208,10 +207,9 @@ int ViEAutoTest::ViERenderStandardTest()
                                          __FUNCTION__, __LINE__);
 
     // Destroy full screen render module and create new in normal mode
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(
-        4561, _window1, false, _renderType);
+    _vrm1 = VideoRender::CreateVideoRender(4561, _window1, false, _renderType);
     numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 #endif
@@ -368,10 +366,9 @@ int ViEAutoTest::ViERenderExtendedTest()
                                          __FUNCTION__, __LINE__);
 
     // Destroy render module and create new in full screen mode
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(
-        4563, _window1, true, _renderType);
+    _vrm1 = VideoRender::CreateVideoRender(4563, _window1, true, _renderType);
     numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -410,10 +407,9 @@ int ViEAutoTest::ViERenderExtendedTest()
                                          __FUNCTION__, __LINE__);
 
     // Destroy full screen render module and create new for external rendering
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(4564, NULL, false,
-                                                   _renderType);
+    _vrm1 = VideoRender::CreateVideoRender(4564, NULL, false, _renderType);
     numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -446,10 +442,9 @@ int ViEAutoTest::ViERenderExtendedTest()
 
     // Destroy render module for external rendering and create new in normal
     // mode
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(4561, _window1, false,
-                                                   _renderType);
+    _vrm1 = VideoRender::CreateVideoRender(4561, _window1, false, _renderType);
     numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 

@@ -25,11 +25,9 @@ char* ViETest::_logStr = NULL;
 ViEAutoTest::ViEAutoTest(void* window1, void* window2) :
     _window1(window1),
     _window2(window2),
-    _renderType(webrtc::kRenderDefault),
-    _vrm1(webrtc::VideoRender::CreateVideoRender(
-        4561, window1, false, _renderType)),
-    _vrm2(webrtc::VideoRender::CreateVideoRender(
-        4562, window2, false, _renderType))
+    _renderType(kRenderDefault),
+    _vrm1(VideoRender::CreateVideoRender(4561, window1, false, _renderType)),
+    _vrm2(VideoRender::CreateVideoRender(4562, window2, false, _renderType))
 {
     assert(_vrm1);
     assert(_vrm2);
@@ -39,9 +37,9 @@ ViEAutoTest::ViEAutoTest(void* window1, void* window2) :
 
 ViEAutoTest::~ViEAutoTest()
 {
-    webrtc::VideoRender::DestroyVideoRender(_vrm1);
+    VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    webrtc::VideoRender::DestroyVideoRender(_vrm2);
+    VideoRender::DestroyVideoRender(_vrm2);
     _vrm2 = NULL;
 
     ViETest::Terminate();
@@ -112,6 +110,7 @@ int ViEAutoTest::ViEAPITest()
 
 void ViEAutoTest::PrintVideoCodec(const webrtc::VideoCodec videoCodec)
 {
+    using namespace std;
     ViETest::Log("Video Codec Information:");
 
     switch (videoCodec.codecType)
@@ -143,6 +142,15 @@ void ViEAutoTest::PrintVideoCodec(const webrtc::VideoCodec videoCodec)
             break;
     }
 
+    //cout << "\tcodecSpecific: " << videoCodec.codecSpecific << endl;
+    //switch(videoCodec.codecSpecific)
+    //{
+    //    webrtc::VideoCodecH263      H263;
+    //    webrtc::VideoCodecVP8       VP8;
+    //    webrtc::VideoCodecMPEG4     MPEG4;
+    //    webrtc::VideoCodecGeneric   Generic;
+    //}
+
     ViETest::Log("\theight: %u", videoCodec.height);
     ViETest::Log("\tmaxBitrate: %u", videoCodec.maxBitrate);
     ViETest::Log("\tmaxFramerate: %u", videoCodec.maxFramerate);
@@ -156,6 +164,7 @@ void ViEAutoTest::PrintVideoCodec(const webrtc::VideoCodec videoCodec)
 
 void ViEAutoTest::PrintAudioCodec(const webrtc::CodecInst audioCodec)
 {
+    using namespace std;
     ViETest::Log("Audio Codec Information:");
     ViETest::Log("\tchannels: %u", audioCodec.channels);
     ViETest::Log("\t: %u", audioCodec.pacsize);

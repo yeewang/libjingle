@@ -32,22 +32,16 @@
 
 #include "talk/app/webrtc_dev/stream_dev.h"
 
+namespace cricket {
+class PortAllocator;
+class DeviceManager;
+}
+
 namespace talk_base {
-  class Thread;
-  class NetworkManager;
-  class PacketSocketFactory;
+class Thread;
 }
 
 namespace webrtc {
-
-class StreamCollection : public RefCount {
- public:
-  virtual size_t count() = 0;
-  virtual MediaStream* at(size_t index) = 0;
- protected:
-  // Dtor protected as objects shouldn't be deleted via this interface.
-  ~StreamCollection() {}
-};
 
 /////////////////////////////////////////////
 class PeerConnectionObserver {
@@ -77,8 +71,13 @@ class PeerConnectionObserver {
   ~PeerConnectionObserver() {}
 };
 
+class StreamCollection : public RefCount {
+ public:
+  virtual size_t count() = 0;
+  virtual MediaStream* at(size_t index) = 0;
+};
 
-class PeerConnection : public RefCount {
+class PeerConnection {
  public:
   // Start Negotiation. Negotiation is based on if
   // SignalingMessage and AddStream have been called prior to this function.
@@ -112,58 +111,7 @@ class PeerConnection : public RefCount {
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
-  ~PeerConnection() {}
-};
-
-// Reference counted wrapper for talk_base::NetworkManager.
-class PcNetworkManager : public RefCount {
- public:
-  static scoped_refptr<PcNetworkManager> Create(
-      talk_base::NetworkManager* network_manager);
-  virtual talk_base::NetworkManager* network_manager() const;
-
- protected:
-  explicit PcNetworkManager(talk_base::NetworkManager* network_manager);
-  virtual ~PcNetworkManager();
-
-  talk_base::NetworkManager* network_manager_;
-};
-
-// Reference counted wrapper for talk_base::PacketSocketFactory.
-class PcPacketSocketFactory : public RefCount {
- public:
-  static scoped_refptr<PcPacketSocketFactory> Create(
-      talk_base::PacketSocketFactory* socket_factory);
-  virtual talk_base::PacketSocketFactory* socket_factory() const;
-
- protected:
-  explicit PcPacketSocketFactory(
-      talk_base::PacketSocketFactory* socket_factory);
-  virtual ~PcPacketSocketFactory();
-
-  talk_base::PacketSocketFactory* socket_factory_;
-};
-
-class PeerConnectionManager : public RefCount {
- public:
-  // Create a new instance of PeerConnectionManager.
-  static scoped_refptr<PeerConnectionManager> Create();
-
-  // Create a new instance of PeerConnectionManager.
-  // Ownership of the arguments are not transfered to this object and must
-  // remain in scope for the lifetime of the PeerConnectionManager.
-  static scoped_refptr<PeerConnectionManager> Create(
-      talk_base::Thread* worker_thread,
-      PcNetworkManager* network_manager,
-      PcPacketSocketFactory* packet_socket_factory,
-      AudioDevice* default_adm);
-
-  virtual scoped_refptr<PeerConnection> CreatePeerConnection(
-      const std::string& config) = 0;
-
- protected:
-  // Dtor protected as objects shouldn't be deleted via this interface.
-  ~PeerConnectionManager() {}
+  virtual ~PeerConnection() {}
 };
 
 }  // namespace webrtc
