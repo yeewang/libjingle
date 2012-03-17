@@ -47,11 +47,8 @@ def delete_directory(directory):
     os.rmdir(directory)
     return True
   except OSError as exception:
-    if "not empty" in str(exception):
-      # This is normal, ignore it
-      pass
-    else:
-      print "Could not remove directory %s: reason %s." % (directory, exception)
+    # The directory probably contains newer files.
+    print "Could not remove directory %s: reason %s." % (directory, exception)
   return False
 
 

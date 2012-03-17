@@ -15,6 +15,8 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 from google.appengine.ext.webapp import template
 import webapp2
 
+import add_build_status_data
+import add_coverage_data
 import load_build_status
 import load_coverage
 
@@ -49,3 +51,10 @@ class ShowDashboard(webapp2.RequestHandler):
   def _show_error_page(self, error_message):
     self.response.write('<html><body>%s</body></html>' % error_message)
 
+
+app = webapp2.WSGIApplication([('/', ShowDashboard),
+                               ('/add_coverage_data',
+                                add_coverage_data.AddCoverageData),
+                               ('/add_build_status_data',
+                                add_build_status_data.AddBuildStatusData)],
+                              debug=True)
