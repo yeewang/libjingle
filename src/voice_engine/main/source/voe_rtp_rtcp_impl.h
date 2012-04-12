@@ -18,7 +18,8 @@
 
 namespace webrtc {
 
-class VoERTP_RTCPImpl : public VoERTP_RTCP,
+class VoERTP_RTCPImpl : public virtual voe::SharedData,
+                        public VoERTP_RTCP,
                         public voe::RefCount
 {
 public:
@@ -86,6 +87,17 @@ public:
 
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats);
 
+    // RTP keepalive mechanism (maintains NAT mappings associated to RTP flows)
+    virtual int SetRTPKeepaliveStatus(int channel,
+                                      bool enable,
+                                      int unknownPayloadType,
+                                      int deltaTransmitTimeSeconds = 15);
+
+    virtual int GetRTPKeepaliveStatus(int channel,
+                                      bool& enabled,
+                                      int& unknownPayloadType,
+                                      int& deltaTransmitTimeSeconds);
+
     // FEC
     virtual int SetFECStatus(int channel,
                              bool enable,
@@ -112,11 +124,8 @@ public:
                                      unsigned short payloadSize);
 
 protected:
-    VoERTP_RTCPImpl(voe::SharedData* shared);
+    VoERTP_RTCPImpl();
     virtual ~VoERTP_RTCPImpl();
-
-private:
-    voe::SharedData* _shared;
 };
 
 }  // namespace webrtc

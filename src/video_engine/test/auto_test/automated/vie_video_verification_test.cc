@@ -14,10 +14,10 @@
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
+#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
-#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 namespace {
 
@@ -194,7 +194,7 @@ TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors)  {
   // Set a low bit rate so the encoder budget will be tight, causing it to drop
   // frames every now and then.
   const int kBitRateKbps = 50;
-  const int kPacketLossPercent = 5;
+  const int kPacketLossPercent = 10;
   const int kNetworkDelayMs = 100;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
   ViETest::Log("Packet loss  : %5d %%", kPacketLossPercent);

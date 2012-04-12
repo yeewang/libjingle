@@ -44,18 +44,15 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
 
 #if !defined(MAC_IPHONE)
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
+// NOTE(phoglund): This test is flaky because of how the OS works, and is hence
+// disabled by default.
 TEST_F(VolumeTest, DISABLED_DefaultMicrophoneVolumeIsAtMost255) {
   unsigned int volume = 1000;
   EXPECT_EQ(0, voe_volume_control_->GetMicVolume(volume));
   EXPECT_LE(volume, 255u);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest,
-       DISABLED_ManualRequiresMicrophoneCanSetMicrophoneVolumeWithAcgOff) {
+TEST_F(VolumeTest, ManualRequiresMicrophoneCanSetMicrophoneVolumeWithAcgOff) {
   SwitchToManualMicrophone();
   EXPECT_EQ(0, voe_apm_->SetAgcStatus(false));
 
@@ -126,17 +123,15 @@ TEST_F(VolumeTest, ManualInputMutingMutesMicrophone) {
   Sleep(2000);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
+// NOTE(phoglund): This test is flaky because of how the OS works, and is hence
+// disabled by default.
 TEST_F(VolumeTest, DISABLED_SystemInputMutingIsNotEnabledByDefault) {
   bool is_muted = true;
   EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
   EXPECT_FALSE(is_muted);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest, DISABLED_ManualSystemInputMutingMutesMicrophone) {
+TEST_F(VolumeTest, ManualSystemInputMutingMutesMicrophone) {
   SwitchToManualMicrophone();
 
   // Enable system input muting.

@@ -16,6 +16,7 @@
 
 extern "C" {
 #include "vad_core.h"
+#include "vad_defines.h"
 #include "vad_filterbank.h"
 }
 
@@ -26,14 +27,14 @@ enum { kNumValidFrameLengths = 3 };
 TEST_F(VadTest, vad_filterbank) {
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));
   static const int16_t kReference[kNumValidFrameLengths] = { 48, 11, 11 };
-  static const int16_t kFeatures[kNumValidFrameLengths * kNumChannels] = {
+  static const int16_t kFeatures[kNumValidFrameLengths * NUM_CHANNELS] = {
       1213, 759, 587, 462, 434, 272,
       1479, 1385, 1291, 1200, 1103, 1099,
       1732, 1692, 1681, 1629, 1436, 1436
   };
-  static const int16_t kOffsetVector[kNumChannels] = {
+  static const int16_t kOffsetVector[NUM_CHANNELS] = {
       368, 368, 272, 176, 176, 176 };
-  int16_t features[kNumChannels];
+  int16_t features[NUM_CHANNELS];
 
   // Construct a speech signal that will trigger the VAD in all modes. It is
   // known that (i * i) will wrap around, but that doesn't matter in this case.
@@ -49,8 +50,8 @@ TEST_F(VadTest, vad_filterbank) {
       EXPECT_EQ(kReference[frame_length_index],
                 WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
                                             features));
-      for (int k = 0; k < kNumChannels; ++k) {
-        EXPECT_EQ(kFeatures[k + frame_length_index * kNumChannels],
+      for (int k = 0; k < NUM_CHANNELS; ++k) {
+        EXPECT_EQ(kFeatures[k + frame_length_index * NUM_CHANNELS],
                   features[k]);
       }
       frame_length_index++;
@@ -65,7 +66,7 @@ TEST_F(VadTest, vad_filterbank) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
                                                features));
-      for (int k = 0; k < kNumChannels; ++k) {
+      for (int k = 0; k < NUM_CHANNELS; ++k) {
         EXPECT_EQ(kOffsetVector[k], features[k]);
       }
     }
@@ -81,7 +82,7 @@ TEST_F(VadTest, vad_filterbank) {
       ASSERT_EQ(0, WebRtcVad_InitCore(self));
       EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
                                                features));
-      for (int k = 0; k < kNumChannels; ++k) {
+      for (int k = 0; k < NUM_CHANNELS; ++k) {
         EXPECT_EQ(kOffsetVector[k], features[k]);
       }
     }

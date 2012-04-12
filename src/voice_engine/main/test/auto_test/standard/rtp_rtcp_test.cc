@@ -147,8 +147,7 @@ TEST_F(RtpRtcpTest, CanTransmitExtraRtpPacketsWithoutError) {
   }
 }
 
-// TODO(xians, phoglund): Re-enable when issue 372 is resolved.
-TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
+TEST_F(RtpRtcpTest, CanCreateRtpDumpFilesWithoutError) {
   // Create two RTP dump files (3 seconds long). You can verify these after
   // the test using rtpplay or NetEqRTPplay if you like.
   std::string output_path = webrtc::test::OutputPath();

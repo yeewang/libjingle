@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,8 +20,7 @@ NETEQTEST_NetEQClass::NETEQTEST_NetEQClass()
     _bufferMem(NULL),
     _preparseRTP(false),
     _fsmult(1),
-    _isMaster(true),
-    _noDecode(false)
+    _isMaster(true)
 {
 #ifdef WINDOWS_TIMING
     _totTimeRecIn.QuadPart = 0;
@@ -37,8 +36,7 @@ NETEQTEST_NetEQClass::NETEQTEST_NetEQClass(enum WebRtcNetEQDecoder *usedCodec, i
     _bufferMem(NULL),
     _preparseRTP(false),
     _fsmult(1),
-    _isMaster(true),
-    _noDecode(false)
+    _isMaster(true)
 {
 #ifdef WINDOWS_TIMING
     _totTimeRecIn.QuadPart = 0;
@@ -285,14 +283,7 @@ WebRtc_Word16 NETEQTEST_NetEQClass::recOut(WebRtc_Word16 *outData, void *msInfo,
     if (!msInfo)
     {
         // no msInfo given, do mono mode
-        if (_noDecode)
-        {
-            err = WebRtcNetEQ_RecOutNoDecode(_inst, outData, &outLen);
-        }
-        else
-        {
-            err = WebRtcNetEQ_RecOut(_inst, outData, &outLen);
-        }
+        err = WebRtcNetEQ_RecOut(_inst, outData, &outLen);
     }
     else
     {

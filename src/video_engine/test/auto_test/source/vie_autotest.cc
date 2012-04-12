@@ -12,25 +12,29 @@
 // vie_autotest.cc
 //
 
-#include "video_engine/test/auto_test/interface/vie_autotest.h"
+#include "vie_autotest.h"
 
 #include <stdio.h>
 
 #include "engine_configurations.h"
-#include "modules/video_render/main/interface/video_render.h"
+#include "general_primitives.h"
+#include "tb_interfaces.h"
+#include "tb_video_channel.h"
+#include "tb_capture_device.h"
 #include "testsupport/fileutils.h"
-#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
-#include "video_engine/test/auto_test/primitives/general_primitives.h"
-#include "video_engine/test/libvietest/include/tb_capture_device.h"
-#include "video_engine/test/libvietest/include/tb_interfaces.h"
-#include "video_engine/test/libvietest/include/tb_video_channel.h"
+#include "video_render.h"
+#include "vie_autotest_defines.h"
 
 // ViETest implementation
 FILE* ViETest::log_file_ = NULL;
 char* ViETest::log_str_ = NULL;
 
 std::string ViETest::GetResultOutputPath() {
-  return webrtc::test::OutputPath();
+#ifdef WEBRTC_ANDROID
+    return "/sdcard/";
+#else
+    return webrtc::test::OutputPath();
+#endif
 }
 
 // ViEAutoTest implementation

@@ -74,7 +74,7 @@ class VP8Encoder : public VideoEncoder {
 
   virtual int Encode(const RawImage& input_image,
                      const CodecSpecificInfo* codec_specific_info,
-                     const VideoFrameType frame_type);
+                     const VideoFrameType* frame_types);
 
   // Register an encode complete callback object.
   //
@@ -107,7 +107,7 @@ class VP8Encoder : public VideoEncoder {
   VP8Encoder();
 
   // Call encoder initialize function and set control settings.
-  int InitAndSetControlSettings(const VideoCodec* inst);
+  int InitAndSetControlSettings();
 
   // Update frame size for codec.
   int UpdateCodecFrameSize(WebRtc_UWord32 input_image_width,

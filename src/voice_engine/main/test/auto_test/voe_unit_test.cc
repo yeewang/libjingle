@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,8 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#include "voe_unit_test.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,9 +16,10 @@
 #include <conio.h>
 #endif
 
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "voice_engine/main/source/voice_engine_defines.h"
-#include "voice_engine/main/test/auto_test/fakes/fake_media_process.h"
+#include "voe_unit_test.h"
+
+#include "../../source/voice_engine_defines.h"
+#include "thread_wrapper.h"
 
 using namespace webrtc;
 
@@ -181,14 +180,14 @@ void VoEUnitTest::SetStereoExternalEncryption(int channel, bool onOff,
 }
 
 // VoEVEMediaProcess
-FakeMediaProcess mpobj;
+MyMedia mpobj;
 
 // ----------------------------------------------------------------------------
 //                               VoEUnitTest
 // ----------------------------------------------------------------------------
 
 VoEUnitTest::VoEUnitTest(VoETestManager& mgr) :
-  _mgr(mgr), _extOnOff(false), _extBitsPerSample(-1), _extChannel(0) {
+  _mgr(mgr), _extOnOff(false), _extBitsPerSample(-1) {
   for (int i = 0; i < 32; i++) {
     _listening[i] = false;
     _playing[i] = false;

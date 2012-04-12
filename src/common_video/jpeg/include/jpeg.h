@@ -49,7 +49,7 @@ public:
 private:
 
     jpeg_compress_struct*   _cinfo;
-    char                    _fileName[257];
+    char                    _fileName[256];
 };
 
 class JpegDecoder

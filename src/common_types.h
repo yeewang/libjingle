@@ -513,7 +513,6 @@ struct VideoCodecVP8
     VideoCodecComplexity complexity;
     VP8ResilienceMode    resilience;
     unsigned char        numberOfTemporalLayers;
-    bool                 denoisingOn;
 };
 
 // Unknown specific

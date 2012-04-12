@@ -51,7 +51,6 @@ VP8Encoder::VP8Encoder()
       encoder_(NULL),
       config_(NULL),
       raw_(NULL) {
-  memset(&codec_, 0, sizeof(codec_));
   uint32_t seed = static_cast<uint32_t>(TickTime::MillisecondTimestamp());
   srand(seed);
 }
@@ -269,10 +268,10 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
       break;
   }
   rps_->Init();
-  return InitAndSetControlSettings(inst);
+  return InitAndSetControlSettings();
 }
 
-int VP8Encoder::InitAndSetControlSettings(const VideoCodec* inst) {
+int VP8Encoder::InitAndSetControlSettings() {
   vpx_codec_flags_t flags = 0;
   // TODO(holmer): We should make a smarter decision on the number of
   // partitions. Eight is probably not the optimal number for low resolution
@@ -288,8 +287,7 @@ int VP8Encoder::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
   vpx_codec_control(encoder_, VP8E_SET_TOKEN_PARTITIONS,
                     static_cast<vp8e_token_partitions>(token_partitions_));
-  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY,
-                    inst->codecSpecific.VP8.denoisingOn ? 1 : 0);
+  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY, 2);
 #if WEBRTC_LIBVPX_VERSION >= 971
   vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     rc_max_intra_target_);
@@ -316,7 +314,7 @@ uint32_t VP8Encoder::MaxIntraTarget(uint32_t optimalBuffersize) {
 
 int VP8Encoder::Encode(const RawImage& input_image,
                        const CodecSpecificInfo* codec_specific_info,
-                       const VideoFrameType frame_type) {
+                       const VideoFrameType* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -347,7 +345,7 @@ int VP8Encoder::Encode(const RawImage& input_image,
     flags |= temporal_layers_->EncodeFlags();
   }
 #endif
-  bool send_keyframe = (frame_type == kKeyFrame);
+  bool send_keyframe = frame_types && (*frame_types == kKeyFrame);
   if (send_keyframe) {
     // Key frame request from caller.
     // Will update both golden and alt-ref.
@@ -572,7 +570,6 @@ VP8Decoder::VP8Decoder()
       propagation_cnt_(-1),
       latest_keyframe_complete_(false),
       mfqe_enabled_(false) {
-  memset(&codec_, 0, sizeof(codec_));
 }
 
 VP8Decoder::~VP8Decoder() {
@@ -592,9 +589,6 @@ int VP8Decoder::Reset() {
 }
 
 int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
-  if (inst == NULL) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
   int ret_val = Release();
   if (ret_val < 0 ) {
     return ret_val;
@@ -602,7 +596,7 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (decoder_ == NULL) {
     decoder_ = new vpx_dec_ctx_t;
   }
-  if (inst->codecType == kVideoCodecVP8) {
+  if (inst && inst->codecType == kVideoCodecVP8) {
     feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
   }
   vpx_codec_dec_cfg_t  cfg;
