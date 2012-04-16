@@ -188,6 +188,31 @@ void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
   fflush(NULL);
 }
 
+#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
+void MyMedia::Process(const int channel,
+                      const ProcessingTypes type,
+                      WebRtc_Word16 audio_10ms[],
+                      const int length,
+                      const int samplingFreqHz,
+                      const bool stereo) {
+  for (int i = 0; i < length; i++) {
+    if (!stereo) {
+      audio_10ms[i] = (WebRtc_Word16) (audio_10ms[i] *
+          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
+    } else {
+      // interleaved stereo
+      audio_10ms[2 * i] = (WebRtc_Word16) (audio_10ms[2 * i] *
+          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
+      audio_10ms[2 * i + 1] = (WebRtc_Word16) (audio_10ms[2 * i + 1] *
+          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
+    }
+    f++;
+  }
+}
+#endif
+
+MyMedia mobj;
+
 FakeExternalTransport::FakeExternalTransport(VoENetwork* ptr)
     : my_network_(ptr),
       thread_(NULL),
@@ -305,6 +330,47 @@ void RtcpAppHandler::Reset() {
   memset(data_, 0, sizeof(data_));
   sub_type_ = 0;
   name_ = 0;
+}
+
+void my_encryption::encrypt(int, unsigned char * in_data,
+                            unsigned char * out_data,
+                            int bytes_in,
+                            int * bytes_out) {
+  int i;
+  for (i = 0; i < bytes_in; i++)
+    out_data[i] = ~in_data[i];
+  *bytes_out = bytes_in + 2; // length is increased by 2
+}
+
+void my_encryption::decrypt(int, unsigned char * in_data,
+                            unsigned char * out_data,
+                            int bytes_in,
+                            int * bytes_out) {
+  int i;
+  for (i = 0; i < bytes_in; i++)
+    out_data[i] = ~in_data[i];
+  *bytes_out = bytes_in - 2; // length is decreased by 2
+}
+
+void my_encryption::encrypt_rtcp(int,
+                                 unsigned char * in_data,
+                                 unsigned char * out_data,
+                                 int bytes_in,
+                                 int * bytes_out) {
+  int i;
+  for (i = 0; i < bytes_in; i++)
+    out_data[i] = ~in_data[i];
+  *bytes_out = bytes_in + 2;
+}
+
+void my_encryption::decrypt_rtcp(int, unsigned char * in_data,
+                                 unsigned char * out_data,
+                                 int bytes_in,
+                                 int * bytes_out) {
+  int i;
+  for (i = 0; i < bytes_in; i++)
+    out_data[i] = ~in_data[i];
+  *bytes_out = bytes_in + 2;
 }
 
 void SubAPIManager::DisplayStatus() const {
@@ -917,6 +983,293 @@ int VoETestManager::DoStandardTest() {
   if (TestStartStreaming(channel0_transport) != 0) return -1;
   if (TestStartPlaying() != 0) return -1;
 
+  //////////////
+  // Video Sync
+
+#ifdef _TEST_VIDEO_SYNC_
+  TEST_LOG("\n\n+++ Video sync tests +++\n\n");
+
+  unsigned int val;
+  TEST_MUSTPASS(voe_vsync_->GetPlayoutTimestamp(0, val));
+  TEST_LOG("Playout timestamp = %lu\n", (long unsigned int) val);
+
+  TEST_LOG("Init timestamp and sequence number manually\n");
+  TEST_MUSTPASS(!voe_vsync_->SetInitTimestamp(0, 12345));
+  TEST_MUSTPASS(!voe_vsync_->SetInitSequenceNumber(0, 123));
+  TEST_MUSTPASS(voe_base_->StopSend(0));
+  TEST_MUSTPASS(voe_vsync_->SetInitTimestamp(0, 12345));
+  TEST_MUSTPASS(voe_vsync_->SetInitSequenceNumber(0, 123));
+  TEST_MUSTPASS(voe_base_->StartSend(0));
+  if (voe_file_) {
+    TEST_LOG("Start playing a file as microphone again \n");
+    TEST_MUSTPASS(voe_file_->StartPlayingFileAsMicrophone(0,
+            AudioFilename(),
+            true,
+            true));
+  }
+  SLEEP(3000);
+
+  TEST_LOG("Check delay estimates during 15 seconds, verify that "
+    "they stabilize during this time\n");
+  int valInt = -1;
+  for (int i = 0; i < 15; i++) {
+    TEST_MUSTPASS(voe_vsync_->GetDelayEstimate(0, valInt));
+    TEST_LOG("Delay estimate = %d ms\n", valInt);
+#if defined(MAC_IPHONE)
+    TEST_MUSTPASS(valInt <= 30);
+#else
+    TEST_MUSTPASS(valInt <= 45); // 45=20+25 => can't be this low
+#endif
+    SLEEP(1000);
+  }
+
+  TEST_LOG("Setting NetEQ min delay to 500 milliseconds and repeat "
+    "the test above\n");
+  TEST_MUSTPASS(voe_vsync_->SetMinimumPlayoutDelay(0, 500));
+  for (int i = 0; i < 15; i++) {
+    TEST_MUSTPASS(voe_vsync_->GetDelayEstimate(0, valInt));
+    TEST_LOG("Delay estimate = %d ms\n", valInt);
+    TEST_MUSTPASS(valInt <= 45);
+    SLEEP(1000);
+  }
+
+  TEST_LOG("Setting NetEQ min delay to 0 milliseconds and repeat"
+    " the test above\n");
+  TEST_MUSTPASS(voe_vsync_->SetMinimumPlayoutDelay(0, 0));
+  for (int i = 0; i < 15; i++) {
+    TEST_MUSTPASS(voe_vsync_->GetDelayEstimate(0, valInt));
+    TEST_LOG("Delay estimate = %d ms\n", valInt);
+    TEST_MUSTPASS(valInt <= 45);
+    SLEEP(1000);
+  }
+
+#if (defined (_WIN32) || (defined(WEBRTC_LINUX)) && !defined(WEBRTC_ANDROID))
+  valInt = -1;
+  TEST_MUSTPASS(voe_vsync_->GetPlayoutBufferSize(valInt));
+  TEST_LOG("Soundcard buffer size = %d ms\n", valInt);
+#endif
+#else
+  TEST_LOG("\n\n+++ Video sync tests NOT ENABLED +++\n");
+#endif  // #ifdef _TEST_VIDEO_SYNC_
+  //////////////
+  // Encryption
+
+#ifdef _TEST_ENCRYPT_
+  TEST_LOG("\n\n+++ Encryption tests +++\n\n");
+
+#ifdef WEBRTC_SRTP
+  TEST_LOG("SRTP tests:\n");
+
+  unsigned char encrKey[30] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+
+  TEST_LOG("Enable SRTP encryption and decryption, you should still hear"
+      " the voice\n");
+  TEST_MUSTPASS(voe_encrypt_->EnableSRTPSend(0,
+          kCipherAes128CounterMode,
+          30,
+          kAuthHmacSha1,
+          20, 4, kEncryptionAndAuthentication, encrKey));
+  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
+          kCipherAes128CounterMode,
+          30,
+          kAuthHmacSha1,
+          20, 4, kEncryptionAndAuthentication, encrKey));
+  SLEEP(2000);
+
+  TEST_LOG("Disabling decryption, you should hear nothing or garbage\n");
+  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
+  SLEEP(2000);
+
+  TEST_LOG("Enable decryption again, you should hear the voice again\n");
+  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
+          kCipherAes128CounterMode,
+          30,
+          kAuthHmacSha1,
+          20, 4, kEncryptionAndAuthentication, encrKey));
+  SLEEP(2000);
+
+  TEST_LOG("Disabling encryption and enabling decryption, you should"
+      " hear nothing\n");
+  TEST_MUSTPASS(voe_encrypt_->DisableSRTPSend(0));
+  SLEEP(2000);
+
+  TEST_LOG("Back to normal\n");
+  // both SRTP sides are now inactive
+  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
+  SLEEP(2000);
+
+  TEST_LOG("Enable SRTP and SRTCP encryption and decryption,"
+      " you should still hear the voice\n");
+  TEST_MUSTPASS(voe_encrypt_->EnableSRTPSend(0,
+          kCipherAes128CounterMode,
+          30,
+          kAuthHmacSha1,
+          20, 4, kEncryptionAndAuthentication, encrKey, true));
+  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
+          kCipherAes128CounterMode,
+          30,
+          kAuthHmacSha1,
+          20, 4, kEncryptionAndAuthentication, encrKey, true));
+  SLEEP(2000);
+
+  TEST_LOG("Back to normal\n");
+  TEST_MUSTPASS(voe_encrypt_->DisableSRTPSend(0));
+  // both SRTP sides are now inactive
+  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
+  SLEEP(2000);
+
+#else
+  TEST_LOG("Skipping SRTP tests - WEBRTC_SRTP not defined \n");
+#endif // #ifdef WEBRTC_SRTP
+  TEST_LOG("\nExternal encryption tests:\n");
+  my_encryption * encObj = new my_encryption;
+  TEST_MUSTPASS(voe_encrypt_->RegisterExternalEncryption(0, *encObj));
+  TEST_LOG("Encryption enabled but you should still hear the voice\n");
+  SLEEP(2000);
+  TEST_LOG("Removing encryption object and deleting it\n");
+  TEST_MUSTPASS(voe_encrypt_->DeRegisterExternalEncryption(0));
+  delete encObj;
+  SLEEP(2000);
+#else
+  TEST_LOG("\n\n+++ Encryption tests NOT ENABLED +++\n");
+#endif // #ifdef _TEST_ENCRYPT_
+  //////////////////
+  // External media
+
+#ifdef _TEST_XMEDIA_
+  TEST_LOG("\n\n+++ External media tests +++\n\n");
+
+#ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
+  TEST_LOG("Stop playing file as microphone \n");
+  TEST_LOG("==> Talk into the microphone \n");
+  TEST_MUSTPASS(voe_file_->StopPlayingFileAsMicrophone(0));
+
+  TEST_LOG("Enabling external playout\n");
+  TEST_MUSTPASS(voe_base_->StopSend(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(0));
+  TEST_MUSTPASS(voe_xmedia_->SetExternalPlayoutStatus(true));
+  TEST_MUSTPASS(voe_base_->StartPlayout(0));
+  TEST_MUSTPASS(voe_base_->StartSend(0));
+
+  TEST_LOG("Writing 2 secs of play data to vector\n");
+  int getLen;
+  WebRtc_Word16 speechData[32000];
+  for (int i = 0; i < 200; i++) {
+    TEST_MUSTPASS(voe_xmedia_->ExternalPlayoutGetData(speechData+i*160,
+            16000,
+            100,
+            getLen));
+    TEST_MUSTPASS(160 != getLen);
+    SLEEP(10);
+  }
+
+  TEST_LOG("Disabling external playout\n");
+  TEST_MUSTPASS(voe_base_->StopSend(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(0));
+  TEST_MUSTPASS(voe_xmedia_->SetExternalPlayoutStatus(false));
+  TEST_MUSTPASS(voe_base_->StartPlayout(0));
+
+  TEST_LOG("Enabling external recording\n");
+  TEST_MUSTPASS(voe_xmedia_->SetExternalRecordingStatus(true));
+  TEST_MUSTPASS(voe_base_->StartSend(0));
+
+  TEST_LOG("Inserting record data from vector\n");
+  for (int i = 0; i < 200; i++) {
+    TEST_MUSTPASS(voe_xmedia_->ExternalRecordingInsertData(speechData+i*160,
+            160,
+            16000,
+            20));
+    SLEEP(10);
+  }
+
+  TEST_LOG("Disabling external recording\n");
+  TEST_MUSTPASS(voe_base_->StopSend(0));
+  TEST_MUSTPASS(voe_xmedia_->SetExternalRecordingStatus(false));
+  TEST_MUSTPASS(voe_base_->StartSend(0));
+
+  TEST_LOG("==> Start playing a file as microphone again \n");
+  TEST_MUSTPASS(voe_file_->StartPlayingFileAsMicrophone(0, AudioFilename(),
+          true, true));
+#else
+  TEST_LOG("Skipping external rec and playout tests - \
+             WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT not defined \n");
+#endif // WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
+  TEST_LOG("Enabling playout external media processing => "
+    "played audio should now be affected \n");
+  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
+          -1, kPlaybackAllChannelsMixed, mobj));
+  SLEEP(2000);
+  TEST_LOG("Back to normal again \n");
+  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
+          -1, kPlaybackAllChannelsMixed));
+  SLEEP(2000);
+  // Note that we must do per channel here because PlayFileAsMicrophone
+  // is only done on ch 0.
+  TEST_LOG("Enabling recording external media processing => "
+    "played audio should now be affected \n");
+  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
+          0, kRecordingPerChannel, mobj));
+  SLEEP(2000);
+  TEST_LOG("Back to normal again \n");
+  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
+          0, kRecordingPerChannel));
+  SLEEP(2000);
+  TEST_LOG("Enabling recording external media processing => "
+    "speak and make sure that voice is affected \n");
+  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
+          -1, kRecordingAllChannelsMixed, mobj));
+  SLEEP(2000);
+  TEST_LOG("Back to normal again \n");
+  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
+          -1, kRecordingAllChannelsMixed));
+  SLEEP(2000);
+#else
+  TEST_LOG("\n\n+++ External media tests NOT ENABLED +++\n");
+#endif // #ifdef _TEST_XMEDIA_
+  /////////////////////
+  // NetEQ statistics
+
+#ifdef _TEST_NETEQ_STATS_
+  TEST_LOG("\n\n+++ NetEQ statistics tests +++\n\n");
+
+#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+  NetworkStatistics nStats;
+  TEST_MUSTPASS(voe_neteq_stats_->GetNetworkStatistics(0, nStats));
+  TEST_LOG("\nNetwork statistics: \n");
+  TEST_LOG("    currentAccelerateRate     = %hu \n",
+           nStats.currentAccelerateRate);
+  TEST_LOG("    currentBufferSize         = %hu \n",
+           nStats.currentBufferSize);
+  TEST_LOG("    currentDiscardRate        = %hu \n",
+           nStats.currentDiscardRate);
+  TEST_LOG("    currentExpandRate         = %hu \n",
+           nStats.currentExpandRate);
+  TEST_LOG("    currentPacketLossRate     = %hu \n",
+           nStats.currentPacketLossRate);
+  TEST_LOG("    currentPreemptiveRate     = %hu \n",
+           nStats.currentPreemptiveRate);
+  TEST_LOG("    preferredBufferSize       = %hu \n",
+           nStats.preferredBufferSize);
+  TEST_LOG("    jitterPeaksFound          = %i \n",
+           nStats.jitterPeaksFound);
+  TEST_LOG("    clockDriftPPM             = %i \n",
+           nStats.clockDriftPPM);
+  TEST_LOG("    meanWaitingTimeMs         = %i \n",
+           nStats.meanWaitingTimeMs);
+  TEST_LOG("    medianWaitingTimeMs       = %i \n",
+           nStats.medianWaitingTimeMs);
+  TEST_LOG("    minWaitingTimeMs          = %i \n",
+           nStats.minWaitingTimeMs);
+  TEST_LOG("    maxWaitingTimeMs          = %i \n",
+           nStats.maxWaitingTimeMs);
+#else
+  TEST_LOG("Skipping NetEQ statistics tests - "
+      "WEBRTC_VOICE_ENGINE_NETEQ_STATS_API not defined \n");
+#endif // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+#else
+  TEST_LOG("\n\n+++ NetEQ statistics tests NOT ENABLED +++\n");
+#endif // #ifdef _TEST_NETEQ_STATS_
   //////////////////
   // Stop streaming
   TEST_LOG("\n\n+++ Stop streaming +++\n\n");

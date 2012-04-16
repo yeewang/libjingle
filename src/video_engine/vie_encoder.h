@@ -45,8 +45,6 @@ class ViEEncoder
              ProcessThread& module_process_thread);
   ~ViEEncoder();
 
-  bool Init();
-
   // Returns the id of the owning channel.
   int Owner() const;
 
@@ -110,9 +108,12 @@ class ViEEncoder
     const RTPVideoHeader* rtp_video_hdr);
 
   // Implements VideoProtectionCallback.
-  virtual int ProtectionRequest(
-      const FecProtectionParams* delta_fec_params,
-      const FecProtectionParams* key_fec_params,
+  virtual WebRtc_Word32 ProtectionRequest(
+      WebRtc_UWord8 delta_fecrate,
+      WebRtc_UWord8 key_fecrate,
+      bool delta_use_uep_protection,
+      bool key_use_uep_protection,
+      bool nack_enabled,
       WebRtc_UWord32* sent_video_rate_bps,
       WebRtc_UWord32* sent_nack_rate_bps,
       WebRtc_UWord32* sent_fec_rate_bps);
@@ -157,7 +158,7 @@ class ViEEncoder
   VideoCodec send_codec_;
 
   bool paused_;
-  WebRtc_Word64 time_last_intra_request_ms_;
+  WebRtc_Word64 time_last_intra_request_ms_[kMaxSimulcastStreams];
   WebRtc_Word32 channels_dropping_delta_frames_;
   bool drop_next_frame_;
 

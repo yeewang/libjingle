@@ -1621,7 +1621,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
         }
     default:
         {
-            assert(false && "JitterBuffer::InsertPacket: Undefined value");
+            assert(!"JitterBuffer::InsertPacket: Undefined value");
         }
     }
    return ret;
@@ -1652,7 +1652,7 @@ VCMJitterBuffer::UpdateOldJitterSample(const VCMPacket& packet)
 bool
 VCMJitterBuffer::IsPacketRetransmitted(const VCMPacket& packet) const
 {
-    if (_NACKSeqNumLength > 0)
+    if (_NACKSeqNum && _NACKSeqNumLength > 0)
     {
         for (WebRtc_UWord16 i = 0; i < _NACKSeqNumLength; i++)
         {

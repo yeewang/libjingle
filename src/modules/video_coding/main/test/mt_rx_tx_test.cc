@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -235,10 +235,9 @@ int MTRxTxTest(CmdArgs& args)
     vcm->SetVideoProtection(kProtectionFEC, fecEnabled);
 
     // inform RTP Module of error resilience features
-    FecProtectionParams delta_params = protectionCallback.DeltaFecParameters();
-    FecProtectionParams key_params = protectionCallback.KeyFecParameters();
-    rtp->SetFecParameters(&delta_params, &key_params);
-    rtp->SetNACKStatus(nackEnabled ? kNackRtcp : kNackOff);
+    rtp->SetFECCodeRate(protectionCallback.FECKeyRate(),
+                        protectionCallback.FECDeltaRate());
+    rtp->SetNACKStatus(protectionCallback.NACKMethod());
 
     vcm->SetChannelParameters((WebRtc_UWord32) bitRate,
                               (WebRtc_UWord8) lossRate, rttMS);

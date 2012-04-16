@@ -33,9 +33,7 @@ LOCAL_SRC_FILES := \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS) \
-    '-DWEBRTC_NS_FIXED' \
-    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
-    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
+    '-DWEBRTC_NS_FIXED'
 #   floating point
 #   -DWEBRTC_NS_FLOAT'
 
@@ -74,9 +72,7 @@ LOCAL_SRC_FILES:= \
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    $(MY_WEBRTC_COMMON_DEFS) \
-    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
-    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
+    $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -94,7 +90,7 @@ LOCAL_SHARED_LIBRARIES := \
     libstlport \
     libwebrtc_audio_preprocessing
 
-LOCAL_MODULE:= webrtc_audioproc
+LOCAL_MODULE:= webrtc_apm_process_test
 
 ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)
@@ -117,9 +113,7 @@ LOCAL_SRC_FILES:= \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS) \
-    '-DWEBRTC_AUDIOPROC_FIXED_PROFILE' \
-    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
-    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
+    '-DWEBRTC_APM_UNIT_TEST_FIXED_PROFILE'
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -139,7 +133,7 @@ LOCAL_SHARED_LIBRARIES := \
     libstlport \
     libwebrtc_audio_preprocessing
 
-LOCAL_MODULE:= webrtc_audioproc_unittest
+LOCAL_MODULE:= webrtc_apm_unit_test
 
 ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)

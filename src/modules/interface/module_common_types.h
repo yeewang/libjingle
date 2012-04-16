@@ -297,31 +297,16 @@ struct RTCPVoIPMetric
     WebRtc_UWord16    JBabsMax;
 };
 
-// Struct containing forward error correction settings.
-struct FecProtectionParams {
-  int fec_rate;
-  bool use_uep_protection;
-  int max_fec_frames;
-};
-
 // class describing a complete, or parts of an encoded frame.
 class EncodedVideoData
 {
 public:
     EncodedVideoData() :
-        payloadType(0),
-        timeStamp(0),
-        renderTimeMs(0),
-        encodedWidth(0),
-        encodedHeight(0),
         completeFrame(false),
         missingFrame(false),
         payloadData(NULL),
         payloadSize(0),
-        bufferSize(0),
-        fragmentationHeader(),
-        frameType(kVideoFrameDelta),
-        codec(kVideoCodecUnknown)
+        bufferSize(0)
     {};
 
     EncodedVideoData(const EncodedVideoData& data)

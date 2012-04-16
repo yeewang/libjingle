@@ -187,20 +187,6 @@ public:
     // Gets the current typing detection status.
     virtual int GetTypingDetectionStatus(bool& enabled) = 0;
 
-    // Reports the lower of:
-    // * Time in seconds since the last typing event.
-    // * Time in seconds since the typing detection was enabled.
-    // Returns error if typing detection is disabled.
-    virtual int TimeSinceLastTyping(int &seconds) = 0;
-
-    // Optional setting of typing detection parameters
-    // Parameter with value == 0 will be ignored
-    // and left with default config.
-    virtual int SetTypingDetectionParameters(int timeWindow,
-                                             int costPerTyping,
-                                             int reportingThreshold,
-                                             int penaltyDecay) = 0;
-
 protected:
     VoEAudioProcessing() {}
     virtual ~VoEAudioProcessing() {}

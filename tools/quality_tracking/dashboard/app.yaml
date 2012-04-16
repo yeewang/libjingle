@@ -21,4 +21,4 @@ handlers:
 
 # Redirect all other requests to our dynamic handlers.
 - url: /.*
-  script: main.app
+  script: dashboard.app

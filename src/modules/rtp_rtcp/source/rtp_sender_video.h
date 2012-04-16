@@ -24,7 +24,6 @@
 #include "forward_error_correction.h"
 #include "Bitrate.h"
 #include "rtp_sender.h"
-#include "producer_fec.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -80,8 +79,11 @@ public:
                                  WebRtc_UWord8& payloadTypeRED,
                                  WebRtc_UWord8& payloadTypeFEC) const;
 
-    WebRtc_Word32 SetFecParameters(const FecProtectionParams* delta_params,
-                                   const FecProtectionParams* key_params);
+    WebRtc_Word32 SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
+                                 const WebRtc_UWord8 deltaFrameCodeRate);
+
+    WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
+                                      const bool deltaUseUepProtection);
 
     void ProcessBitrate();
 
@@ -92,11 +94,11 @@ public:
     int SetSelectiveRetransmissions(uint8_t settings);
 
 protected:
-    virtual WebRtc_Word32 SendVideoPacket(const WebRtc_UWord8* dataBuffer,
+    virtual WebRtc_Word32 SendVideoPacket(const FrameType frameType,
+                                          const WebRtc_UWord8* dataBuffer,
                                           const WebRtc_UWord16 payloadLength,
                                           const WebRtc_UWord16 rtpHeaderLength,
-                                          StorageType storage,
-                                          bool protect);
+                                          StorageType storage);
 
 private:
     WebRtc_Word32 SendGeneric(const WebRtc_Word8 payloadType,
@@ -127,11 +129,15 @@ private:
     bool                    _fecEnabled;
     WebRtc_Word8              _payloadTypeRED;
     WebRtc_Word8              _payloadTypeFEC;
+    WebRtc_UWord8             _codeRateKey;
+    WebRtc_UWord8             _codeRateDelta;
+    bool                      _useUepProtectionKey;
+    bool                      _useUepProtectionDelta;
+    WebRtc_UWord8             _fecProtectionFactor;
+    bool                      _fecUseUepProtection;
     unsigned int              _numberFirstPartition;
-    FecProtectionParams delta_fec_params_;
-    FecProtectionParams key_fec_params_;
-    ProducerFec producer_fec_;
-
+    std::list<ForwardErrorCorrection::Packet*> _mediaPacketListFec;
+    std::list<RtpPacket*> _rtpPacketListFec;
     // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
     // and any padding overhead.
     Bitrate                   _fecOverheadRate;
