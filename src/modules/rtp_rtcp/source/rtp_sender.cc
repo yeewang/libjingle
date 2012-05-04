@@ -187,8 +187,17 @@ RTPSender::ChangeUniqueId(const WebRtc_Word32 id)
     }
 }
 
-void RTPSender::SetTargetSendBitrate(const WebRtc_UWord32 bits) {
-  _targetSendBitrate = static_cast<uint16_t>(bits / 1000);
+WebRtc_Word32
+RTPSender::SetTargetSendBitrate(const WebRtc_UWord32 bits)
+{
+    _targetSendBitrate = (WebRtc_UWord16)(bits/1000);
+    return 0;
+}
+
+WebRtc_UWord16
+RTPSender::TargetSendBitrateKbit() const
+{
+    return _targetSendBitrate;
 }
 
 WebRtc_UWord16
@@ -734,7 +743,7 @@ RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                  kTraceRtpRtcp,
                  _id,
                  "NACK bitrate reached. Skip sending NACK response. Target %d",
-                 _targetSendBitrate);
+                 TargetSendBitrateKbit());
     return;
   }
 
@@ -757,10 +766,10 @@ RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
       break;
     }
     // delay bandwidth estimate (RTT * BW)
-    if (_targetSendBitrate != 0 && avgRTT) {
+    if (TargetSendBitrateKbit() != 0 && avgRTT) {
       // kbits/s * ms = bits => bits/8 = bytes
       WebRtc_UWord32 targetBytes =
-          (static_cast<WebRtc_UWord32>(_targetSendBitrate) * avgRTT) >> 3;
+          (static_cast<WebRtc_UWord32>(TargetSendBitrateKbit()) * avgRTT) >> 3;
       if (bytesReSent > targetBytes) {
         break; // ignore the rest of the packets in the list
       }

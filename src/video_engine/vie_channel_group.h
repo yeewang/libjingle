@@ -17,7 +17,6 @@
 
 namespace webrtc {
 
-class BitrateController;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
@@ -41,13 +40,10 @@ class ChannelGroup {
                             ViEChannel* channel,
                             ViEEncoder* encoder);
 
-  BitrateController* GetBitrateController() { return bitrate_controller_.get();}
-
  private:
   typedef std::set<int> ChannelSet;
 
   scoped_ptr<VieRemb> remb_;
-  scoped_ptr<BitrateController> bitrate_controller_;
   ChannelSet channels_;
 };
 

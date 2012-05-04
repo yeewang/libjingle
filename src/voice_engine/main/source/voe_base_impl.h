@@ -14,6 +14,7 @@
 #include "voe_base.h"
 
 #include "module_common_types.h"
+#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc
@@ -22,10 +23,13 @@ namespace webrtc
 class ProcessThread;
 
 class VoEBaseImpl: public VoEBase,
+                   public voe::RefCount,
                    public AudioTransport,
                    public AudioDeviceObserver
 {
 public:
+    virtual int Release();
+
     virtual int RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
 
     virtual int DeRegisterVoiceEngineObserver();

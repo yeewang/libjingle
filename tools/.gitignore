@@ -11,11 +11,9 @@
 .settings
 .status_password
 /continuous_build/depot_tools
-/third_party/bloat
 /third_party/gaeunit
-/third_party/google-visualization-python
 /third_party/oauth2
-/third_party/webtreemap
+/third_party/google-visualization-python
 
 # Buildbot creates these files:
 .manhole
@@ -53,8 +51,6 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/win-32-dbg
 /continuous_build/build_internal/masters/master.webrtc/win-32-release
 /continuous_build/build_internal/masters/master.webrtc/video
-/continuous_build/build_internal/masters/master.tryserver.webrtc/android-trybot
-/continuous_build/build_internal/masters/master.tryserver.webrtc/android-ndk-trybot
 /continuous_build/build_internal/masters/master.tryserver.webrtc/linux-trybot-1
 /continuous_build/build_internal/masters/master.tryserver.webrtc/linux-trybot-2
 /continuous_build/build_internal/masters/master.tryserver.webrtc/mac-trybot-1

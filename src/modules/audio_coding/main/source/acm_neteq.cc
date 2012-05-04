@@ -586,7 +586,7 @@ ACMNetEQ::RecOut(
         }
         {
             WriteLockScoped lockCodec(*_decodeLock);
-            if(WebRtcNetEQ_RecOut(_inst[0], &(audioFrame.data_[0]),
+            if(WebRtcNetEQ_RecOut(_inst[0], &(audioFrame._payloadData[0]),
                 &payloadLenSample) != 0)
             {
                 LogError("RecOut", 0);
@@ -604,7 +604,7 @@ ACMNetEQ::RecOut(
             }
         }
         WebRtcNetEQ_GetSpeechOutputType(_inst[0], &type);
-        audioFrame.num_channels_ = 1;
+        audioFrame._audioChannel = 1;
     }
     else
     {
@@ -667,10 +667,10 @@ audio by Master (%d samples) and Slave (%d samples).",
 
         for(WebRtc_Word16 n = 0; n < payloadLenSample; n++)
         {
-            audioFrame.data_[n<<1]     = payloadMaster[n];
-            audioFrame.data_[(n<<1)+1] = payloadSlave[n];
+            audioFrame._payloadData[n<<1]     = payloadMaster[n];
+            audioFrame._payloadData[(n<<1)+1] = payloadSlave[n];
         }
-        audioFrame.num_channels_ = 2;
+        audioFrame._audioChannel = 2;
 
         WebRtcNetEQ_GetSpeechOutputType(_inst[0], &typeMaster);
         WebRtcNetEQ_GetSpeechOutputType(_inst[1], &typeSlave);
@@ -685,58 +685,58 @@ audio by Master (%d samples) and Slave (%d samples).",
         }
     }
 
-    audioFrame.samples_per_channel_ = static_cast<WebRtc_UWord16>(payloadLenSample);
+    audioFrame._payloadDataLengthInSamples = static_cast<WebRtc_UWord16>(payloadLenSample);
     // NetEq always returns 10 ms of audio.
-    _currentSampFreqKHz = static_cast<float>(audioFrame.samples_per_channel_) / 10.0f;
-    audioFrame.sample_rate_hz_ = audioFrame.samples_per_channel_ * 100;
+    _currentSampFreqKHz = static_cast<float>(audioFrame._payloadDataLengthInSamples) / 10.0f;
+    audioFrame._frequencyInHz = audioFrame._payloadDataLengthInSamples * 100;
     if(_vadStatus)
     {
         if(type == kOutputVADPassive)
         {
-            audioFrame.vad_activity_ = AudioFrame::kVadPassive;
-            audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
+            audioFrame._vadActivity = AudioFrame::kVadPassive;
+            audioFrame._speechType = AudioFrame::kNormalSpeech;
         }
         else if(type == kOutputNormal)
         {
-            audioFrame.vad_activity_ = AudioFrame::kVadActive;
-            audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
+            audioFrame._vadActivity = AudioFrame::kVadActive;
+            audioFrame._speechType = AudioFrame::kNormalSpeech;
         }
         else if(type == kOutputPLC)
         {
-            audioFrame.vad_activity_ = _previousAudioActivity;
-            audioFrame.speech_type_  = AudioFrame::kPLC;
+            audioFrame._vadActivity = _previousAudioActivity;
+            audioFrame._speechType  = AudioFrame::kPLC;
         }
         else if(type == kOutputCNG)
         {
-            audioFrame.vad_activity_ = AudioFrame::kVadPassive;
-            audioFrame.speech_type_  = AudioFrame::kCNG;
+            audioFrame._vadActivity = AudioFrame::kVadPassive;
+            audioFrame._speechType  = AudioFrame::kCNG;
         }
         else
         {
-            audioFrame.vad_activity_ = AudioFrame::kVadPassive;
-            audioFrame.speech_type_  = AudioFrame::kPLCCNG;
+            audioFrame._vadActivity = AudioFrame::kVadPassive;
+            audioFrame._speechType  = AudioFrame::kPLCCNG;
         }
     }
     else
     {
         // Always return kVadUnknown when receive VAD is inactive
-        audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
+        audioFrame._vadActivity = AudioFrame::kVadUnknown;
 
         if(type == kOutputNormal)
         {
-            audioFrame.speech_type_  = AudioFrame::kNormalSpeech;
+            audioFrame._speechType  = AudioFrame::kNormalSpeech;
         }
         else if(type == kOutputPLC)
         {
-            audioFrame.speech_type_  = AudioFrame::kPLC;
+            audioFrame._speechType  = AudioFrame::kPLC;
         }
         else if(type == kOutputPLCtoCNG)
         {
-            audioFrame.speech_type_  = AudioFrame::kPLCCNG;
+            audioFrame._speechType  = AudioFrame::kPLCCNG;
         }
         else if(type == kOutputCNG)
         {
-            audioFrame.speech_type_  = AudioFrame::kCNG;
+            audioFrame._speechType  = AudioFrame::kCNG;
         }
         else
         {
@@ -744,11 +744,11 @@ audio by Master (%d samples) and Slave (%d samples).",
             // we don't expect to get if _vadStatus is false
             WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, _id,
                 "RecOut: NetEq returned kVadPassive while _vadStatus is false.");
-            audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
-            audioFrame.speech_type_  = AudioFrame::kNormalSpeech;
+            audioFrame._vadActivity = AudioFrame::kVadUnknown;
+            audioFrame._speechType  = AudioFrame::kNormalSpeech;
         }
     }
-    _previousAudioActivity = audioFrame.vad_activity_;
+    _previousAudioActivity = audioFrame._vadActivity;
 
     return 0;
 }

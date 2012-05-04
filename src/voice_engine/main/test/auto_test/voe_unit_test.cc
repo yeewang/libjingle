@@ -19,7 +19,6 @@
 #endif
 
 #include "system_wrappers/interface/thread_wrapper.h"
-#include "testsupport/fileutils.h"
 #include "voice_engine/main/source/voice_engine_defines.h"
 #include "voice_engine/main/test/auto_test/fakes/fake_media_process.h"
 
@@ -35,6 +34,19 @@ namespace voetest {
 		PAUSE												    \
         return -1;                                              \
     }
+
+extern char* GetFilename(char* filename);
+extern const char* GetFilename(const char* filename);
+extern int GetResource(char* resource, char* dest, int destLen);
+extern char* GetResource(char* resource);
+extern const char* GetResource(const char* resource);
+
+const char* VoEUnitTest::_key = "====YUtFWRAAAAADBtIHgAAAAAEAAAAcAAAAAQBHU0dsb2"
+  "JhbCBJUCBTb3VuZAAC\nAAAAIwAAAExpY2Vuc2VkIHRvIE5vcnRlbCBOZXR3cm9rcwAAAAAxA"
+  "AAAZxZ7/u0M\niFYyTwSwko5Uutf7mh8S0O4rYZYTFidbzQeuGonuL17F/2oD/2pfDp3jL4Rf"
+  "3z/A\nnlJsEJgEtASkDNFuwLILjGY0pzjjAYQp3pCl6z6k2MtE06AirdjGLYCjENpq/opX\nO"
+  "rs3sIuwdYK5va/aFcsjBDmlsGCUM48RDYG9s23bIHYafXUC4ofOaubbZPWiPTmL\nEVJ8WH4F"
+  "9pgNjALc14oJXfON7r/3\n=EsLx";
 
 // ----------------------------------------------------------------------------
 //                       >>>  R E A D M E  F I R S T <<<
@@ -274,9 +286,8 @@ int VoEUnitTest::StartMedia(int channel, int rtpPort, bool listen, bool playout,
             true, mixWithMic));
   }
   if (localFile) {
-    std::string inputFile = webrtc::test::OutputPath() + "audio_short16.pcm";
     CHECK(file->StartPlayingFileLocally(channel,
-            inputFile.c_str(),
+            GetResource("audio_short16.pcm"),
             false,
             kFileFormatPcm16kHzFile));
   }
@@ -358,9 +369,7 @@ int VoEUnitTest::MixerTest() {
 
   // Set trace
   //
-  std::string outputDir = webrtc::test::OutputPath();
-  std::string traceFile = outputDir + "UnitTest_Mixer_trace.txt";
-  VoiceEngine::SetTraceFile(outputDir.c_str());
+  VoiceEngine::SetTraceFile(GetFilename("UnitTest_Mixer_trace.txt"));
   VoiceEngine::SetTraceFilter(kTraceStateInfo | kTraceWarning | kTraceError |
                               kTraceCritical | kTraceApiCall | kTraceMemory |
                               kTraceInfo);
@@ -407,8 +416,7 @@ int VoEUnitTest::MixerTest() {
   Sleep(testTime);
 
   Test("(ch 0) Playing 16kHz file locally <=> mixing at 16kHz...");
-  std::string inputFile = outputDir + "audio_long16.pcm";
-  CHECK(file->StartPlayingFileLocally(0, inputFile.c_str(),
+  CHECK(file->StartPlayingFileLocally(0, GetResource("audio_long16.pcm"),
           false, kFileFormatPcm16kHzFile));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
@@ -712,18 +720,15 @@ int VoEUnitTest::MixerTest() {
   Sleep(testTime);
 
   Test("(ch 0) Recording of playout to 16kHz PCM file...");
-
-  std::string recordedPlayoutFile = webrtc::test::OutputPath() +
-        "RecordedPlayout16kHz.pcm";
   CHECK(file->StartRecordingPlayout(
-          0, recordedPlayoutFile.c_str(), NULL));
+          0, GetFilename("RecordedPlayout16kHz.pcm"), NULL));
   Sleep(testTime);
   CHECK(file->StopRecordingPlayout(0));
 
   Test("(ch 0) Playing out the recorded file...");
   CHECK(volume->SetInputMute(0, true));
   CHECK(file->StartPlayingFileLocally(
-          0, recordedPlayoutFile.c_str()));
+          0, GetFilename("RecordedPlayout16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
   CHECK(volume->SetInputMute(0, false));
@@ -734,14 +739,14 @@ int VoEUnitTest::MixerTest() {
 
   Test("(ch 0) Recording of playout to 16kHz PCM file...");
   CHECK(file->StartRecordingPlayout(
-          0, recordedPlayoutFile.c_str(), NULL));
+          0, GetFilename("RecordedPlayout16kHz.pcm"), NULL));
   Sleep(testTime);
   CHECK(file->StopRecordingPlayout(0));
 
   Test("(ch 0) Playing out the recorded file...");
   CHECK(volume->SetInputMute(0, true));
   CHECK(file->StartPlayingFileLocally(
-          0, recordedPlayoutFile.c_str()));
+          0, GetFilename("RecordedPlayout16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
   CHECK(volume->SetInputMute(0, false));
@@ -752,14 +757,14 @@ int VoEUnitTest::MixerTest() {
 
   Test("(ch 0) Recording of playout to 16kHz PCM file...");
   CHECK(file->StartRecordingPlayout(
-          0, recordedPlayoutFile.c_str(), NULL));
+          0, GetFilename("RecordedPlayout16kHz.pcm"), NULL));
   Sleep(testTime);
   CHECK(file->StopRecordingPlayout(0));
 
   Test("(ch 0) Playing out the recorded file...");
   CHECK(volume->SetInputMute(0, true));
   CHECK(file->StartPlayingFileLocally(
-          0, recordedPlayoutFile.c_str()));
+          0, GetFilename("RecordedPlayout16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
   CHECK(volume->SetInputMute(0, false));
@@ -773,14 +778,14 @@ int VoEUnitTest::MixerTest() {
 
   Test("(ch 0) Recording of playout to 16kHz PCM file...");
   CHECK(file->StartRecordingPlayout(
-          0, recordedPlayoutFile.c_str(), NULL));
+          0, GetFilename("RecordedPlayout16kHz.pcm"), NULL));
   Sleep(testTime);
   CHECK(file->StopRecordingPlayout(0));
   CHECK(file->StopPlayingFileLocally(0));
 
   Test("(ch 0) Playing out the recorded file...");
   CHECK(file->StartPlayingFileLocally(
-          0, recordedPlayoutFile.c_str()));
+          0, GetFilename("RecordedPlayout16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
 
@@ -797,7 +802,7 @@ int VoEUnitTest::MixerTest() {
   Test("(ch -1) Speak while recording all channels to add mixer input on "
     "channel 0...");
   CHECK(file->StartRecordingPlayout(
-          -1, recordedPlayoutFile.c_str(), NULL));
+          -1, GetFilename("RecordedPlayout16kHz.pcm"), NULL));
   Sleep(testTime);
   CHECK(file->StopRecordingPlayout(-1));
   CHECK(file->StopPlayingFileLocally(1));
@@ -805,7 +810,7 @@ int VoEUnitTest::MixerTest() {
   Test("(ch 0) Playing out the recorded file...");
   CHECK(volume->SetInputMute(0, true));
   CHECK(file->StartPlayingFileLocally(
-          0, recordedPlayoutFile.c_str()));
+          0, GetFilename("RecordedPlayout16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
   CHECK(volume->SetInputMute(0, false));
@@ -840,15 +845,15 @@ int VoEUnitTest::MixerTest() {
 
   Test("(ch 0) Playing out the recorded file for the left channel (10%%)...");
   CHECK(volume->SetInputMute(0, true));
-  std::string leftFilename = outputDir + "RecordedPlayout_Left_16kHz.pcm";
-  CHECK(file->StartPlayingFileLocally(0, leftFilename.c_str()));
+  CHECK(file->StartPlayingFileLocally(
+          0, GetFilename("RecordedPlayout_Left_16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
 
   Test("(ch 0) Playing out the recorded file for the right channel (100%%) =>"
     " should sound louder than the left channel...");
-  std::string rightFilename = outputDir + "RecordedPlayout_Right_16kHz.pcm";
-  CHECK(file->StartPlayingFileLocally(0, rightFilename.c_str()));
+  CHECK(file->StartPlayingFileLocally(
+          0, GetFilename("RecordedPlayout_Right_16kHz.pcm")));
   Sleep(testTime);
   CHECK(file->StopPlayingFileLocally(0));
   CHECK(volume->SetInputMute(0, false));

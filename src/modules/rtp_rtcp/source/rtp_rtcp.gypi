@@ -61,6 +61,8 @@
         'rtp_sender_audio.cc',
         'rtp_sender_audio.h',
         # Video Files
+        'bandwidth_management.cc',
+        'bandwidth_management.h',
         'bwe_defines.h',
         'fec_private_tables.h',
         'forward_error_correction.cc',

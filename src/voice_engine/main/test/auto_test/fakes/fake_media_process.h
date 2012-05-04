@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VOICE_ENGINE_MAIN_TEST_AUTO_TEST_FAKE_MEDIA_PROCESS_H_
-#define VOICE_ENGINE_MAIN_TEST_AUTO_TEST_FAKE_MEDIA_PROCESS_H_
+#ifndef FAKE_MEDIA_PROCESS_H_
+#define FAKE_MEDIA_PROCESS_H_
 
 #include <cmath>
 
@@ -41,4 +41,4 @@ class FakeMediaProcess : public webrtc::VoEMediaProcess {
   int frequency;
 };
 
-#endif  // VOICE_ENGINE_MAIN_TEST_AUTO_TEST_FAKE_MEDIA_PROCESS_H_
+#endif  // FAKE_MEDIA_PROCESS_H_

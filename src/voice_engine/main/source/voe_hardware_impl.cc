@@ -30,9 +30,11 @@ VoEHardware* VoEHardware::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
-    s->AddRef();
-    return s;
+    VoiceEngineImpl* s =
+            reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
+    VoEHardwareImpl* d = s;
+    (*d)++;
+    return (d);
 #endif
 }
 
@@ -61,6 +63,24 @@ VoEHardwareImpl::~VoEHardwareImpl()
         delete _cpu;
         _cpu = NULL;
     }
+}
+
+int VoEHardwareImpl::Release()
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "VoEHardwareImpl::Release()");
+    (*this)--;
+    int refCount = GetCount();
+    if (refCount < 0)
+    {
+        Reset();
+        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
+        return (-1);
+    }
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "VoEHardwareImpl reference counter = %d", refCount);
+    return (refCount);
 }
 
 int VoEHardwareImpl::SetAudioDeviceLayer(AudioLayers audioLayer)

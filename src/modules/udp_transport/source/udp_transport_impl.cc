@@ -2726,7 +2726,6 @@ WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
         ++size;
         // Buffer size needed is unknown. Try increasing it until no overflow
         // occurs.
-        // TODO(pwestin) memory leak
         if (NULL == (ifc.ifc_req = (ifreq*)realloc(ifc.ifc_req, IFRSIZE))) {
           fprintf(stderr, "Out of memory.\n");
           exit(EXIT_FAILURE);

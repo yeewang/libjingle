@@ -13,13 +13,17 @@
 
 #include "voe_volume_control.h"
 
+#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoEVolumeControlImpl : public VoEVolumeControl
+class VoEVolumeControlImpl : public VoEVolumeControl,
+                             public voe::RefCount
 {
 public:
+    virtual int Release();
+
     virtual int SetSpeakerVolume(unsigned int volume);
 
     virtual int GetSpeakerVolume(unsigned int& volume);

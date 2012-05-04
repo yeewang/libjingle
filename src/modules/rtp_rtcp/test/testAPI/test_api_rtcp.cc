@@ -20,9 +20,9 @@
 
 using namespace webrtc;
  
-const uint64_t kTestPictureId = 12345678;
+const WebRtc_UWord64 kTestPictureId = 12345678;
 
-class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
+class RtcpCallback : public RtcpFeedback {
  public:
   RtcpCallback(RtpRtcp* module) {
     _rtpRtcpModule = module;
@@ -32,9 +32,22 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
   virtual void OnLipSyncUpdate(const WebRtc_Word32 id,
                                const WebRtc_Word32 audioVideoOffset) {
   };
+  virtual void OnTMMBRReceived(const WebRtc_Word32 id,
+                               const WebRtc_UWord16 bwEstimateKbit) {
+  };
   virtual void OnXRVoIPMetricReceived(
       const WebRtc_Word32 id,
-      const RTCPVoIPMetric* metric) {
+      const RTCPVoIPMetric* metric,
+      const WebRtc_Word8 VoIPmetricBuffer[28]) {
+  };
+  virtual void OnSLIReceived(const WebRtc_Word32 id,
+                             const WebRtc_UWord8 pictureId) {
+    EXPECT_EQ(28, pictureId);
+  };
+
+  virtual void OnRPSIReceived(const WebRtc_Word32 id,
+                              const WebRtc_UWord64 pictureId) {
+    EXPECT_EQ(kTestPictureId, pictureId);
   };
   virtual void OnApplicationDataReceived(const WebRtc_Word32 id,
                                          const WebRtc_UWord8 subType,
@@ -50,23 +63,15 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
 
     EXPECT_STRCASEEQ("test", print_name);
   };
+
   virtual void OnSendReportReceived(const WebRtc_Word32 id,
                                     const WebRtc_UWord32 senderSSRC) {
     RTCPSenderInfo senderInfo;
     EXPECT_EQ(0, _rtpRtcpModule->RemoteRTCPStat(&senderInfo));
   };
+
   virtual void OnReceiveReportReceived(const WebRtc_Word32 id,
                                        const WebRtc_UWord32 senderSSRC) {
-  };
-  virtual void OnReceivedIntraFrameRequest(const uint32_t ssrc) {
-  };
-  virtual void OnReceivedSLI(const uint32_t ssrc,
-                             const uint8_t pictureId) {
-    EXPECT_EQ(28, pictureId);
-  };
-  virtual void OnReceivedRPSI(const uint32_t ssrc,
-                              const uint64_t pictureId) {
-    EXPECT_EQ(kTestPictureId, pictureId);
   };
  private:
   RtpRtcp* _rtpRtcpModule;
@@ -109,8 +114,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   }
 
   void SetUpCallFromModule1(RtcpCallback* feedback1, RtcpCallback* feedback2 ) {
-    module1->RegisterRtcpObservers(feedback1, NULL, feedback1);
-    module2->RegisterRtcpObservers(feedback2, NULL, feedback2);
+    EXPECT_EQ(0, module1->RegisterIncomingRTCPCallback(feedback1));
+    EXPECT_EQ(0, module2->RegisterIncomingRTCPCallback(feedback2));
 
     EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
@@ -156,7 +161,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   FakeRtpRtcpClock fake_clock;
 };
 
-TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
+TEST_F(RtpRtcpRtcpTest, RTCP) {
   RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
   RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
 
@@ -164,13 +169,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
 
   EXPECT_EQ(0, module1->SendRTCPReferencePictureSelection(kTestPictureId));
   EXPECT_EQ(0, module1->SendRTCPSliceLossIndication(156));
-}
 
-TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
-  RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
-  RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
-
-  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
   WebRtc_UWord32 testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, module2->RemoteCSRCs(testOfCSRC));
   EXPECT_EQ(test_CSRC[0], testOfCSRC[0]);
@@ -179,41 +178,12 @@ TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   // Set cname of mixed.
   EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[0], "john@192.168.0.1"));
   EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[1], "jane@192.168.0.2"));
+  EXPECT_EQ(-1, module1->AddMixedCNAME(test_CSRC[0], NULL));
 
   EXPECT_EQ(-1, module1->RemoveMixedCNAME(test_CSRC[0] + 1));
   EXPECT_EQ(0, module1->RemoveMixedCNAME(test_CSRC[1]));
   EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[1], "jane@192.168.0.2"));
 
-  // send RTCP packet, triggered by timer
-  fake_clock.IncrementTime(7500);
-  module1->Process();
-  fake_clock.IncrementTime(100);
-  module2->Process();
-
-  char cName[RTCP_CNAME_SIZE];
-  EXPECT_EQ(-1, module2->RemoteCNAME(module2->RemoteSSRC() + 1, cName));
-
-  // Check multiple CNAME.
-  EXPECT_EQ(0, module2->RemoteCNAME(module2->RemoteSSRC(), cName));
-  EXPECT_EQ(0, strncmp(cName, "john.doe@test.test", RTCP_CNAME_SIZE));
-
-  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[0], cName));
-  EXPECT_EQ(0, strncmp(cName, "john@192.168.0.1", RTCP_CNAME_SIZE));
-
-  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[1], cName));
-  EXPECT_EQ(0, strncmp(cName, "jane@192.168.0.2", RTCP_CNAME_SIZE));
-
-  EXPECT_EQ(0, module1->SetSendingStatus(false));
-
-  // Test that BYE clears the CNAME
-  EXPECT_EQ(-1, module2->RemoteCNAME(module2->RemoteSSRC(), cName));
-}
-
-TEST_F(RtpRtcpRtcpTest, RTCP) {
-  RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
-  RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
-
-  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
   RTCPReportBlock reportBlock;
   reportBlock.cumulativeLost = 1;
   reportBlock.delaySinceLastSR = 2;
@@ -253,9 +223,23 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   WebRtc_UWord32 receivedNTPfrac = 0;
   WebRtc_UWord32 RTCPArrivalTimeSecs = 0;
   WebRtc_UWord32 RTCPArrivalTimeFrac = 0;
+  char cName[RTCP_CNAME_SIZE];
+
   EXPECT_EQ(0, module2->RemoteNTP(&receivedNTPsecs, &receivedNTPfrac,
                                   &RTCPArrivalTimeSecs, &RTCPArrivalTimeFrac));
 
+  EXPECT_EQ(-1, module2->RemoteCNAME(module2->RemoteSSRC() + 1, cName));
+  EXPECT_EQ(-1, module2->RemoteCNAME(module2->RemoteSSRC(), NULL));
+
+  // Check multiple CNAME.
+  EXPECT_EQ(0, module2->RemoteCNAME(module2->RemoteSSRC(), cName));
+  EXPECT_EQ(0, strncmp(cName, "john.doe@test.test", RTCP_CNAME_SIZE));
+
+  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[0], cName));
+  EXPECT_EQ(0, strncmp(cName, "john@192.168.0.1", RTCP_CNAME_SIZE));
+
+  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[1], cName));
+  EXPECT_EQ(0, strncmp(cName, "jane@192.168.0.2", RTCP_CNAME_SIZE));
 
   // get all report blocks
   std::vector<RTCPReportBlock> report_blocks;
@@ -307,10 +291,16 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   // Test receive report.
   EXPECT_EQ(0, module1->SetSendingStatus(false));
 
+  // Test that BYE clears the CNAME
+  EXPECT_EQ(-1, module2->RemoteCNAME(module2->RemoteSSRC(), cName));
+
   // Send RTCP packet, triggered by timer.
   fake_clock.IncrementTime(5000);
   module1->Process();
   module2->Process();
+
+  delete myRTCPFeedback1;
+  delete myRTCPFeedback2;
 }
 
 TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {

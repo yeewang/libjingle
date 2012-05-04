@@ -41,7 +41,7 @@ public:
 
     virtual void ChangeUniqueId(const WebRtc_Word32 id);
 
-    void Init();
+    WebRtc_Word32 Init();
 
     RtpVideoCodecTypes VideoCodecType() const;
     WebRtc_UWord32 MaxConfiguredBitrate() const;

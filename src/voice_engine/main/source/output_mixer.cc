@@ -32,7 +32,7 @@ OutputMixer::NewMixedAudio(const WebRtc_Word32 id,
                  "OutputMixer::NewMixedAudio(id=%d, size=%u)", id, size);
 
     _audioFrame = generalAudioFrame;
-    _audioFrame.id_ = id;
+    _audioFrame._id = id;
 }
 
 void OutputMixer::MixedParticipants(
@@ -539,9 +539,9 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
 
     int outLen(0);
 
-    if (audioFrame.num_channels_ == 1)
+    if (audioFrame._audioChannel == 1)
     {
-        if (_resampler.ResetIfNeeded(audioFrame.sample_rate_hz_,
+        if (_resampler.ResetIfNeeded(audioFrame._frequencyInHz,
                                      desiredFreqHz,
                                      kResamplerSynchronous) != 0)
         {
@@ -552,7 +552,7 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
     }
     else
     {
-        if (_resampler.ResetIfNeeded(audioFrame.sample_rate_hz_,
+        if (_resampler.ResetIfNeeded(audioFrame._frequencyInHz,
                                      desiredFreqHz,
                                      kResamplerSynchronousStereo) != 0)
         {
@@ -562,18 +562,18 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
         }
     }
     if (_resampler.Push(
-        _audioFrame.data_,
-        _audioFrame.samples_per_channel_*_audioFrame.num_channels_,
-        audioFrame.data_,
-        AudioFrame::kMaxDataSizeSamples,
+        _audioFrame._payloadData,
+        _audioFrame._payloadDataLengthInSamples*_audioFrame._audioChannel,
+        audioFrame._payloadData,
+        AudioFrame::kMaxAudioFrameSizeSamples,
         outLen) == 0)
     {
         // Ensure that output from resampler matches the audio-frame format.
         // Example: 10ms stereo output at 48kHz => outLen = 960 =>
-        // convert samples_per_channel_ to 480
-        audioFrame.samples_per_channel_ =
-            (outLen / _audioFrame.num_channels_);
-        audioFrame.sample_rate_hz_ = desiredFreqHz;
+        // convert _payloadDataLengthInSamples to 480
+        audioFrame._payloadDataLengthInSamples =
+            (outLen / _audioFrame._audioChannel);
+        audioFrame._frequencyInHz = desiredFreqHz;
     }
     else
     {
@@ -582,7 +582,7 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
         return -1;
     }
 
-    if ((channels == 2) && (audioFrame.num_channels_ == 1))
+    if ((channels == 2) && (audioFrame._audioChannel == 1))
     {
         AudioFrameOperations::MonoToStereo(audioFrame);
     }
@@ -593,12 +593,12 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
 WebRtc_Word32 
 OutputMixer::DoOperationsOnCombinedSignal()
 {
-    if (_audioFrame.sample_rate_hz_ != _mixingFrequencyHz)
+    if (_audioFrame._frequencyInHz != _mixingFrequencyHz)
     {
         WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                      "OutputMixer::DoOperationsOnCombinedSignal() => "
-                     "mixing frequency = %d", _audioFrame.sample_rate_hz_);
-        _mixingFrequencyHz = _audioFrame.sample_rate_hz_;
+                     "mixing frequency = %d", _audioFrame._frequencyInHz);
+        _mixingFrequencyHz = _audioFrame._frequencyInHz;
     }
 
     // --- Insert inband Dtmf tone
@@ -610,7 +610,7 @@ OutputMixer::DoOperationsOnCombinedSignal()
     // Scale left and/or right channel(s) if balance is active
     if (_panLeft != 1.0 || _panRight != 1.0)
     {
-        if (_audioFrame.num_channels_ == 1)
+        if (_audioFrame._audioChannel == 1)
         {
             AudioFrameOperations::MonoToStereo(_audioFrame);
         }
@@ -619,7 +619,7 @@ OutputMixer::DoOperationsOnCombinedSignal()
             // Pure stereo mode (we are receiving a stereo signal).
         }
 
-        assert(_audioFrame.num_channels_ == 2);
+        assert(_audioFrame._audioChannel == 2);
         AudioFrameOperations::Scale(_panLeft, _panRight, _audioFrame);
     }
 
@@ -632,15 +632,15 @@ OutputMixer::DoOperationsOnCombinedSignal()
     if (_externalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (_audioFrame.num_channels_ == 2);
+        const bool isStereo = (_audioFrame._audioChannel == 2);
         if (_externalMediaCallbackPtr)
         {
             _externalMediaCallbackPtr->Process(
                 -1,
                 kPlaybackAllChannelsMixed, 
-                (WebRtc_Word16*)_audioFrame.data_,
-                _audioFrame.samples_per_channel_,
-                _audioFrame.sample_rate_hz_,
+                (WebRtc_Word16*)_audioFrame._payloadData,
+                _audioFrame._payloadDataLengthInSamples,
+                _audioFrame._frequencyInHz,
                 isStereo);
         }
     }
@@ -664,31 +664,31 @@ OutputMixer::APMAnalyzeReverseStream()
     // Convert from mixing frequency to APM frequency.
     // Sending side determines APM frequency.
 
-    if (audioFrame.num_channels_ == 1)
+    if (audioFrame._audioChannel == 1)
     {
-        _apmResampler.ResetIfNeeded(_audioFrame.sample_rate_hz_,
+        _apmResampler.ResetIfNeeded(_audioFrame._frequencyInHz,
                                     _audioProcessingModulePtr->sample_rate_hz(),
                                     kResamplerSynchronous);
     }
     else
     {
-        _apmResampler.ResetIfNeeded(_audioFrame.sample_rate_hz_,
+        _apmResampler.ResetIfNeeded(_audioFrame._frequencyInHz,
                                     _audioProcessingModulePtr->sample_rate_hz(),
                                     kResamplerSynchronousStereo);
     }
     if (_apmResampler.Push(
-        _audioFrame.data_,
-        _audioFrame.samples_per_channel_*_audioFrame.num_channels_,
-        audioFrame.data_,
-        AudioFrame::kMaxDataSizeSamples,
+        _audioFrame._payloadData,
+        _audioFrame._payloadDataLengthInSamples*_audioFrame._audioChannel,
+        audioFrame._payloadData,
+        AudioFrame::kMaxAudioFrameSizeSamples,
         outLen) == 0)
     {
-        audioFrame.samples_per_channel_ =
-            (outLen / _audioFrame.num_channels_);
-        audioFrame.sample_rate_hz_ = _audioProcessingModulePtr->sample_rate_hz();
+        audioFrame._payloadDataLengthInSamples =
+            (outLen / _audioFrame._audioChannel);
+        audioFrame._frequencyInHz = _audioProcessingModulePtr->sample_rate_hz();
     }
 
-    if (audioFrame.num_channels_ == 2)
+    if (audioFrame._audioChannel == 2)
     {
         AudioFrameOperations::StereoToMono(audioFrame);
     }
@@ -709,11 +709,11 @@ OutputMixer::InsertInbandDtmfTone()
 {
     WebRtc_UWord16 sampleRate(0);
     _dtmfGenerator.GetSampleRate(sampleRate);
-    if (sampleRate != _audioFrame.sample_rate_hz_)
+    if (sampleRate != _audioFrame._frequencyInHz)
     {
         // Update sample rate of Dtmf tone since the mixing frequency changed.
         _dtmfGenerator.SetSampleRate(
-            (WebRtc_UWord16)(_audioFrame.sample_rate_hz_));
+            (WebRtc_UWord16)(_audioFrame._frequencyInHz));
         // Reset the tone to be added taking the new sample rate into account.
         _dtmfGenerator.ResetTone();
     }
@@ -729,21 +729,21 @@ OutputMixer::InsertInbandDtmfTone()
     }
 
     // replace mixed audio with Dtmf tone
-    if (_audioFrame.num_channels_ == 1)
+    if (_audioFrame._audioChannel == 1)
     {
         // mono
-        memcpy(_audioFrame.data_, toneBuffer, sizeof(WebRtc_Word16)
+        memcpy(_audioFrame._payloadData, toneBuffer, sizeof(WebRtc_Word16)
             * toneSamples);
     } else
     {
         // stereo
-        for (int i = 0; i < _audioFrame.samples_per_channel_; i++)
+        for (int i = 0; i < _audioFrame._payloadDataLengthInSamples; i++)
         {
-            _audioFrame.data_[2 * i] = toneBuffer[i];
-            _audioFrame.data_[2 * i + 1] = 0;
+            _audioFrame._payloadData[2 * i] = toneBuffer[i];
+            _audioFrame._payloadData[2 * i + 1] = 0;
         }
     }
-    assert(_audioFrame.samples_per_channel_ == toneSamples);
+    assert(_audioFrame._payloadDataLengthInSamples == toneSamples);
 
     return 0;
 }

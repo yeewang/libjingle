@@ -13,13 +13,17 @@
 
 #include "voe_neteq_stats.h"
 
+#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoENetEqStatsImpl : public VoENetEqStats
+class VoENetEqStatsImpl : public VoENetEqStats,
+                          public voe::RefCount
 {
 public:
+    virtual int Release();
+
     virtual int GetNetworkStatistics(int channel,
                                      NetworkStatistics& stats);
 

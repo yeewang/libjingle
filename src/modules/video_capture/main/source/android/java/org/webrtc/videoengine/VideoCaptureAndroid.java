@@ -19,8 +19,6 @@ import org.webrtc.videoengine.VideoCaptureDeviceInfoAndroid.AndroidVideoCaptureD
 
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.util.Log;
@@ -35,10 +33,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     private int PIXEL_FORMAT = ImageFormat.NV21;
     PixelFormat pixelFormat = new PixelFormat();
     // True when the C++ layer has ordered the camera to be started.
-    private boolean isCaptureStarted = false;
-    private boolean isCaptureRunning = false;
-    private boolean isSurfaceReady = false;
-    private SurfaceHolder surfaceHolder = null;
+    private boolean isRunning=false;
 
     private final int numCaptureBuffers = 3;
     private int expectedFrameSize = 0;
@@ -50,9 +45,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     // True if this class owns the preview video buffers.
     private boolean ownsBuffers = false;
 
-    // Set this to 4 for DEBUG logging. 2 for DEBUG
-    private final static String TAG = "WEBRTC";
-    private static int LOGLEVEL = 2;
+    // Set this to 2 for VERBOSE logging. 1 for DEBUG
+    private static int LOGLEVEL = 0;
     private static boolean VERBOSE = LOGLEVEL > 2;
     private static boolean DEBUG = LOGLEVEL > 1;
 
@@ -60,14 +54,15 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
     public static
     void DeleteVideoCaptureAndroid(VideoCaptureAndroid captureAndroid) {
-        if(DEBUG) Log.d(TAG, "DeleteVideoCaptureAndroid");
+        if(DEBUG) Log.d("*WEBRTC*", "DeleteVideoCaptureAndroid");
 
         captureAndroid.StopCapture();
         captureAndroid.camera.release();
         captureAndroid.camera = null;
         captureAndroid.context = 0;
 
-        if(DEBUG) Log.v(TAG, "DeleteVideoCaptureAndroid ended");
+        if(DEBUG) Log.v("*WEBRTC*", "DeleteVideoCaptureAndroid ended");
+
     }
 
     public VideoCaptureAndroid(int in_id,
@@ -80,13 +75,13 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         currentDevice = in_device;
     }
 
-    private int doStartCapture(int width, int height, int frameRate) {
-        if(DEBUG) Log.d(TAG, "doStartCapture " + width +
+    public int StartCapture(int width, int height, int frameRate) {
+        if(DEBUG) Log.d("*WEBRTC*", "StartCapture width" + width +
                 " height " + height +" frame rate " + frameRate);
-
         try {
             if (camera == null) {
-                Log.e(TAG, "Camera not initialized %d" + id);
+                Log.e("*WEBRTC*",
+                        String.format(Locale.US,"Camera not initialized %d",id));
                 return -1;
             }
             currentCapability = new CaptureCapabilityAndroid();
@@ -98,9 +93,15 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
             Camera.Parameters parameters = camera.getParameters();
             parameters.setPreviewSize(currentCapability.width,
                     currentCapability.height);
-            parameters.setPreviewFormat(PIXEL_FORMAT);
+            parameters.setPreviewFormat(PIXEL_FORMAT );
             parameters.setPreviewFrameRate(currentCapability.maxFPS);
             camera.setParameters(parameters);
+
+            // Get the local preview SurfaceHolder from the static render class
+            localPreview = ViERenderer.GetLocalRenderer();
+            if(localPreview != null) {
+                localPreview.addCallback(this);
+            }
 
             int bufSize = width * height * pixelFormat.bitsPerPixel / 8;
             if(android.os.Build.VERSION.SDK_INT >= 7) {
@@ -123,44 +124,21 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
             camera.startPreview();
             previewBufferLock.lock();
             expectedFrameSize = bufSize;
-            isCaptureRunning = true;
+            isRunning = true;
             previewBufferLock.unlock();
-
         }
         catch (Exception ex) {
-            Log.e(TAG, "Failed to start camera");
+            Log.e("*WEBRTC*", "Failed to start camera");
             return -1;
         }
-        isCaptureRunning = true;
         return 0;
     }
 
-    public int StartCapture(int width, int height, int frameRate) {
-        if(DEBUG) Log.d(TAG, "StartCapture width " + width +
-                " height " + height +" frame rate " + frameRate);
-        isCaptureStarted = true;
-
-        // Get the local preview SurfaceHolder from the static render class
-        localPreview = ViERenderer.GetLocalRenderer();
-        if(localPreview != null) {
-            localPreview.addCallback(this);
-        }
-
-        if (camera == null) {
-            Log.e(TAG, "Camera not initialized %d" + id);
-            return -1;
-        }
-
-        if (!isSurfaceReady) return 0;
-
-        return doStartCapture(width, height, frameRate);
-    }
-
     public int StopCapture() {
-        if(DEBUG) Log.d(TAG, "StopCapture");
+        if(DEBUG) Log.d("*WEBRTC*", "StopCapture");
         try {
             previewBufferLock.lock();
-            isCaptureRunning = false;
+            isRunning = false;
             previewBufferLock.unlock();
 
             camera.stopPreview();
@@ -173,28 +151,34 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
             }
         }
         catch (Exception ex) {
-            Log.e(TAG, "Failed to stop camera");
+            Log.e("*WEBRTC*", "Failed to stop camera");
             return -1;
         }
 
-        isCaptureStarted = false;
+        if(DEBUG) {
+            Log.d("*WEBRTC*", "StopCapture ended");
+        }
         return 0;
     }
 
-    native void ProvideCameraFrame(byte[] data, int length, long captureObject);
+    native void ProvideCameraFrame(byte[] data,int length, long captureObject);
 
     public void onPreviewFrame(byte[] data, Camera camera) {
         previewBufferLock.lock();
 
         if(VERBOSE) {
-            Log.v(TAG, "preview frame length " + data.length +
-                    " context" + context);
+            Log.v("*WEBRTC*",
+                    String.format(Locale.US, "preview frame length %d context %x",
+                            data.length, context));
         }
-        if(isCaptureRunning) {
+        if(isRunning) {
             // If StartCapture has been called but not StopCapture
             // Call the C++ layer with the captured frame
             if (data.length == expectedFrameSize) {
                 ProvideCameraFrame(data, expectedFrameSize, context);
+                if (VERBOSE) {
+                    Log.v("*WEBRTC*", String.format(Locale.US, "frame delivered"));
+                }
                 if(ownsBuffers) {
                     // Give the video buffer to the camera service again.
                     camera.addCallbackBuffer(data);
@@ -204,21 +188,36 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         previewBufferLock.unlock();
     }
 
+
+    public void surfaceChanged(SurfaceHolder holder,
+            int format, int width, int height) {
+
+        try {
+            if(camera != null) {
+                camera.setPreviewDisplay(localPreview);
+            }
+        } catch (IOException e) {
+            Log.e("*WEBRTC*",
+                    String.format(Locale.US,
+                            "Failed to set Local preview. " + e.getMessage()));
+        }
+    }
+
     // Sets the rotation of the preview render window.
     // Does not affect the captured video image.
     public void SetPreviewRotation(int rotation) {
-        Log.v(TAG, "SetPreviewRotation:" + rotation);
-
         if(camera != null) {
             previewBufferLock.lock();
+            final boolean running = isRunning;
             int width = 0;
             int height = 0;
             int framerate = 0;
 
-            if(isCaptureRunning) {
+            if(running) {
                 width = currentCapability.width;
                 height = currentCapability.height;
                 framerate = currentCapability.maxFPS;
+
                 StopCapture();
             }
 
@@ -246,46 +245,18 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
                 camera.setParameters(parameters);
             }
 
-            if(isCaptureRunning) {
+            if(running) {
                 StartCapture(width, height, framerate);
             }
             previewBufferLock.unlock();
         }
     }
 
-    public void surfaceChanged(SurfaceHolder holder,
-                               int format, int width, int height) {
-        if (DEBUG) Log.d(TAG, "VideoCaptureAndroid::surfaceChanged");
-        isSurfaceReady = true;
-        surfaceHolder = holder;
-
-        if (!isCaptureStarted || isCaptureRunning)
-            return;
-
-        if (DEBUG) {
-            Log.d(TAG, "VideoCaptureAndroid::surfaceChanged StartCapture");
-        }
-        if(camera != null) {
-            try {
-                camera.setPreviewDisplay(surfaceHolder);
-            }
-            catch (IOException e) {
-                Log.e(TAG, "Failed to set Local preview. " + e.getMessage());
-            }
-        }
-        doStartCapture(currentCapability.width,
-                currentCapability.height,
-                currentCapability.maxFPS);
-    }
-
     public void surfaceCreated(SurfaceHolder holder) {
-        if(DEBUG) Log.d(TAG, "VideoCaptureAndroid::surfaceCreated");
     }
 
 
     public void surfaceDestroyed(SurfaceHolder holder) {
-        if(DEBUG) Log.d(TAG, "VideoCaptureAndroid::surfaceDestroyed");
-        isSurfaceReady = false;
     }
 
 }

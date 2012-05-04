@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -33,35 +33,35 @@
 
 #define WEBRTC_LOG_TAG "*WEBRTCN*"
 #define VALIDATE_BASE_POINTER                                           \
-  if (!voeData.base)                                                    \
+  if (!veData.base)                                                     \
   {                                                                     \
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
                         "Base pointer doesn't exist");                  \
     return -1;                                                          \
   }
 #define VALIDATE_CODEC_POINTER                                          \
-  if (!voeData.codec)                                                   \
+  if (!veData.codec)                                                    \
   {                                                                     \
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
                         "Codec pointer doesn't exist");                 \
     return -1;                                                          \
   }
 #define VALIDATE_FILE_POINTER                                           \
-  if (!voeData.file)                                                    \
+  if (!veData.file)                                                     \
   {                                                                     \
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
                         "File pointer doesn't exist");                  \
     return -1;                                                          \
   }
 #define VALIDATE_APM_POINTER                                            \
-  if (!voeData.codec)                                                   \
+  if (!veData.codec)                                                    \
   {                                                                     \
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
                         "Apm pointer doesn't exist");                   \
     return -1;                                                          \
   }
 #define VALIDATE_HARDWARE_POINTER                                       \
-  if (!voeData.hardware)                                                \
+  if (!veData.hardware)                                                 \
   {                                                                     \
     __android_log_write(                                                \
         ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,                              \
@@ -69,7 +69,7 @@
     return -1;                                                          \
   }
 #define VALIDATE_VOLUME_POINTER                                         \
-  if (!voeData.volume)                                                  \
+  if (!veData.volume)                                                   \
   {                                                                     \
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
                         "Volume pointer doesn't exist");                \
@@ -116,7 +116,7 @@ typedef struct
 JavaVM* webrtcGlobalVM;
 
 // Global variables visible in this file
-static VoiceEngineData voeData;
+static VoiceEngineData veData;
 static VideoEngineData vieData;
 
 // "Local" functions (i.e. not Java accessible)
@@ -234,9 +234,9 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
   }
 
   // Init VoiceEngine data
-  memset(&voeData, 0, sizeof(voeData));
+  memset(&veData, 0, sizeof(veData));
   // Store the JVM
-  voeData.jvm = vm;
+  veData.jvm = vm;
 
   // Init VideoEngineData data
   memset(&vieData, 0, sizeof(vieData));
@@ -244,12 +244,11 @@ jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
   return JNI_VERSION_1_4;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    NativeInit
- * Signature: (Landroid/content/Context;)Z
- */
-JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_NativeInit(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    NativeInit
+// Signature: (Landroid/content/Context;)Z
+JNIEXPORT jboolean JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_NativeInit(
     JNIEnv * env,
     jobject,
     jobject context)
@@ -257,12 +256,12 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Nati
   return true;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    GetVideoEngine
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideoEngine(
+// VideoEngine API wrapper functions
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    GetVideoEngine
+// Signature: ()I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideoEngine(
     JNIEnv *,
     jobject context) {
 
@@ -328,11 +327,9 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideo
   return 0;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    Init
- * Signature: (Z)I
- */
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    Init
+// Signature: (IIIZ)I
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Init(
     JNIEnv *,
     jobject,
@@ -370,11 +367,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Init(
                                     "Could not set trace filter");
             }
         }
-        if (voeData.ve) // VoiceEngine is enabled
+        if (veData.ve) // VoiceEngine is enabled
         {
             __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                                 "SetVoiceEngine");
-            if (0 != vieData.base->SetVoiceEngine(voeData.ve))
+            if (0 != vieData.base->SetVoiceEngine(veData.ve))
             {
                 __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                                     "SetVoiceEngine failed");
@@ -445,11 +442,9 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Terminat
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StartSend
- * Signature: (I)I
- */
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StartSend
+// Signature: (I)I
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartSend(
     JNIEnv *,
     jobject,
@@ -466,15 +461,13 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartSen
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StopRender
- * Signature: (I)I
- */
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StopRender
+// Signature: (I)I
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopRender(
-    JNIEnv *,
-    jobject,
-    jint channel)
+                                                                            JNIEnv *,
+                                                                            jobject,
+                                                                            jint channel)
 {
     __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "StopRender");
 
@@ -486,11 +479,9 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopRend
     }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StopSend
- * Signature: (I)I
- */
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    Stop
+// Signature: ()I
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopSend(
     JNIEnv *,
     jobject,
@@ -506,11 +497,9 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopSend
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StartReceive
- * Signature: (I)I
- */
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StartReceive
+// Signature: ()I
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartReceive(
     JNIEnv *,
     jobject,
@@ -526,12 +515,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartRec
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StopReceive
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopReceive(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StopReceive
+// Signature: ()I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopReceive(
     JNIEnv *,
     jobject,
     jint channel)
@@ -545,12 +533,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopRece
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    CreateChannel
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_CreateChannel(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    CreateChannel
+// Signature: ()I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_CreateChannel(
     JNIEnv *,
     jobject,
     jint voiceChannel)
@@ -573,12 +560,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_CreateCh
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetLocalReceiver
- * Signature: (II)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocalReceiver(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetLocalReceiver
+// Signature: (II)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocalReceiver(
     JNIEnv *,
     jobject,
     jint channel,
@@ -595,12 +581,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocal
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetSendDestination
- * Signature: (II[B)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetSendDestination
+// Signature: (II[B)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination(
     JNIEnv * env,
     jobject,
     jint channel,
@@ -626,12 +611,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendD
 }
 
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetReceiveCodec
- * Signature: (IIIIII)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetReceiveCodec(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetReceiveCodec
+// Signature: (IIIIII)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetReceiveCodec(
     JNIEnv *,
     jobject,
     jint channel,
@@ -662,12 +646,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRecei
   return ret;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetSendCodec
- * Signature: (IIIIII)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendCodec(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetSendCodec
+// Signature: (IIIIII)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendCodec(
     JNIEnv *,
     jobject,
     jint channel,
@@ -714,12 +697,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendC
   return vieData.codec->SetSendCodec(channel, codec);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    AddRemoteRenderer
- * Signature: (ILjava/lang/Object;)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_AddRemoteRenderer(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    AddRemoteRenderer
+// Signature: (ILandroid/view/SurfaceView;)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_AddRemoteRenderer(
     JNIEnv *,
     jobject,
     jint channel,
@@ -734,12 +716,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_AddRemot
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    RemoveRemoteRenderer
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_RemoveRemoteRenderer(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    RemoveRemoteRenderer
+// Signature: (I)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_RemoveRemoteRenderer(
     JNIEnv *,
     jobject,
     jint channel)
@@ -755,12 +736,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_RemoveRe
   return 0;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StartRender
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartRender(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StartRender
+// Signature: (I)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartRender(
     JNIEnv *,
     jobject,
     jint channel)
@@ -775,12 +755,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartRen
   }
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StartCamera
- * Signature: (II)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartCamera(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StarteCamera
+// Signature: (II)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartCamera(
     JNIEnv * env,
     jobject,
     jint channel,
@@ -827,12 +806,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartCam
   return cameraId;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    StopCamera
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopCamera(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    StopCamera
+// Signature: ()I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopCamera(
     JNIEnv *,
     jobject,
     jint cameraId)
@@ -850,12 +828,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopCame
   return ret;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    GetCameraOrientation
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCameraOrientation(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    GetCameraOrientation
+// Signature: (I)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCameraOrientation(
     JNIEnv *,
     jobject,
     jint cameraNum)
@@ -882,12 +859,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCamer
 
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetRotation
- * Signature: (II)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRotation(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetRotation
+// Signature: (II)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRotation(
     JNIEnv *,
     jobject,
     jint captureId,
@@ -908,16 +884,15 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRotat
   return ret;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    EnableNACK
- * Signature: (IZ)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnableNACK(
-    JNIEnv *,
-    jobject,
-    jint channel,
-    jboolean enable)
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    EnableNACK
+// Signature: (IZ)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnableNACK(
+                                                                JNIEnv *,
+                                                                jobject,
+                                                                jint channel,
+                                                                jboolean enable)
 {
   if (NULL == vieData.rtp)
     return -1;
@@ -933,12 +908,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnableNA
   return ret;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    EnablePLI
- * Signature: (IZ)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnablePLI(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    EnablePLI
+// Signature: (IZ)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnablePLI(
     JNIEnv *,
     jobject,
     jint channel,
@@ -959,12 +933,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnablePL
   return ret;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    SetCallback
- * Signature: (ILorg/webrtc/videoengineapp/IViEAndroidCallback;)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallback(
+// Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+// Method:    SetCallback
+// Signature: (ILorg/webrtc/videoengineapp/IViEAndroidCallback;)I
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallback(
     JNIEnv * env,
     jobject,
     jint channel,
@@ -992,27 +965,27 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallb
 // VoiceEngine API wrapper functions
 //
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_Create
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Create(
+// Create VoiceEngine instance
+JNIEXPORT jboolean JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Create(
     JNIEnv *env,
-    jobject)
+    jobject,
+    jobject context)
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "Create");
 
   // Check if already created
-  if (voeData.ve) {
+  if (veData.ve) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "VoE already created");
     return false;
   }
 
+  // Init Android Object
+  VoiceEngine::SetAndroidObjects(veData.jvm, env, context);
   // Create
-  voeData.ve = VoiceEngine::Create();
-  if (!voeData.ve) {
+  veData.ve = VoiceEngine::Create();
+  if (!veData.ve) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Create VoE failed");
     return false;
@@ -1022,7 +995,7 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_
   if (!VE_GetSubApis()) {
     // If not OK, release all sub-APIs and delete VoE
     VE_ReleaseSubApis();
-    if (!VoiceEngine::Delete(voeData.ve)) {
+    if (!VoiceEngine::Delete(veData.ve)) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Delete VoE failed");
     }
@@ -1032,17 +1005,14 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_
   return true;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_Delete
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Delete(
+// Delete VoiceEngine instance
+JNIEXPORT jboolean JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Delete(
     JNIEnv *,
     jobject)
 {
   // Check if exists
-  if (!voeData.ve) {
+  if (!veData.ve) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "VoE does not exist");
     return false;
@@ -1052,13 +1022,13 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_
   VE_ReleaseSubApis();
 
   // Delete
-  if (!VoiceEngine::Delete(voeData.ve)) {
+  if (!VoiceEngine::Delete(veData.ve)) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Delete VoE failed");
     return false;
   }
 
-  voeData.ve = NULL;
+  veData.ve = NULL;
 
   // Clear instance independent Java objects
   VoiceEngine::SetAndroidObjects(NULL, NULL, NULL);
@@ -1066,87 +1036,77 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_
   return true;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_Init
- * Signature: (Z)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Init(
+// [Base] Initialize VoiceEngine
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Init(
     JNIEnv *,
     jobject,
-    jboolean enableTrace)
+    jboolean enableTrace,
+    jboolean useExtTrans)
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "VE_Init");
 
   VALIDATE_BASE_POINTER;
 
-  return voeData.base->Init();
+  if (useExtTrans) {
+    // Not implemented
+    return -1;
+  }
+
+  return veData.base->Init();
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_Terminate
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Terminate(
+// [Base] Terminate VoiceEngine
+JNIEXPORT jint
+JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Terminate(
     JNIEnv *,
     jobject)
 {
   VALIDATE_BASE_POINTER;
 
-  jint retVal = voeData.base->Terminate();
+  jint retVal = veData.base->Terminate();
   return retVal;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_CreateChannel
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1CreateChannel(
+// [Base] Create channel
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_CreateChannel(
     JNIEnv *,
     jobject)
 {
   VALIDATE_BASE_POINTER;
 
   webrtc::CodecInst voiceCodec;
-  int numOfVeCodecs = voeData.codec->NumOfCodecs();
+  int numOfVeCodecs = veData.codec->NumOfCodecs();
 
   //enum all the supported codec
   __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                       "Supported Voice Codec:\n");
   for (int i = 0; i < numOfVeCodecs; ++i) {
-    if (voeData.codec->GetCodec(i, voiceCodec) != -1) {
+    if (veData.codec->GetCodec(i, voiceCodec) != -1) {
       __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                           "num: %d name: %s\n", i, voiceCodec.plname);
     }
   }
 
-  jint channel = voeData.base->CreateChannel();
+  jint channel = veData.base->CreateChannel();
 
   return channel;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_DeleteChannel
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1DeleteChannel(
+// [Base] Delete channel
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_DeleteChannel(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_BASE_POINTER;
-  return voeData.base->DeleteChannel(channel);
+  return veData.base->DeleteChannel(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetLocalReceiver
- * Signature: (II)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetLocalReceiver(
+// [Base] SetLocalReceiver
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetLocalReceiver(
     JNIEnv *,
     jobject,
     jint channel,
@@ -1154,15 +1114,12 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "SetLocalReceiver");
   VALIDATE_BASE_POINTER;
-  return voeData.base->SetLocalReceiver(channel, port);
+  return veData.base->SetLocalReceiver(channel, port);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetSendDestination
- * Signature: (IILjava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetSendDestination(
+// [Base] SetSendDestination
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSendDestination(
     JNIEnv *env,
     jobject,
     jint channel,
@@ -1178,141 +1135,161 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
                         "Could not get UTF string");
     return -1;
   }
-  jint retVal = voeData.base->SetSendDestination(channel, port, ipaddrNative);
+  jint retVal = veData.base->SetSendDestination(channel, port, ipaddrNative);
   env->ReleaseStringUTFChars(ipaddr, ipaddrNative);
   return retVal;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StartListen
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartListen(
+// [Base] StartListen
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartListen(
     JNIEnv *,
     jobject,
     jint channel)
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "StartListen");
   VALIDATE_BASE_POINTER;
-  return voeData.base->StartReceive(channel);
+  return veData.base->StartReceive(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StartPlayout
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartPlayout(
+// [Base] Start playout
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayout(
     JNIEnv *,
     jobject,
     jint channel)
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "StartPlayout");
   VALIDATE_BASE_POINTER;
-  return voeData.base->StartPlayout(channel);
+  return veData.base->StartPlayout(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StartSend
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartSend(
+// [Base] Start send
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartSend(
     JNIEnv *,
     jobject,
     jint channel)
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "StartSend");
   VALIDATE_BASE_POINTER;
-  return voeData.base->StartSend(channel);
+  return veData.base->StartSend(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopListen
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopListen(
+// [Base] Stop listen
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopListen(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_BASE_POINTER;
-  return voeData.base->StartReceive(channel);
+  return veData.base->StartReceive(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopPlayout
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopPlayout(
+// [Base] Stop playout
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayout(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_BASE_POINTER;
-  return voeData.base->StopPlayout(channel);
+  return veData.base->StopPlayout(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopSend
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopSend(
+// [Base] Stop send
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopSend(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_BASE_POINTER;
-  return voeData.base->StopSend(channel);
+  return veData.base->StopSend(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetSpeakerVolume
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetSpeakerVolume(
+// [codec] Number of codecs
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_NumOfCodecs(
     JNIEnv *,
-    jobject,
-    jint level)
+    jobject)
 {
-  VALIDATE_VOLUME_POINTER;
-
-  if (voeData.volume->SetSpeakerVolume(level) != 0) {
-    return -1;
-  }
-  return 0;
+  VALIDATE_CODEC_POINTER;
+  return veData.codec->NumOfCodecs();
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetLoudspeakerStatus
- * Signature: (Z)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetLoudspeakerStatus(
+// [codec] Set send codec
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSendCodec(
     JNIEnv *,
     jobject,
-    jboolean enable)
+    jint channel,
+    jint index)
 {
-  VALIDATE_HARDWARE_POINTER;
+  VALIDATE_CODEC_POINTER;
 
-  if (voeData.hardware->SetLoudspeakerStatus(enable) != 0) {
-    return -1;
+  webrtc::CodecInst codec;
+
+  for (int i = 0; i < veData.codec->NumOfCodecs(); ++i) {
+    webrtc::CodecInst codecToList;
+    veData.codec->GetCodec(i, codecToList);
+    __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
+                        "VE Codec list %s, pltype=%d\n",
+                        codecToList.plname, codecToList.pltype);
   }
 
-  return 0;
+  if (veData.codec->GetCodec(index, codec) != 0) {
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed to get codec");
+    return -1;
+  }
+  __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "SetSendCodec %s\n",
+                      codec.plname);
+
+  return veData.codec->SetSendCodec(channel, codec);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StartPlayingFileLocally
- * Signature: (ILjava/lang/String;Z)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartPlayingFileLocally(
+// [audioprocessing] SetNSStatus
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetNSStatus(
+    JNIEnv *,
+    jobject,
+    jboolean enable,
+    jint mode)
+{
+  //TODO implement
+  return -1;
+}
+
+// [audioprocessing] SetAGCStatus
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetAGCStatus(
+    JNIEnv *,
+    jobject,
+    jboolean enable,
+    jint mode)
+{
+  //TODO implement
+  return -1;
+}
+
+// [audioprocessing] SetECStatus
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetECStatus(
+    JNIEnv *,
+    jobject,
+    jboolean enable,
+    jint mode,
+    jint AESmode,
+    jint AESattenuation)
+{
+  //TODO implement
+  return -1;
+}
+
+// [File] Start play file locally
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayingFileLocally(
     JNIEnv * env,
     jobject,
     jint channel,
@@ -1328,7 +1305,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
     return -1;
   }
 
-  jint retVal = voeData.file->StartPlayingFileLocally(channel,
+  jint retVal = veData.file->StartPlayingFileLocally(channel,
                                                      fileNameNative,
                                                      loop);
 
@@ -1337,26 +1314,20 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
   return retVal;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopPlayingFileLocally
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopPlayingFileLocally(
+// [File] Stop play file locally
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayingFileLocally(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_FILE_POINTER;
-  return voeData.file->StopPlayingFileLocally(channel);
+  return veData.file->StopPlayingFileLocally(channel);
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StartPlayingFileAsMicrophone
- * Signature: (ILjava/lang/String;Z)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartPlayingFileAsMicrophone(
+// [File] Start playing file as microphone
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayingFileAsMicrophone(
     JNIEnv *env,
     jobject,
     jint channel,
@@ -1372,7 +1343,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
     return -1;
   }
 
-  jint retVal = voeData.file->StartPlayingFileAsMicrophone(channel,
+  jint retVal = veData.file->StartPlayingFileAsMicrophone(channel,
                                                           fileNameNative,
                                                           loop);
 
@@ -1381,113 +1352,56 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
   return retVal;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopPlayingFileAsMicrophone
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopPlayingFileAsMicrophone(
+// [File] Stop playing file as microphone
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayingFileAsMicrophone(
     JNIEnv *,
     jobject,
     jint channel)
 {
   VALIDATE_FILE_POINTER;
-  return voeData.file->StopPlayingFileAsMicrophone(channel);
+  return veData.file->StopPlayingFileAsMicrophone(channel);
 }
 
-
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_NumOfCodecs
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1NumOfCodecs(
-    JNIEnv *,
-    jobject)
-{
-  VALIDATE_CODEC_POINTER;
-  return voeData.codec->NumOfCodecs();
-}
-
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetSendCodec
- * Signature: (II)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetSendCodec(
+// [Volume] Set speaker volume
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSpeakerVolume(
     JNIEnv *,
     jobject,
-    jint channel,
-    jint index)
+    jint level)
 {
-  VALIDATE_CODEC_POINTER;
+  VALIDATE_VOLUME_POINTER;
 
-  webrtc::CodecInst codec;
-
-  for (int i = 0; i < voeData.codec->NumOfCodecs(); ++i) {
-    webrtc::CodecInst codecToList;
-    voeData.codec->GetCodec(i, codecToList);
-    __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
-                        "VE Codec list %s, pltype=%d\n",
-                        codecToList.plname, codecToList.pltype);
-  }
-
-  if (voeData.codec->GetCodec(index, codec) != 0) {
-    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-                        "Failed to get codec");
+  if (veData.volume->SetSpeakerVolume(level) != 0) {
     return -1;
   }
-  __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "SetSendCodec %s\n",
-                      codec.plname);
 
-  return voeData.codec->SetSendCodec(channel, codec);
+  unsigned int storedVolume = 0;
+  if (veData.volume->GetSpeakerVolume(storedVolume) != 0) {
+    return -1;
+  }
+
+  if (storedVolume != level) {
+    return -1;
+  }
+
+  return 0;
 }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetECStatus
- * Signature: (ZIII)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetECStatus(
+// [Hardware] Set speaker volume
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetLoudspeakerStatus(
     JNIEnv *,
     jobject,
-    jboolean enable,
-    jint mode,
-    jint AESmode,
-    jint AESattenuation)
+    jboolean enable)
 {
-  // TODO(leozwang) implement
-  return -1;
-}
+  VALIDATE_HARDWARE_POINTER;
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetAGCStatus
- * Signature: (ZI)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetAGCStatus(
-    JNIEnv *,
-    jobject,
-    jboolean enable,
-    jint mode)
-{
-  // TODO(leozwang) implement
-  return -1;
-}
+  if (veData.hardware->SetLoudspeakerStatus(enable) != 0) {
+    return -1;
+  }
 
-/*
- * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_SetNSStatus
- * Signature: (ZI)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetNSStatus(
-    JNIEnv *,
-    jobject,
-    jboolean enable,
-    jint mode)
-{
-  // TODO(leozwang) implement
-  return -1;
+  return 0;
 }
 
 //
@@ -1499,56 +1413,56 @@ bool VE_GetSubApis() {
   bool getOK = true;
 
   // Base
-  voeData.base = VoEBase::GetInterface(voeData.ve);
-  if (!voeData.base) {
+  veData.base = VoEBase::GetInterface(veData.ve);
+  if (!veData.base) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get base sub-API failed");
     getOK = false;
   }
 
   // Codec
-  voeData.codec = VoECodec::GetInterface(voeData.ve);
-  if (!voeData.codec) {
+  veData.codec = VoECodec::GetInterface(veData.ve);
+  if (!veData.codec) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get codec sub-API failed");
     getOK = false;
   }
 
   // File
-  voeData.file = VoEFile::GetInterface(voeData.ve);
-  if (!voeData.file) {
+  veData.file = VoEFile::GetInterface(veData.ve);
+  if (!veData.file) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get file sub-API failed");
     getOK = false;
   }
 
   // Network
-  voeData.netw = VoENetwork::GetInterface(voeData.ve);
-  if (!voeData.netw) {
+  veData.netw = VoENetwork::GetInterface(veData.ve);
+  if (!veData.netw) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get network sub-API failed");
     getOK = false;
   }
 
   // audioprocessing
-  voeData.apm = VoEAudioProcessing::GetInterface(voeData.ve);
-  if (!voeData.apm) {
+  veData.apm = VoEAudioProcessing::GetInterface(veData.ve);
+  if (!veData.apm) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get VoEAudioProcessing sub-API failed");
     getOK = false;
   }
 
   // Volume
-  voeData.volume = VoEVolumeControl::GetInterface(voeData.ve);
-  if (!voeData.volume) {
+  veData.volume = VoEVolumeControl::GetInterface(veData.ve);
+  if (!veData.volume) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get volume sub-API failed");
     getOK = false;
   }
 
   // Hardware
-  voeData.hardware = VoEHardware::GetInterface(voeData.ve);
-  if (!voeData.hardware) {
+  veData.hardware = VoEHardware::GetInterface(veData.ve);
+  if (!veData.hardware) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get hardware sub-API failed");
     getOK = false;
@@ -1562,86 +1476,86 @@ bool VE_ReleaseSubApis() {
   bool releaseOK = true;
 
   // Base
-  if (voeData.base) {
-    if (0 != voeData.base->Release()) {
+  if (veData.base) {
+    if (0 != veData.base->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release base sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.base = NULL;
+      veData.base = NULL;
     }
   }
 
   // Codec
-  if (voeData.codec) {
-    if (0 != voeData.codec->Release()) {
+  if (veData.codec) {
+    if (0 != veData.codec->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release codec sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.codec = NULL;
+      veData.codec = NULL;
     }
   }
 
   // File
-  if (voeData.file) {
-    if (0 != voeData.file->Release()) {
+  if (veData.file) {
+    if (0 != veData.file->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release file sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.file = NULL;
+      veData.file = NULL;
     }
   }
 
   // Network
-  if (voeData.netw) {
-    if (0 != voeData.netw->Release()) {
+  if (veData.netw) {
+    if (0 != veData.netw->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release network sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.netw = NULL;
+      veData.netw = NULL;
     }
   }
 
   // apm
-  if (voeData.apm) {
-    if (0 != voeData.apm->Release()) {
+  if (veData.apm) {
+    if (0 != veData.apm->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release apm sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.apm = NULL;
+      veData.apm = NULL;
     }
   }
 
   // Volume
-  if (voeData.volume) {
-    if (0 != voeData.volume->Release()) {
+  if (veData.volume) {
+    if (0 != veData.volume->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release volume sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.volume = NULL;
+      veData.volume = NULL;
     }
   }
 
   // Hardware
-  if (voeData.hardware) {
-    if (0 != voeData.hardware->Release()) {
+  if (veData.hardware) {
+    if (0 != veData.hardware->Release()) {
       __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Release hardware sub-API failed");
       releaseOK = false;
     }
     else {
-      voeData.hardware = NULL;
+      veData.hardware = NULL;
     }
   }
 

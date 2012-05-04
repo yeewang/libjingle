@@ -13,14 +13,18 @@
 
 #include "voe_dtmf.h"
 
+#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc
 {
 
-class VoEDtmfImpl : public VoEDtmf
+class VoEDtmfImpl : public VoEDtmf,
+                    public voe::RefCount
 {
 public:
+    virtual int Release();
+
     virtual int SendTelephoneEvent(
         int channel,
         int eventCode,

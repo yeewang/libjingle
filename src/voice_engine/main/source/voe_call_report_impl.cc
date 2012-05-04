@@ -30,9 +30,11 @@ VoECallReport* VoECallReport::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
-    s->AddRef();
-    return s;
+    VoiceEngineImpl* s =
+            reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
+    VoECallReportImpl* d = s;
+    (*d)++;
+    return (d);
 #endif
 }
 
@@ -50,6 +52,24 @@ VoECallReportImpl::~VoECallReportImpl()
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "~VoECallReportImpl() - dtor");
     delete &_file;
+}
+
+int VoECallReportImpl::Release()
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "VoECallReportImpl::Release()");
+    (*this)--;
+    int refCount = GetCount();
+    if (refCount < 0)
+    {
+        Reset();
+        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
+        return (-1);
+    }
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "VoECallReportImpl reference counter = %d", refCount);
+    return (refCount);
 }
 
 int VoECallReportImpl::ResetCallReportStatistics(int channel)
