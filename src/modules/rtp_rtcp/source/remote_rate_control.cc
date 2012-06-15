@@ -8,16 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/remote_bitrate_estimator/remote_rate_control.h"
-
-#include <assert.h>
-#include <math.h>
-#include <string.h>
 #if _WIN32
 #include <windows.h>
 #endif
 
-#include "system_wrappers/interface/trace.h"
+#include "remote_rate_control.h"
+#include "trace.h"
+#include <math.h>
+#include <string.h>
 
 #ifdef MATLAB
 extern MatlabEngine eng; // global variable defined elsewhere
@@ -42,8 +40,7 @@ _timeFirstIncomingEstimate(-1),
 _initializedBitRate(false),
 _avgChangePeriod(1000.0f),
 _lastChangeMs(-1),
-_beta(0.9f),
-_rtt(0)
+_beta(0.9f)
 #ifdef MATLAB
 ,_plot1(NULL),
 _plot2(NULL)
@@ -86,8 +83,7 @@ bool RemoteRateControl::ValidEstimate() const {
   return _initializedBitRate;
 }
 
-WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(
-    WebRtc_UWord32 minBitRateBps, WebRtc_UWord32 maxBitRateBps)
+WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(WebRtc_UWord32 minBitRateBps, WebRtc_UWord32 maxBitRateBps)
 {
     if (minBitRateBps > maxBitRateBps)
     {
@@ -95,8 +91,7 @@ WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(
     }
     _minConfiguredBitRate = minBitRateBps;
     _maxConfiguredBitRate = maxBitRateBps;
-    _currentBitRate = BWE_MIN(BWE_MAX(minBitRateBps, _currentBitRate),
-                              maxBitRateBps);
+    _currentBitRate = BWE_MIN(BWE_MAX(minBitRateBps, _currentBitRate), maxBitRateBps);
     return 0;
 }
 
@@ -104,23 +99,18 @@ WebRtc_UWord32 RemoteRateControl::LatestEstimate() const {
   return _currentBitRate;
 }
 
-WebRtc_UWord32 RemoteRateControl::UpdateBandwidthEstimate(WebRtc_Word64 nowMS)
+WebRtc_UWord32 RemoteRateControl::UpdateBandwidthEstimate(WebRtc_UWord32 RTT,
+                                                          WebRtc_Word64 nowMS)
 {
-    _currentBitRate = ChangeBitRate(_currentBitRate,
-                                    _currentInput._incomingBitRate,
-                                    _currentInput._noiseVar,
-                                    nowMS);
+    _currentBitRate = ChangeBitRate(_currentBitRate, _currentInput._incomingBitRate,
+        _currentInput._noiseVar, RTT, nowMS);
     return _currentBitRate;
 }
 
-void RemoteRateControl::SetRtt(unsigned int rtt) {
-  _rtt = rtt;
-}
-
-RateControlRegion RemoteRateControl::Update(const RateControlInput* input,
+RateControlRegion RemoteRateControl::Update(const RateControlInput& input,
+                                            bool& firstOverUse,
                                             WebRtc_Word64 nowMS)
 {
-    assert(input);
 #ifdef MATLAB
     // Create plots
     if (_plot1 == NULL)
@@ -143,20 +133,23 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput* input,
     }
 #endif
 
+    firstOverUse = (_currentInput._bwState != kBwOverusing &&
+                   input._bwState == kBwOverusing);
+
     // Set the initial bit rate value to what we're receiving the first second
     if (!_initializedBitRate)
     {
         if (_timeFirstIncomingEstimate < 0)
         {
-            if (input->_incomingBitRate > 0)
+            if (input._incomingBitRate > 0)
             {
                 _timeFirstIncomingEstimate = nowMS;
             }
         }
         else if (nowMS - _timeFirstIncomingEstimate > 1000 &&
-            input->_incomingBitRate > 0)
+            input._incomingBitRate > 0)
         {
-            _currentBitRate = input->_incomingBitRate;
+            _currentBitRate = input._incomingBitRate;
             _initializedBitRate = true;
         }
     }
@@ -164,19 +157,20 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput* input,
     if (_updated && _currentInput._bwState == kBwOverusing)
     {
         // Only update delay factor and incoming bit rate. We always want to react on an over-use.
-        _currentInput._noiseVar = input->_noiseVar;
-        _currentInput._incomingBitRate = input->_incomingBitRate;
+        _currentInput._noiseVar = input._noiseVar;
+        _currentInput._incomingBitRate = input._incomingBitRate;
         return _rcRegion;
     }
     _updated = true;
-    _currentInput = *input;
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: Incoming rate = %u kbps", input->_incomingBitRate/1000);
+    _currentInput = input;
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: Incoming rate = %u kbps", input._incomingBitRate/1000);
     return _rcRegion;
 }
 
 WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
                                                 WebRtc_UWord32 incomingBitRate,
                                                 double noiseVar,
+                                                WebRtc_UWord32 RTT,
                                                 WebRtc_Word64 nowMS)
 {
     if (!_updated)
@@ -215,13 +209,13 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
             }
             WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                          "BWE: Response time: %f + %i + 10*33\n",
-                         _avgChangePeriod, _rtt);
-            const WebRtc_UWord32 responseTime = static_cast<WebRtc_UWord32>(_avgChangePeriod + 0.5f) + _rtt + 300;
+                         _avgChangePeriod, RTT);
+            const WebRtc_UWord32 responseTime = static_cast<WebRtc_UWord32>(_avgChangePeriod + 0.5f) + RTT + 300;
             double alpha = RateIncreaseFactor(nowMS, _lastBitRateChange,
                                               responseTime, noiseVar);
 
             WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                "BWE: _avgChangePeriod = %f ms; RTT = %u ms", _avgChangePeriod, _rtt);
+                "BWE: _avgChangePeriod = %f ms; RTT = %u ms", _avgChangePeriod, RTT);
 
             currentBitRate = static_cast<WebRtc_UWord32>(currentBitRate * alpha) + 1000;
             if (_maxHoldRate > 0 && _beta * _maxHoldRate > currentBitRate)

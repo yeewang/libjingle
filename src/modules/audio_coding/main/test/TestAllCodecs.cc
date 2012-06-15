@@ -10,9 +10,8 @@
 
 #include "TestAllCodecs.h"
 
-#include <stdio.h>
 #include <cassert>
-#include <string>
+#include <iostream>
 
 #include "audio_coding_module_typedefs.h"
 #include "common_types.h"
@@ -660,11 +659,11 @@ void TestAllCodecs::Perform()
     _testCntr++;
     OpenOutFile(_testCntr);
     char codecCELT_32[] = "CELT";
-    RegisterSendCodec('A', codecCELT_32, 32000, 48000, 640, 0);
+    RegisterSendCodec('A', codecCELT_32, 32000, 48000, 320, 0);
     Run(_channelA2B);
-    RegisterSendCodec('A', codecCELT_32, 32000, 64000, 640, 0);
+    RegisterSendCodec('A', codecCELT_32, 32000, 64000, 320, 0);
     Run(_channelA2B);
-    RegisterSendCodec('A', codecCELT_32, 32000, 128000, 640, 0);
+    RegisterSendCodec('A', codecCELT_32, 32000, 128000, 320, 0);
     Run(_channelA2B);
     _outFileB.Close();
 #endif

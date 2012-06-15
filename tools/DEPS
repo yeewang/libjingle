@@ -44,9 +44,9 @@ deps_os = {
 
 hooks = [
   {
-    # Make changes needed for customization of WebRTC buildbots.
+    # Update slave buildbot.tac to include WebRTC slave_utils import.
     "pattern": ".",
-    "action": ["python", "tools/fix_webrtc_buildbots.py"],
+    "action": ["python", "tools/add_webrtc_slave_utils.py"],
   },
 ]
 

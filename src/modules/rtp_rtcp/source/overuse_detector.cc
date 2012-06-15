@@ -9,13 +9,13 @@
  */
 
 #include <math.h>
-#include <stdlib.h>  // fabsf
+#include <stdlib.h>  // abs
 #if _WIN32
 #include <windows.h>
 #endif
 
-#include "modules/remote_bitrate_estimator/overuse_detector.h"
-#include "modules/remote_bitrate_estimator/remote_rate_control.h"
+#include "modules/rtp_rtcp/source/overuse_detector.h"
+#include "modules/rtp_rtcp/source/remote_rate_control.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "system_wrappers/interface/trace.h"
 
@@ -109,8 +109,8 @@ void OverUseDetector::Reset() {
   tsDeltaHist_.clear();
 }
 
-void OverUseDetector::Update(WebRtc_UWord16 packetSize,
-                             WebRtc_UWord32 timestamp,
+bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
+                             const WebRtc_UWord16 packetSize,
                              const WebRtc_Word64 nowMS) {
 #ifdef WEBRTC_BWE_MATLAB
   // Create plots
@@ -145,14 +145,14 @@ void OverUseDetector::Update(WebRtc_UWord16 packetSize,
   bool wrapped = false;
   bool completeFrame = false;
   if (currentFrame_.timestamp_ == -1) {
-    currentFrame_.timestamp_ = timestamp;
-  } else if (OldTimestamp(
-      timestamp,
+    currentFrame_.timestamp_ = rtpHeader.header.timestamp;
+  } else if (ModuleRTPUtility::OldTimestamp(
+      rtpHeader.header.timestamp,
       static_cast<WebRtc_UWord32>(currentFrame_.timestamp_),
       &wrapped)) {
     // Don't update with old data
-    return;
-  } else if (timestamp != currentFrame_.timestamp_) {
+    return completeFrame;
+  } else if (rtpHeader.header.timestamp != currentFrame_.timestamp_) {
     // First packet of a later frame, the previous frame sample is ready
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                  "Frame complete at %I64i", currentFrame_.completeTimeMs_);
@@ -160,7 +160,7 @@ void OverUseDetector::Update(WebRtc_UWord16 packetSize,
       WebRtc_Word64 tDelta = 0;
       double tsDelta = 0;
       // Check for wrap
-      OldTimestamp(
+      ModuleRTPUtility::OldTimestamp(
           static_cast<WebRtc_UWord32>(prevFrame_.timestamp_),
           static_cast<WebRtc_UWord32>(currentFrame_.timestamp_),
           &wrapped);
@@ -172,7 +172,7 @@ void OverUseDetector::Update(WebRtc_UWord16 packetSize,
     // The new timestamp is now the current frame,
     // and the old timestamp becomes the previous frame.
     prevFrame_ = currentFrame_;
-    currentFrame_.timestamp_ = timestamp;
+    currentFrame_.timestamp_ = rtpHeader.header.timestamp;
     currentFrame_.size_ = 0;
     currentFrame_.completeTimeMs_ = -1;
     completeFrame = true;
@@ -180,6 +180,7 @@ void OverUseDetector::Update(WebRtc_UWord16 packetSize,
   // Accumulate the frame size
   currentFrame_.size_ += packetSize;
   currentFrame_.completeTimeMs_ = nowMS;
+  return completeFrame;
 }
 
 BandwidthUsage OverUseDetector::State() const {
@@ -256,10 +257,10 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta,
   const double residual = tTsDelta - slope_*h[0] - offset_;
 
   const bool stableState =
-      (BWE_MIN(numOfDeltas_, 60) * fabsf(offset_) < threshold_);
+      (BWE_MIN(numOfDeltas_, 60) * abs(offset_) < threshold_);
   // We try to filter out very late frames. For instance periodic key
   // frames doesn't fit the Gaussian model well.
-  if (fabsf(residual) < 3 * sqrt(varNoise_)) {
+  if (abs(residual) < 3 * sqrt(varNoise_)) {
     UpdateNoiseEstimate(residual, minFramePeriod, stableState);
   } else {
     UpdateNoiseEstimate(3 * sqrt(varNoise_), minFramePeriod, stableState);
@@ -365,7 +366,7 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta) {
     return kBwNormal;
   }
   const double T = BWE_MIN(numOfDeltas_, 60) * offset_;
-  if (fabsf(T) > threshold_) {
+  if (abs(T) > threshold_) {
     if (offset_ > 0) {
       if (timeOverUsing_ == -1) {
         // Initialize the timer. Assume that we've been
@@ -417,24 +418,6 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta) {
     hypothesis_ = kBwNormal;
   }
   return hypothesis_;
-}
-
-bool OverUseDetector::OldTimestamp(uint32_t newTimestamp,
-                                   uint32_t existingTimestamp,
-                                   bool* wrapped) {
-  bool tmpWrapped =
-      (newTimestamp < 0x0000ffff && existingTimestamp > 0xffff0000) ||
-      (newTimestamp > 0xffff0000 && existingTimestamp < 0x0000ffff);
-  *wrapped = tmpWrapped;
-  if (existingTimestamp > newTimestamp && !tmpWrapped) {
-    return true;
-  } else if (existingTimestamp <= newTimestamp && !tmpWrapped) {
-    return false;
-  } else if (existingTimestamp < newTimestamp && tmpWrapped) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 }  // namespace webrtc

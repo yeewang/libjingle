@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -77,8 +77,6 @@
         ((CWinTestDlg*)_parentDialogPtr)->UpdateTest(false, _strMsg); \
     }
 #endif
-
-#include <string>
 
 #include "voe_base.h"
 #include "voe_rtp_rtcp.h"
@@ -199,7 +197,6 @@ private:
     bool                    _rxVad;
     int                     _nErrorCallbacks;
     int                     _timerTicks;
-    std::string             _long_audio_file_path;
 
 public:
     afx_msg void OnBnClickedButtonCreate2();

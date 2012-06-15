@@ -13,14 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
-
-#include "gtest/gtest.h"
 
 #include "audio_coding_module.h"
 #include "common_types.h"
-#include "testsupport/fileutils.h"
+#include "gtest/gtest.h"
 #include "trace.h"
+#include "testsupport/fileutils.h"
 #include "utility.h"
 
 namespace webrtc {
@@ -272,8 +270,7 @@ void Receiver::Run() {
 EncodeDecodeTest::EncodeDecodeTest() {
   _testMode = 2;
   Trace::CreateTrace();
-  Trace::SetTraceFile((webrtc::test::OutputPath() +
-      "acm_encdec_trace.txt").c_str());
+  Trace::SetTraceFile("acm_encdec_test.txt");
 }
 
 EncodeDecodeTest::EncodeDecodeTest(int testMode) {
@@ -283,8 +280,7 @@ EncodeDecodeTest::EncodeDecodeTest(int testMode) {
  _testMode = testMode;
  if(_testMode != 0) {
    Trace::CreateTrace();
-   Trace::SetTraceFile((webrtc::test::OutputPath() +
-       "acm_encdec_trace.txt").c_str());
+   Trace::SetTraceFile("acm_encdec_test.txt");
  }
 }
 

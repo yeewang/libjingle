@@ -760,7 +760,10 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = MakeCommandToRunTestInXvfb(['out/Debug/video_render_module_test'])
       self.AddCommonTestRunStep(test=test, cmd=cmd)
     elif test == 'voe_auto_test':
-      self._AddStartPulseAudioStep()
+      # Restart pulseaudio first to reduce risk of pulseaudio flakiness.
+      self.AddCommonStep(['/etc/init.d/pulseaudio', 'restart'],
+                         'restart pulseaudio')
+
       # Set up the regular test run.
       binary = 'out/Debug/voe_auto_test'
       cmd = [binary, '--automated', '--gtest_filter=-RtpFuzzTest.*']
@@ -771,30 +774,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = MEMCHECK_CMD + [binary, ' ++automated',
                             '++gtest_filter=RtpFuzzTest*']
       self.AddCommonFyiStep(cmd=cmd, descriptor='voe_auto_test (fuzz tests)')
-    elif test == 'audio_e2e_test':
-      self._AddStartPulseAudioStep()
-      output_file = '/tmp/e2e_audio_out.pcm'
-      cmd = ('python tools/e2e_quality/audio/run_audio_test.py '
-             '--input=/home/webrtc-cb/data/e2e_audio_in.pcm '
-             '--output=%s --codec=L16 '
-             '--compare="/home/webrtc-cb/bin/compare-audio +16000 +wb" '
-             '--regexp="(\d\.\d{3})"' % output_file)
-      self.AddCommonStep(cmd, descriptor=test)
-      # Ensure anyone can read the output file, in case of problems.
-      cmd = 'chmod 644 %s' % output_file
-      self.AddCommonStep(cmd, descriptor='Make output file readable')
-      # TODO(andrew): how do we get the metric output to the dashboard?
     else:
       self.AddCommonTestRunStep(test)
-
-  def _AddStartPulseAudioStep(self):
-    # Ensure a PulseAudio daemon is running. Options:
-    #   --start          starts the daemon if it is not running
-    #   --daemonize      daemonize after startup
-    #   --high-priority  succeeds due to changes in /etc/security/limits.conf.
-    #   -vvvv            gives us fully verbose logs.
-    cmd = ('/usr/bin/pulseaudio --start --daemonize --high-priority -vvvv')
-    self.AddCommonStep(cmd=cmd, descriptor='Start PulseAudio')
 
 class WebRTCMacFactory(WebRTCFactory):
   """Sets up the Mac build, both for make and xcode."""

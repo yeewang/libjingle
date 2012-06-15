@@ -56,11 +56,6 @@
             'src/windows/port.cc',
           ],
         }],
-        ['OS=="mac" and clang==1', {
-          'xcode_settings': {
-            'WARNING_CFLAGS!': ['-Wheader-hygiene'],
-          },
-        }],
       ],
     },
   ],

@@ -364,22 +364,19 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
   // Copy Y
   for (int i = 0; i < y_rows; ++i) {
     memcpy(current_pointer, y_plane, y_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += y_width;
+    current_pointer += video_frame.y_pitch;
     y_plane += video_frame.y_pitch;
   }
   // Copy U
   for (int i = 0; i < uv_rows; ++i) {
     memcpy(current_pointer, u_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += uv_width;
+    current_pointer += video_frame.u_pitch;
     u_plane += video_frame.u_pitch;
   }
   // Copy V
   for (int i = 0; i < uv_rows; ++i) {
     memcpy(current_pointer, v_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += uv_width;
+    current_pointer += video_frame.v_pitch;
     v_plane += video_frame.v_pitch;
   }
   _captureFrame.SetLength(frame_size);

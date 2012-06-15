@@ -8,13 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
-#define WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
+#ifndef WEBRTC_COMMONT_AUDIO_VAD_VAD_UNIT_TESTS_H
+#define WEBRTC_COMMONT_AUDIO_VAD_VAD_UNIT_TESTS_H
 
 #include <stddef.h>  // size_t
 
 #include "gtest/gtest.h"
-
 #include "typedefs.h"
 
 namespace {
@@ -45,4 +44,4 @@ class VadTest : public ::testing::Test {
   bool ValidRatesAndFrameLengths(int16_t rate, int16_t frame_length);
 };
 
-#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
+#endif  // WEBRTC_COMMONT_AUDIO_VAD_VAD_UNIT_TESTS_H
