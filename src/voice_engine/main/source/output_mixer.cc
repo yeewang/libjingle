@@ -586,10 +586,7 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
     {
         AudioFrameOperations::MonoToStereo(audioFrame);
     }
-    else if ((channels == 1) && (audioFrame.num_channels_ == 2))
-    {
-        AudioFrameOperations::StereoToMono(audioFrame);
-    }
+
     return 0;
 }
 

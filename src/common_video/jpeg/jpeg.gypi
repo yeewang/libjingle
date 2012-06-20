@@ -9,13 +9,6 @@
 {
   'variables': {
     'use_libjpeg_turbo%': '<(use_libjpeg_turbo)',
-    'conditions': [
-      ['use_libjpeg_turbo==1', {
-        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg_turbo', ],
-      }, {
-        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg', ],
-      }],
-    ],
   },
   'targets': [
     {
@@ -37,12 +30,38 @@
       },
       'conditions': [
         ['build_libjpeg==1', {
-          'dependencies': [
-            '<(libjpeg_gyp_path):libjpeg',
+          'conditions': [
+            ['build_with_chromium==1', {
+              'dependencies': [
+                '<(libjpeg_gyp_path):libjpeg',
+              ],
+            }, {
+              'conditions': [
+                ['use_libjpeg_turbo==1', {
+                  'dependencies': [
+                    '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+                  ],
+                }, {
+                  'dependencies': [
+                    '<(DEPTH)/third_party/libjpeg/libjpeg.gyp:libjpeg',
+                  ],
+                }],
+              ],
+            }],
           ],
         }, {
           # Need to add a directory normally exported by libjpeg.gyp.
-          'include_dirs': [ '<(libjpeg_include_dir)' ],
+          'conditions': [
+            ['use_libjpeg_turbo==1', {
+              'include_dirs': [
+                '<(DEPTH)/third_party/libjpeg_turbo',
+              ],
+            }, {
+              'include_dirs': [
+                '<(DEPTH)/third_party/libjpeg',
+              ],
+            }],
+          ],
         }],
       ],
       'sources': [

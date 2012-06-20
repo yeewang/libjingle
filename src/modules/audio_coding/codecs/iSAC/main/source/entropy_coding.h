@@ -19,12 +19,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ENTROPY_CODING_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ENTROPY_CODING_H_
 
-#include "settings.h"
 #include "structs.h"
 
+/* decode complex spectrum (return number of bytes in stream) */
+int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
+                            double *fr,
+                            double *fi,
+                            WebRtc_Word16 AvgPitchGain_Q12);
+
 /******************************************************************************
- * WebRtcIsac_DecodeSpec()
+ * WebRtcIsac_DecodeSpecUB16()
  * Decode real and imaginary part of the DFT coefficients, given a bit-stream.
+ * This function is called when the codec is in 0-16 kHz bandwidth.
  * The decoded DFT coefficient can be transformed to time domain by
  * WebRtcIsac_Time2Spec().
  *
@@ -32,37 +38,68 @@
  *  - streamdata            : pointer to a stucture containg the encoded
  *                            data and theparameters needed for entropy
  *                            coding.
- *  - AvgPitchGain_Q12      : average pitch-gain of the frame. This is only
- *                            relevant for 0-4 kHz band, and the input value is
- *                            not used in other bands.
- *  - band                  : specifies which band's DFT should be decoded.
  *
  * Output:
- *   - *fr                  : pointer to a buffer where the real part of DFT
+ *      -*fr                : pointer to a buffer where the real part of DFT
  *                            coefficients are written to.
- *   - *fi                  : pointer to a buffer where the imaginary part
+ *      -*fi                : pointer to a buffer where the imaginary part
  *                            of DFT coefficients are written to.
  *
  * Return value             : < 0 if an error occures
  *                              0 if succeeded.
  */
-int WebRtcIsac_DecodeSpec(Bitstr* streamdata, WebRtc_Word16 AvgPitchGain_Q12,
-                          enum ISACBand band, double* fr, double* fi);
+int WebRtcIsac_DecodeSpecUB16(
+    Bitstr* streamdata,
+    double* fr,
+    double* fi);
+
 
 /******************************************************************************
- * WebRtcIsac_EncodeSpec()
- * Encode real and imaginary part of the DFT coefficients into the given
- * bit-stream.
+ * WebRtcIsac_DecodeSpecUB12()
+ * Decode real and imaginary part of the DFT coefficients, given a bit-stream.
+ * This function is called when the codec is in 0-12 kHz bandwidth.
+ * The decoded DFT coefficient can be transformed to time domain by
+ * WebRtcIsac_Time2Spec().
  *
  * Input:
- *  - *fr                   : pointer to a buffer where the real part of DFT
+ *  - streamdata            : pointer to a stucture containg the encoded
+ *                            data and theparameters needed for entropy
+ *                            coding.
+ *
+ * Output:
+ *      -*fr                : pointer to a buffer where the real part of DFT
  *                            coefficients are written to.
- *  - *fi                   : pointer to a buffer where the imaginary part
+ *      -*fi                : pointer to a buffer where the imaginary part
  *                            of DFT coefficients are written to.
- *  - AvgPitchGain_Q12      : average pitch-gain of the frame. This is only
- *                            relevant for 0-4 kHz band, and the input value is
- *                            not used in other bands.
- *  - band                  : specifies which band's DFT should be decoded.
+ *
+ * Return value             : < 0 if an error occures
+ *                              0 if succeeded.
+ */
+int WebRtcIsac_DecodeSpecUB12(
+    Bitstr* streamdata,
+    double* fr,
+    double* fi);
+
+
+/* encode complex spectrum */
+int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16* fr,
+                            const WebRtc_Word16* fi,
+                            Bitstr* streamdata,
+                            WebRtc_Word16 AvgPitchGain_Q12);
+
+
+/******************************************************************************
+ * WebRtcIsac_EncodeSpecUB16()
+ * Quantize and encode real and imaginary part of the DFT coefficients.
+ * This function is called when the codec is in 0-16 kHz bandwidth.
+ * The real and imaginary part are computed by calling WebRtcIsac_Time2Spec().
+ *
+ *
+ * Input:
+ *      -*fr                : pointer to a buffer where the real part of DFT
+ *                            coefficients are stored.
+ *      -*fi                : pointer to a buffer where the imaginary part
+ *                            of DFT coefficients are stored.
  *
  * Output:
  *  - streamdata            : pointer to a stucture containg the encoded
@@ -72,25 +109,55 @@ int WebRtcIsac_DecodeSpec(Bitstr* streamdata, WebRtc_Word16 AvgPitchGain_Q12,
  * Return value             : < 0 if an error occures
  *                              0 if succeeded.
  */
-int WebRtcIsac_EncodeSpec(const WebRtc_Word16* fr, const WebRtc_Word16* fi,
-                          WebRtc_Word16 AvgPitchGain_Q12, enum ISACBand band,
-                          Bitstr* streamdata);
+int WebRtcIsac_EncodeSpecUB16(
+    const WebRtc_Word16* fr,
+    const WebRtc_Word16* fi,
+    Bitstr*            streamdata);
+
+
+/******************************************************************************
+ * WebRtcIsac_EncodeSpecUB12()
+ * Quantize and encode real and imaginary part of the DFT coefficients.
+ * This function is called when the codec is in 0-12 kHz bandwidth.
+ * The real and imaginary part are computed by calling WebRtcIsac_Time2Spec().
+ *
+ *
+ * Input:
+ *      -*fr                : pointer to a buffer where the real part of DFT
+ *                            coefficients are stored.
+ *      -*fi                : pointer to a buffer where the imaginary part
+ *                            of DFT coefficients are stored.
+ *
+ * Output:
+ *  - streamdata            : pointer to a stucture containg the encoded
+ *                            data and theparameters needed for entropy
+ *                            coding.
+ *
+ * Return value             : < 0 if an error occures
+ *                              0 if succeeded.
+ */
+int WebRtcIsac_EncodeSpecUB12(
+    const WebRtc_Word16* fr,
+    const WebRtc_Word16* fi,
+    Bitstr*            streamdata);
+
 
 /* decode & dequantize LPC Coef */
-int WebRtcIsac_DecodeLpcCoef(Bitstr* streamdata, double* LPCCoef);
-int WebRtcIsac_DecodeLpcCoefUB(Bitstr* streamdata, double* lpcVecs,
-                               double* percepFilterGains,
-                               WebRtc_Word16 bandwidth);
+int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef);
+int WebRtcIsac_DecodeLpcCoefUB(
+    Bitstr*     streamdata,
+    double*     lpcVecs,
+    double*     percepFilterGains,
+    WebRtc_Word16 bandwidth);
 
-int WebRtcIsac_DecodeLpc(Bitstr* streamdata, double* LPCCoef_lo,
-                         double* LPCCoef_hi);
+int WebRtcIsac_DecodeLpc(Bitstr *streamdata, double *LPCCoef_lo,
+                         double *LPCCoef_hi);
 
 /* quantize & code LPC Coef */
-void WebRtcIsac_EncodeLpcLb(double* LPCCoef_lo, double* LPCCoef_hi,
-                            Bitstr* streamdata, ISAC_SaveEncData_t* encData);
-
-void WebRtcIsac_EncodeLpcGainLb(double* LPCCoef_lo, double* LPCCoef_hi,
-                                Bitstr* streamdata,
+void WebRtcIsac_EncodeLpcLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                            Bitstr *streamdata, ISAC_SaveEncData_t* encData);
+void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                                Bitstr *streamdata,
                                 ISAC_SaveEncData_t* encData);
 
 /******************************************************************************
@@ -108,8 +175,8 @@ void WebRtcIsac_EncodeLpcGainLb(double* LPCCoef_lo, double* LPCCoef_hi,
  *                            or 0-16 kHz mode.
  *
  * Input/output:
- *  - streamdata            : pointer to a structure containing the encoded
- *                            data and the parameters needed for entropy
+ *  - streamdata            : pointer to a stucture containg the encoded
+ *                            data and theparameters needed for entropy
  *                            coding.
  *
  * Output:
@@ -126,10 +193,12 @@ void WebRtcIsac_EncodeLpcGainLb(double* LPCCoef_lo, double* LPCCoef_hi,
  * Return value             : 0 if encoding is successful,
  *                           <0 if failed to encode.
  */
-WebRtc_Word16 WebRtcIsac_EncodeLpcUB(double* lpcCoeff, Bitstr* streamdata,
-                                     double* interpolLPCCoeff,
-                                     WebRtc_Word16 bandwidth,
-                                     ISACUBSaveEncDataStruct* encData);
+WebRtc_Word16 WebRtcIsac_EncodeLpcUB(
+    double*                  lpcCoeff,
+    Bitstr*                  streamdata,
+    double*                  interpolLPCCoeff,
+    WebRtc_Word16              bandwidth,
+    ISACUBSaveEncDataStruct* encData);
 
 /******************************************************************************
  * WebRtcIsac_DecodeInterpolLpcUb()
@@ -159,21 +228,22 @@ WebRtc_Word16 WebRtcIsac_EncodeLpcUB(double* lpcCoeff, Bitstr* streamdata,
  * Return value             : 0 if encoding is successful,
  *                           <0 if failed to encode.
  */
-WebRtc_Word16 WebRtcIsac_DecodeInterpolLpcUb(Bitstr* streamdata,
-                                             double* percepFilterParam,
-                                             WebRtc_Word16 bandwidth);
+WebRtc_Word16 WebRtcIsac_DecodeInterpolLpcUb(
+    Bitstr*     streamdata,
+    double*     percepFilterParam,
+    WebRtc_Word16 bandwidth);
 
-/* Decode & dequantize RC */
-int WebRtcIsac_DecodeRc(Bitstr* streamdata, WebRtc_Word16* RCQ15);
+/* decode & dequantize RC */
+int WebRtcIsac_DecodeRc(Bitstr *streamdata, WebRtc_Word16 *RCQ15);
 
-/* Quantize & code RC */
-void WebRtcIsac_EncodeRc(WebRtc_Word16* RCQ15, Bitstr* streamdata);
+/* quantize & code RC */
+void WebRtcIsac_EncodeRc(WebRtc_Word16 *RCQ15, Bitstr *streamdata);
 
-/* Decode & dequantize squared Gain */
-int WebRtcIsac_DecodeGain2(Bitstr* streamdata, WebRtc_Word32* Gain2);
+/* decode & dequantize squared Gain */
+int WebRtcIsac_DecodeGain2(Bitstr *streamdata, WebRtc_Word32 *Gain2);
 
-/* Quantize & code squared Gain (input is squared gain) */
-int WebRtcIsac_EncodeGain2(WebRtc_Word32* gain2, Bitstr* streamdata);
+/* quantize & code squared Gain (input is squared gain) */
+int WebRtcIsac_EncodeGain2(WebRtc_Word32 *gain2, Bitstr *streamdata);
 
 void WebRtcIsac_EncodePitchGain(WebRtc_Word16* PitchGains_Q12,
                                 Bitstr* streamdata,
@@ -182,24 +252,24 @@ void WebRtcIsac_EncodePitchGain(WebRtc_Word16* PitchGains_Q12,
 void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12,
                                Bitstr* streamdata, ISAC_SaveEncData_t* encData);
 
-int WebRtcIsac_DecodePitchGain(Bitstr* streamdata,
-                               WebRtc_Word16* PitchGain_Q12);
-int WebRtcIsac_DecodePitchLag(Bitstr* streamdata, WebRtc_Word16* PitchGain_Q12,
-                              double* PitchLag);
+int WebRtcIsac_DecodePitchGain(Bitstr *streamdata,
+                               WebRtc_Word16 *PitchGain_Q12);
+int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12,
+                              double *PitchLag);
 
-int WebRtcIsac_DecodeFrameLen(Bitstr* streamdata, WebRtc_Word16* framelength);
-int WebRtcIsac_EncodeFrameLen(WebRtc_Word16 framelength, Bitstr* streamdata);
-int WebRtcIsac_DecodeSendBW(Bitstr* streamdata, WebRtc_Word16* BWno);
-void WebRtcIsac_EncodeReceiveBw(int* BWno, Bitstr* streamdata);
+int WebRtcIsac_DecodeFrameLen(Bitstr *streamdata, WebRtc_Word16 *framelength);
+int WebRtcIsac_EncodeFrameLen(WebRtc_Word16 framelength, Bitstr *streamdata);
+int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno);
+void WebRtcIsac_EncodeReceiveBw(int *BWno, Bitstr *streamdata);
 
-/* Step-down */
-void WebRtcIsac_Poly2Rc(double* a, int N, double* RC);
+/* step-down */
+void WebRtcIsac_Poly2Rc(double *a, int N, double *RC);
 
-/* Step-up */
-void WebRtcIsac_Rc2Poly(double* RC, int N, double* a);
+/* step-up */
+void WebRtcIsac_Rc2Poly(double *RC, int N, double *a);
 
-void WebRtcIsac_TranscodeLPCCoef(double* LPCCoef_lo, double* LPCCoef_hi,
-                                 int* index_g);
+void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi,
+                                 int *index_g);
 
 
 /******************************************************************************
@@ -218,8 +288,10 @@ void WebRtcIsac_TranscodeLPCCoef(double* LPCCoef_lo, double* LPCCoef_hi,
  *  - lpcGainIndex          : quantization indices for lpc gains, these will
  *                            be stored to be used  for FEC.
  */
-void WebRtcIsac_EncodeLpcGainUb(double* lpGains, Bitstr* streamdata,
-                                int* lpcGainIndex);
+void WebRtcIsac_EncodeLpcGainUb(
+    double* lpGains,
+    Bitstr* streamdata,
+    int*    lpcGainIndex);
 
 
 /******************************************************************************
@@ -235,7 +307,9 @@ void WebRtcIsac_EncodeLpcGainUb(double* lpGains, Bitstr* streamdata,
  *                            coding.
  *
  */
-void WebRtcIsac_StoreLpcGainUb(double* lpGains, Bitstr* streamdata);
+void WebRtcIsac_StoreLpcGainUb(
+    double* lpGains,
+    Bitstr* streamdata);
 
 
 /******************************************************************************
@@ -253,7 +327,9 @@ void WebRtcIsac_StoreLpcGainUb(double* lpGains, Bitstr* streamdata);
  * Return value             : 0 if succeeded.
  *                           <0 if failed.
  */
-WebRtc_Word16 WebRtcIsac_DecodeLpcGainUb(double* lpGains, Bitstr* streamdata);
+WebRtc_Word16 WebRtcIsac_DecodeLpcGainUb(
+    double* lpGains,
+    Bitstr* streamdata);
 
 
 /******************************************************************************
@@ -272,8 +348,9 @@ WebRtc_Word16 WebRtcIsac_DecodeLpcGainUb(double* lpGains, Bitstr* streamdata);
  * Return value             : 0 if succeeded.
  *                           <0 if failed.
  */
-WebRtc_Word16 WebRtcIsac_EncodeBandwidth(enum ISACBandwidth bandwidth,
-                                         Bitstr* streamData);
+WebRtc_Word16 WebRtcIsac_EncodeBandwidth(
+    enum ISACBandwidth bandwidth,
+    Bitstr*            streamData);
 
 
 /******************************************************************************
@@ -293,8 +370,9 @@ WebRtc_Word16 WebRtcIsac_EncodeBandwidth(enum ISACBandwidth bandwidth,
  * Return value             : 0 if succeeded.
  *                           <0 if failed.
  */
-WebRtc_Word16 WebRtcIsac_DecodeBandwidth(Bitstr* streamData,
-                                         enum ISACBandwidth* bandwidth);
+WebRtc_Word16 WebRtcIsac_DecodeBandwidth(
+    Bitstr*             streamData,
+    enum ISACBandwidth* bandwidth);
 
 
 /******************************************************************************
@@ -314,8 +392,9 @@ WebRtc_Word16 WebRtcIsac_DecodeBandwidth(Bitstr* streamData,
  * Return value             : 0 if succeeded.
  *                           <0 if failed.
  */
-WebRtc_Word16 WebRtcIsac_EncodeJitterInfo(WebRtc_Word32 jitterIndex,
-                                          Bitstr* streamData);
+WebRtc_Word16 WebRtcIsac_EncodeJitterInfo(
+    WebRtc_Word32 jitterIndex,
+    Bitstr*     streamData);
 
 
 /******************************************************************************
@@ -335,7 +414,8 @@ WebRtc_Word16 WebRtcIsac_EncodeJitterInfo(WebRtc_Word32 jitterIndex,
  * Return value             : 0 if succeeded.
  *                           <0 if failed.
  */
-WebRtc_Word16 WebRtcIsac_DecodeJitterInfo(Bitstr* streamData,
-                                          WebRtc_Word32* jitterInfo);
+WebRtc_Word16 WebRtcIsac_DecodeJitterInfo(
+    Bitstr*      streamData,
+    WebRtc_Word32* jitterInfo);
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ENTROPY_CODING_H_ */

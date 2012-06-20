@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
