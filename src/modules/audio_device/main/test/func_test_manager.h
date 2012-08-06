@@ -85,6 +85,8 @@ public:
 public:
     ErrorCode _error;
     WarningCode _warning;
+private:
+    AudioDeviceModule* _audioDevice;
 };
 
 // ----------------------------------------------------------------------------

@@ -72,7 +72,7 @@ class VP8Encoder : public VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_ERROR
   //                                  WEBRTC_VIDEO_CODEC_TIMEOUT
 
-  virtual int Encode(const VideoFrame& input_image,
+  virtual int Encode(const RawImage& input_image,
                      const CodecSpecificInfo* codec_specific_info,
                      const VideoFrameType frame_type);
 
@@ -116,9 +116,9 @@ class VP8Encoder : public VideoEncoder {
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt);
 
-  int GetEncodedFrame(const VideoFrame& input_image);
+  int GetEncodedFrame(const RawImage& input_image);
 
-  int GetEncodedPartitions(const VideoFrame& input_image);
+  int GetEncodedPartitions(const RawImage& input_image);
 
   // Determine maximum target for Intra frames
   //
@@ -222,7 +222,7 @@ class VP8Decoder : public VideoDecoder {
 
   int ReturnFrame(const vpx_image_t* img, uint32_t timeStamp);
 
-  VideoFrame decoded_image_;
+  RawImage decoded_image_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
   bool feedback_mode_;

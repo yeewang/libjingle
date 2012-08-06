@@ -78,6 +78,7 @@ private:
     float              _encodedBytes;
     VideoCodingModule* _VCMReceiver;
     FrameType          _frameType;
+    WebRtc_UWord8*     _payloadData;
     WebRtc_UWord16     _seqNo;
     bool               _encodeComplete;
     WebRtc_Word32      _width;
@@ -93,6 +94,7 @@ class VCMRTPEncodeCompleteCallback: public VCMPacketizationCallback
 public:
     VCMRTPEncodeCompleteCallback(RtpRtcp* rtp) :
         _encodedBytes(0),
+        _seqNo(0),
         _encodeComplete(false),
         _RTPModule(rtp) {}
 
@@ -126,6 +128,8 @@ public:
 private:
     float              _encodedBytes;
     FrameType          _frameType;
+    WebRtc_UWord8*     _payloadData;
+    WebRtc_UWord16     _seqNo;
     bool               _encodeComplete;
     RtpRtcp*           _RTPModule;
     WebRtc_Word16      _width;

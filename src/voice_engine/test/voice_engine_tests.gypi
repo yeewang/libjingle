@@ -104,9 +104,7 @@
     },
   ],
   'conditions': [
-    # TODO(kjellander): Support UseoFMFC on VS2010.
-    # http://code.google.com/p/webrtc/issues/detail?id=709
-    ['OS=="win" and MSVS_VERSION < "2010"', {
+    ['OS=="win"', {
       'targets': [
         # WinTest - GUI test for Windows
         {

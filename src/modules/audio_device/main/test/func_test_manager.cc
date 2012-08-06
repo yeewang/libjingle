@@ -68,7 +68,8 @@ const char* GetResource(const char* resource)
 namespace webrtc
 {
 
-AudioEventObserver::AudioEventObserver(AudioDeviceModule* audioDevice)
+AudioEventObserver::AudioEventObserver(AudioDeviceModule* audioDevice) :
+    _audioDevice(audioDevice)
 {
 }
 

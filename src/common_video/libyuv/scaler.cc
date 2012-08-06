@@ -10,7 +10,8 @@
 
 #include "common_video/libyuv/include/scaler.h"
 
-#include "libyuv.h"
+// LibYuv
+#include "third_party/libyuv/include/libyuv.h"
 
 namespace webrtc {
 

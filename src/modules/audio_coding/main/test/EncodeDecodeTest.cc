@@ -50,6 +50,8 @@ Sender::Sender()
     : _acm(NULL),
       _pcmFile(),
       _audioFrame(),
+      _payloadSize(0),
+      _timeStamp(0),
       _packetization(NULL) {
 }
 

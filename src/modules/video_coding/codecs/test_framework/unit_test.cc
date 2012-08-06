@@ -109,12 +109,13 @@ UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
     return 0;
 }
 
-WebRtc_Word32 UnitTestDecodeCompleteCallback::Decoded(VideoFrame& image)
+WebRtc_Word32 UnitTestDecodeCompleteCallback::Decoded(RawImage& image)
 {
-    _decodedVideoBuffer->CopyBuffer(image.Length(), image.Buffer());
-    _decodedVideoBuffer->SetWidth(image.Width());
-    _decodedVideoBuffer->SetHeight(image.Height());
-    _decodedVideoBuffer->SetTimeStamp(image.TimeStamp());
+    _decodedVideoBuffer->VerifyAndAllocate(image._length);
+    _decodedVideoBuffer->CopyBuffer(image._length, image._buffer);
+    _decodedVideoBuffer->SetWidth(image._width);
+    _decodedVideoBuffer->SetHeight(image._height);
+    _decodedVideoBuffer->SetTimeStamp(image._timeStamp);
     _decodeComplete = true;
     return 0;
 }
@@ -235,7 +236,7 @@ UnitTest::Setup()
     // Get a reference encoded frame.
     _encodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
 
-    VideoFrame image;
+    RawImage image;
     VideoBufferToRawImage(_inputVideoBuffer, image);
 
     // Ensures our initial parameters are valid.
@@ -350,7 +351,7 @@ UnitTest::Perform()
 {
     UnitTest::Setup();
     int frameLength;
-    VideoFrame inputImage;
+    RawImage inputImage;
     EncodedImage encodedImage;
     VideoFrameType videoFrameType = kDeltaFrame;
 
@@ -422,7 +423,7 @@ UnitTest::Perform()
 
     // inputVideoBuffer unallocated.
     _inputVideoBuffer.Free();
-    inputImage.Free();
+    VideoBufferToRawImage(_inputVideoBuffer, inputImage);
     EXPECT_TRUE(_encoder->Encode(inputImage, NULL, videoFrameType) ==
         WEBRTC_VIDEO_CODEC_ERR_PARAMETER);
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
@@ -570,8 +571,8 @@ UnitTest::Perform()
     // Decode with other size, reset, then decode with original size again
     // to verify that decoder is reset to a "fresh" state upon Reset().
     {
-        // Assert that input frame size is a factor of two, so that we can use
-        // quarter size below.
+        // assert that input frame size is a factor of two, so that we can use
+        // quarter size below
         EXPECT_TRUE((_inst.width % 2 == 0) && (_inst.height % 2 == 0));
 
         VideoCodec tempInst;
@@ -579,20 +580,19 @@ UnitTest::Perform()
         tempInst.width /= 2;
         tempInst.height /= 2;
 
-        // Encode reduced (quarter) frame size.
+        // Encode reduced (quarter) frame size
         EXPECT_TRUE(_encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
         EXPECT_TRUE(_encoder->InitEncode(&tempInst, 1, 1440) ==
             WEBRTC_VIDEO_CODEC_OK);
-        VideoFrame tempInput;
-        unsigned int tmpLength = inputImage.Length() / 4;
-        tempInput.CopyFrame(tmpLength, inputImage.Buffer());
-        tempInput.SetWidth(tempInst.width);
-        tempInput.SetHeight(tempInst.height);
+        RawImage tempInput(inputImage._buffer, inputImage._length/4,
+                           inputImage._size/4);
+        tempInput._width = tempInst.width;
+        tempInput._height = tempInst.height;
         VideoFrameType videoFrameType = kDeltaFrame;
         _encoder->Encode(tempInput, NULL, videoFrameType);
         frameLength = WaitForEncodedFrame();
         EXPECT_TRUE(frameLength > 0);
-        tempInput.Free();
+
         // Reset then decode.
         EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
         frameLength = 0;
@@ -695,7 +695,6 @@ UnitTest::Perform()
     rewind(_sourceFile);
 
     RateControlTests();
-    inputImage.Free();
 
     Teardown();
 }
@@ -704,7 +703,7 @@ void
 UnitTest::RateControlTests()
 {
     int frames = 0;
-    VideoFrame inputImage;
+    RawImage inputImage;
     WebRtc_UWord32 frameLength;
 
     // Do not specify maxBitRate (as in ViE).
@@ -769,7 +768,6 @@ UnitTest::RateControlTests()
         ASSERT_TRUE(feof(_sourceFile) != 0);
         rewind(_sourceFile);
     }
-    inputImage.Free();
 }
 
 bool
