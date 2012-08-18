@@ -255,7 +255,6 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
         rtp_rtcp->SetNACKStatus(nack_method);
       }
-      rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
     }
     // Remove last in list if we have too many.
@@ -680,33 +679,15 @@ bool ViEChannel::EnableRemb(bool enable) {
 }
 
 int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
-  int error = 0;
   if (enable) {
-    // Enable the extension, but disable possible old id to avoid errors.
     send_timestamp_extension_id_ = id;
-    rtp_rtcp_->DeregisterSendRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset);
-    error = rtp_rtcp_->RegisterSendRtpHeaderExtension(
+    return rtp_rtcp_->RegisterSendRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset, id);
-    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-         it != simulcast_rtp_rtcp_.end(); it++) {
-      (*it)->DeregisterSendRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset);
-      error |= (*it)->RegisterSendRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset, id);
-    }
   } else {
-    // Disable the extension.
     send_timestamp_extension_id_ = kInvalidRtpExtensionId;
-    rtp_rtcp_->DeregisterSendRtpHeaderExtension(
+    return rtp_rtcp_->DeregisterSendRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset);
-    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-         it != simulcast_rtp_rtcp_.end(); it++) {
-      (*it)->DeregisterSendRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset);
-    }
   }
-  return error;
 }
 
 int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
