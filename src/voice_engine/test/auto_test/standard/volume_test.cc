@@ -87,7 +87,7 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
   Sleep(1000);
 }
 
-#if !defined(WEBRTC_IOS)
+#if !defined(MAC_IPHONE)
 
 TEST_F(VolumeTest, DISABLED_ON_LINUX(DefaultMicrophoneVolumeIsAtMost255)) {
   unsigned int volume = 1000;
@@ -136,9 +136,9 @@ TEST_F(VolumeTest, ManualCanSetChannelScaling) {
   Sleep(2000);
 }
 
-#endif  // !WEBRTC_IOS
+#endif  // !MAC_IPHONE
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
+#if !defined(WEBRTC_ANDROID) && !defined(MAC_IPHONE)
 
 TEST_F(VolumeTest, InputMutingIsNotEnabledByDefault) {
   bool is_muted = true;
@@ -277,4 +277,4 @@ TEST_F(VolumeTest, ManualTestChannelPanning) {
   EXPECT_FLOAT_EQ(0.8f, right);
 }
 
-#endif  // !WEBRTC_ANDROID && !WEBRTC_IOS
+#endif  // !WEBRTC_ANDROID && !MAC_IPHONE

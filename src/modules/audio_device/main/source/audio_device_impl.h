@@ -31,8 +31,7 @@ public:
         kPlatformWinCe = 2,
         kPlatformLinux = 3,
         kPlatformMac = 4,
-        kPlatformAndroid = 5,
-        kPlatformIOS = 6
+        kPlatformAndroid = 5
     };
 
     WebRtc_Word32 CheckPlatform();

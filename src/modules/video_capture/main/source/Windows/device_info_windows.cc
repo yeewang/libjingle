@@ -377,9 +377,7 @@ WebRtc_Word32 DeviceInfoWindows::CreateCapabilityMap(
     MapItem* item = NULL;
     while (item = _captureCapabilities.Last())
     {
-        VideoCaptureCapabilityWindows* cap =
-            static_cast<VideoCaptureCapabilityWindows*> (item->GetItem());
-        delete cap;
+        delete item->GetItem();
         _captureCapabilities.Erase(item);
     }
 

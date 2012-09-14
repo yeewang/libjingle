@@ -24,15 +24,15 @@
 #include "windows/video_render_windows_impl.h"
 #define STANDARD_RENDERING kRenderWindows
 
-// WEBRTC_IOS should go before WEBRTC_MAC because WEBRTC_MAC
-// gets defined if WEBRTC_IOS is defined
-#elif defined(WEBRTC_IOS)
+// MAC_IPHONE should go before WEBRTC_MAC_INTEL because WEBRTC_MAC_INTEL
+// gets defined if MAC_IPHONE is defined
+#elif defined(MAC_IPHONE)
 #if defined(IPHONE_GLES_RENDERING)
 #define STANDARD_RENDERING kRenderiPhone
 #include "iPhone/video_render_iphone_impl.h"
 #endif
 
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL)
 #if defined(COCOA_RENDERING)
 #define STANDARD_RENDERING kRenderCocoa
 #include "mac/video_render_mac_cocoa_impl.h"
@@ -116,7 +116,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         }
         break;
 
-#elif defined(WEBRTC_IOS)
+#elif defined(MAC_IPHONE)
         case kRenderiPhone:
         {
             VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, videoRenderType, window, _fullScreen);
@@ -127,7 +127,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         }
         break;
 
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL)
 
 #if defined(COCOA_RENDERING)
         case kRenderCocoa:
@@ -256,7 +256,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
                 delete ptrRenderer;
             }
             break;
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL)
 
 #if defined(COCOA_RENDERING)
             case kRenderCocoa:
@@ -276,7 +276,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             break;
 #endif
 
-#elif defined(WEBRTC_IOS)
+#elif defined(MAC_IPHONE)
             case kRenderiPhone:
             break;
 
@@ -350,7 +350,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
 
 #ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
-#if defined(WEBRTC_IOS) // WEBRTC_IOS must go before WEBRTC_MAC
+#if defined(MAC_IPHONE) // MAC_IPHONE must go before WEBRTC_MAC or WEBRTC_MAC_INTEL
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 
@@ -363,7 +363,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
     _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
     return _ptrRenderer->ChangeWindow(window);
 
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC) | defined(WEBRTC_MAC_INTEL)
 
     _ptrRenderer = NULL;
     delete _ptrRenderer;

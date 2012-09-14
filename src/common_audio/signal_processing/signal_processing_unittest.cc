@@ -17,11 +17,12 @@ static const int16_t vector16[kVector16Size] = {1, -15511, 4323, 1963,
 
 class SplTest : public testing::Test {
  protected:
-   SplTest() {
-     WebRtcSpl_Init();
-   }
-   virtual ~SplTest() {
-   }
+  virtual ~SplTest() {
+  }
+  void SetUp() {
+  }
+  void TearDown() {
+  }
 };
 
 TEST_F(SplTest, MacroTest) {

@@ -457,9 +457,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                         R.layout.row,
                         mVoiceCodecsStrings));
         spVoiceCodecType.setSelection(0);
-        // Find ISAC and use it
-        for (int i = 0; i < mVoiceCodecsStrings.length; ++i) {
-            if (mVoiceCodecsStrings[i].contains("ISAC")) {
+        // Find PCMU and use it
+        for (int i=0; i<mVoiceCodecsStrings.length; ++i) {
+            if (mVoiceCodecsStrings[i].contains("PCMU")) {
                 spVoiceCodecType.setSelection(i);
                 break;
             }

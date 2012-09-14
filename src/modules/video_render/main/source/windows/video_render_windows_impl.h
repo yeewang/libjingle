@@ -24,8 +24,9 @@ class CriticalSectionWrapper;
 
 #pragma comment(lib, "dxguid.lib")
 
-enum VideoRenderWinMethod {
-  kVideoRenderWinD3D9 = 0,
+enum VideoRenderWinMethod
+{
+    kVideoRenderWinDd = 0, kVideoRenderWinD3D9 = 1
 };
 
 // Class definitions
@@ -128,7 +129,17 @@ public:
                                     const float top, const float right,
                                     const float bottom);
 
+    static int CheckHWAcceleration();
+    static void CheckHWDriver(bool& badDriver, bool& fullAccelerationEnabled);
+
 private:
+
+    void LogOSAndHardwareDetails();
+    HRESULT GetBoolValue(IDxDiagContainer* pObject, WCHAR* wstrName,
+                         BOOL* pbValue);
+    HRESULT GetStringValue(IDxDiagContainer* pObject, WCHAR* wstrName,
+                           TCHAR* strValue, int nStrLen);
+
     WebRtc_Word32 _id;
     CriticalSectionWrapper& _renderWindowsCritsect;
 

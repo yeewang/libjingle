@@ -12,6 +12,7 @@
 
 .align  2
 WebRtcSpl_SqrtFloor:
+.fnstart
   mov    r1, #3 << 30
   mov    r2, #1 << 30
 
@@ -84,3 +85,4 @@ WebRtcSpl_SqrtFloor:
   bic    r0, r2, #3 << 30  @ for rounding add: cmp r0, r2  adc r2, #1
   bx lr
 
+.fnend

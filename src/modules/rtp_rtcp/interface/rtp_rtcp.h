@@ -185,11 +185,6 @@ class RtpRtcp : public Module {
     virtual WebRtc_UWord32 RemoteTimestamp() const = 0;
 
     /*
-    *   Get the local time of the last received remote timestamp
-    */
-    virtual int64_t LocalTimeOfRemoteTimeStamp() const = 0;
-
-    /*
     *   Get the current estimated remote timestamp
     *
     *   timestamp   - estimated timestamp
@@ -555,8 +550,7 @@ class RtpRtcp : public Module {
         WebRtc_UWord32 *ReceivedNTPsecs,
         WebRtc_UWord32 *ReceivedNTPfrac,
         WebRtc_UWord32 *RTCPArrivalTimeSecs,
-        WebRtc_UWord32 *RTCPArrivalTimeFrac,
-        WebRtc_UWord32 *rtcp_timestamp) const  = 0;
+        WebRtc_UWord32 *RTCPArrivalTimeFrac) const  = 0;
 
     /*
     *   AddMixedCNAME

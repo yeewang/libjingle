@@ -251,11 +251,8 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   WebRtc_UWord32 receivedNTPfrac = 0;
   WebRtc_UWord32 RTCPArrivalTimeSecs = 0;
   WebRtc_UWord32 RTCPArrivalTimeFrac = 0;
-  EXPECT_EQ(0, module2->RemoteNTP(&receivedNTPsecs,
-                                  &receivedNTPfrac,
-                                  &RTCPArrivalTimeSecs,
-                                  &RTCPArrivalTimeFrac,
-                                  NULL));
+  EXPECT_EQ(0, module2->RemoteNTP(&receivedNTPsecs, &receivedNTPfrac,
+                                  &RTCPArrivalTimeSecs, &RTCPArrivalTimeFrac));
 
 
   // get all report blocks

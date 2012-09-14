@@ -52,7 +52,7 @@ TEST_F(DtmfTest, TestTwoNonDtmfEvents) {
   EXPECT_EQ(0, voe_dtmf_->SendTelephoneEvent(channel_, 110, true));
 }
 
-#ifndef WEBRTC_IOS
+#ifndef MAC_IPHONE
 TEST_F(DtmfTest, ManualCanDisableDtmfPlayoutExceptOnIphone) {
   TEST_LOG("Disabling DTMF playout (no tone should be heard) \n");
   EXPECT_EQ(0, voe_dtmf_->SetDtmfPlayoutStatus(channel_, false));

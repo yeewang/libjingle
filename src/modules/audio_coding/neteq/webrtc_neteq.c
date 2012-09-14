@@ -56,8 +56,21 @@ int WebRtcNetEQ_strncpy(char *strDest, int numberOfElements,
  */
 
 /*****************************************
- * Error functions
+ * Info functions
  */
+
+int WebRtcNetEQ_GetVersion(char *version)
+{
+    char versionString[] = "3.3.0\0    ";
+    char endChar[] = " ";
+    int i = 0;
+    while ((versionString[i] != endChar[0]) && (i <= 20))
+    {
+        version[i] = versionString[i]; /* To avoid using strcpy */
+        i++;
+    }
+    return (0);
+}
 
 int WebRtcNetEQ_GetErrorCode(void *inst)
 {
@@ -345,7 +358,12 @@ int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecod
     }
     *MaxNoOfPackets = (*MaxNoOfPackets) * multiplier;
     *sizeinbytes = (*sizeinbytes) * multiplier;
-    return 0;
+    if (ok != 0)
+    {
+        NetEqMainInst->ErrorCode = -ok;
+        return (-1);
+    }
+    return (ok);
 }
 
 int WebRtcNetEQ_AssignBuffer(void *inst, int MaxNoOfPackets, void *NETEQ_Buffer_Addr,
@@ -395,8 +413,6 @@ int WebRtcNetEQ_Init(void *inst, WebRtc_UWord16 fs)
     {
         return (-1);
     }
-
-    WebRtcSpl_Init();
 
 #ifdef NETEQ_VAD
     /* Start out with no PostDecode VAD instance */

@@ -36,7 +36,7 @@ const char* GetFilename(const char* filename)
   sprintf(filenameStr[currentStr], "/sdcard/admtest/%s", filename);
   return filenameStr[currentStr];
 }
-#elif !defined(WEBRTC_IOS)
+#elif !defined(MAC_IPHONE)
 const char* GetFilename(const char* filename) {
   std::string full_path_filename = webrtc::test::OutputPath() + filename;
   return full_path_filename.c_str();
@@ -1588,7 +1588,7 @@ TEST_F(AudioDeviceAPITest, PlayoutBufferTests) {
 
   CheckInitialPlayoutStates();
   EXPECT_EQ(0, audio_device_->PlayoutBuffer(&bufferType, &sizeMS));
-#if defined(_WIN32) || defined(ANDROID) || defined(WEBRTC_IOS)
+#if defined(_WIN32) || defined(ANDROID) || defined(MAC_IPHONE)
   EXPECT_EQ(AudioDeviceModule::kAdaptiveBufferSize, bufferType);
 #else
   EXPECT_EQ(AudioDeviceModule::kFixedBufferSize, bufferType);
@@ -1625,7 +1625,7 @@ TEST_F(AudioDeviceAPITest, PlayoutBufferTests) {
   EXPECT_EQ(0, audio_device_->PlayoutBuffer(&bufferType, &sizeMS));
   EXPECT_EQ(AudioDeviceModule::kAdaptiveBufferSize, bufferType);
 #endif
-#if defined(ANDROID) || defined(WEBRTC_IOS)
+#if defined(ANDROID) || defined(MAC_IPHONE)
   EXPECT_EQ(-1,
             audio_device_->SetPlayoutBuffer(AudioDeviceModule::kFixedBufferSize,
                                           kAdmMinPlayoutBufferSizeMs));
@@ -1688,8 +1688,7 @@ TEST_F(AudioDeviceAPITest, CPULoad) {
 }
 
 // TODO(kjellander): Fix flakiness causing failures on Windows.
-// TODO(phoglund):  Fix flakiness causing failures on Linux.
-#if !defined(_WIN32) && !defined(WEBRTC_LINUX)
+#if !defined(_WIN32)
 TEST_F(AudioDeviceAPITest, StartAndStopRawOutputFileRecording) {
   // NOTE: this API is better tested in a functional test
   CheckInitialPlayoutStates();
@@ -1725,6 +1724,8 @@ TEST_F(AudioDeviceAPITest, StartAndStopRawOutputFileRecording) {
   // - size of raw_output_playing.pcm shall be > 0
 }
 
+// TODO(phoglund): The following test is flaky on Linux.
+#if !defined(WEBRTC_LINUX)
 TEST_F(AudioDeviceAPITest, StartAndStopRawInputFileRecording) {
   // NOTE: this API is better tested in a functional test
   CheckInitialRecordingStates();
@@ -1758,7 +1759,8 @@ TEST_F(AudioDeviceAPITest, StartAndStopRawInputFileRecording) {
   // - size of raw_input_not_recording.pcm shall be 0
   // - size of raw_input_not_recording.pcm shall be > 0
 }
-#endif  // !WIN32 && !WEBRTC_LINUX
+#endif  // !WEBRTC_LINUX
+#endif  // !WIN32
 
 TEST_F(AudioDeviceAPITest, RecordingSampleRate) {
   WebRtc_UWord32 sampleRate(0);
@@ -1770,7 +1772,7 @@ TEST_F(AudioDeviceAPITest, RecordingSampleRate) {
 #elif defined(ANDROID)
   TEST_LOG("Recording sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000));
-#elif defined(WEBRTC_IOS)
+#elif defined(MAC_IPHONE)
   TEST_LOG("Recording sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000) ||
               (sampleRate == 8000));
@@ -1789,7 +1791,7 @@ TEST_F(AudioDeviceAPITest, PlayoutSampleRate) {
 #elif defined(ANDROID)
   TEST_LOG("Playout sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000));
-#elif defined(WEBRTC_IOS)
+#elif defined(MAC_IPHONE)
   TEST_LOG("Playout sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000) ||
               (sampleRate == 8000));
@@ -1802,7 +1804,7 @@ TEST_F(AudioDeviceAPITest, ResetAudioDevice) {
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
   EXPECT_EQ(0, audio_device_->SetRecordingDevice(MACRO_DEFAULT_DEVICE));
 
-#if defined(WEBRTC_IOS)
+#if defined(MAC_IPHONE)
   // Not playing or recording, should just return 0
   EXPECT_EQ(0, audio_device_->ResetAudioDevice());
 
@@ -1838,7 +1840,7 @@ TEST_F(AudioDeviceAPITest, SetPlayoutSpeaker) {
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
 
   bool loudspeakerOn(false);
-#if defined(WEBRTC_IOS)
+#if defined(MAC_IPHONE)
   // Not playing or recording, should just return a success
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
   EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));

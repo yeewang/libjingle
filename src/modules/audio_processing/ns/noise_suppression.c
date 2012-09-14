@@ -8,14 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "noise_suppression.h"
-
 #include <stdlib.h>
 #include <string.h>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "defines.h"
+#include "noise_suppression.h"
 #include "ns_core.h"
+#include "defines.h"
 
 int WebRtcNs_Create(NsHandle** NS_inst) {
   *NS_inst = (NsHandle*) malloc(sizeof(NSinst_t));

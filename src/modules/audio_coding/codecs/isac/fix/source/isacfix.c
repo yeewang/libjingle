@@ -217,8 +217,6 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   /* flag encoder init */
   ISAC_inst->initflag |= 2;
 
-  WebRtcSpl_Init();
-
   if (CodingMode == 0)
     /* Adaptive mode */
     ISAC_inst->ISACenc_obj.new_framelength  = INITIAL_FRAMESAMPLES;
@@ -529,7 +527,6 @@ WebRtc_Word16 WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
   /* flag decoder init */
   ISAC_inst->initflag |= 1;
 
-  WebRtcSpl_Init();
 
   WebRtcIsacfix_InitMaskingDec(&ISAC_inst->ISACdec_obj.maskfiltstr_obj);
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACdec_obj.postfiltbankstr_obj);
@@ -613,6 +610,13 @@ WebRtc_Word16 WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst
 #else
   memcpy(streamdata.stream, encoded, 5);
 #endif
+
+  if (packet_size == 0)
+  {
+    /* return error code if the packet length is null */
+    ISAC_inst->errorcode = ISAC_EMPTY_PACKET;
+    return -1;
+  }
 
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,
@@ -701,6 +705,13 @@ WebRtc_Word16 WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 #else
   memcpy(streamdata.stream, encoded, 5);
 #endif
+
+  if (packet_size == 0)
+  {
+    /* return error code if the packet length is null */
+    ISAC_inst->errorcode = ISAC_EMPTY_PACKET;
+    return -1;
+  }
 
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,

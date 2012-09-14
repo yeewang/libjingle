@@ -47,7 +47,7 @@ struct AudioPacket
 };
 
 // Helper functions
-#if !defined(WEBRTC_IOS)
+#if !defined(MAC_IPHONE)
 char* GetFilename(char* filename)
 {
     return filename;
@@ -2667,7 +2667,7 @@ WebRtc_Word32 FuncTestManager::TestAdvancedMBAPI()
     EXPECT_TRUE(audioDevice->Recording());
     EXPECT_TRUE(audioDevice->Playing());
 
-#if defined(_WIN32_WCE) || defined(WEBRTC_IOS)
+#if defined(_WIN32_WCE) || defined(MAC_IPHONE)
     TEST_LOG("\nResetAudioDevice\n \n");
     if (audioDevice->Recording() && audioDevice->Playing())
     {
@@ -2688,7 +2688,7 @@ WebRtc_Word32 FuncTestManager::TestAdvancedMBAPI()
     }
 #endif
 
-#if defined(WEBRTC_IOS)
+#if defined(MAC_IPHONE)
     bool loudspeakerOn(false);
     TEST_LOG("\nSet playout spaker\n \n");
     if (audioDevice->Recording() && audioDevice->Playing())

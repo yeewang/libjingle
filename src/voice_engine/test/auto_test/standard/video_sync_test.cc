@@ -14,11 +14,11 @@
 
 #include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 
-#ifdef WEBRTC_IOS
+#ifdef MAC_IPHONE
   const int kMinimumReasonableDelayEstimateMs = 30;
 #else
   const int kMinimumReasonableDelayEstimateMs = 45;
-#endif  // !WEBRTC_IOS
+#endif  // !MAC_IPHONE
 
 class VideoSyncTest : public AfterStreamingFixture {
  protected:

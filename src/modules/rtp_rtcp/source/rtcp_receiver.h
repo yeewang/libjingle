@@ -61,8 +61,7 @@ public:
     WebRtc_Word32 NTP(WebRtc_UWord32 *ReceivedNTPsecs,
                       WebRtc_UWord32 *ReceivedNTPfrac,
                       WebRtc_UWord32 *RTCPArrivalTimeSecs,
-                      WebRtc_UWord32 *RTCPArrivalTimeFrac,
-                      WebRtc_UWord32 *rtcp_timestamp) const;
+                      WebRtc_UWord32 *RTCPArrivalTimeFrac) const;
 
     // get rtt
     WebRtc_Word32 RTT(const WebRtc_UWord32 remoteSSRC,

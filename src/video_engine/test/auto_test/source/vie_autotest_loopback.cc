@@ -443,7 +443,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     }
 
     // Setting External transport
-    TbExternalTransport extTransport(*(ptrViENetwork), videoChannel, NULL);
+    TbExternalTransport extTransport(*(ptrViENetwork));
 
     int testMode = 0;
     std::cout << std::endl;

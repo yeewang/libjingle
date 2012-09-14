@@ -16,8 +16,9 @@
       'target_name': 'webrtc_vp8',
       'type': '<(library)',
       'dependencies': [
+        '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/common_video/common_video.gyp:common_video',
+        '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
       ],
       'include_dirs': [
         'include',
@@ -26,11 +27,6 @@
         '<(webrtc_root)/modules/interface',
       ],
       'conditions': [
-        ['build_libvpx==1', {
-          'dependencies': [
-            '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
-          ],
-        }],
         # TODO(mikhal): Investigate this mechanism for handling differences
         # between the Chromium and standalone builds.
         # http://code.google.com/p/webrtc/issues/detail?id=201
@@ -38,7 +34,7 @@
           'defines': [
             'WEBRTC_LIBVPX_VERSION=960' # Bali
           ],
-        }, {
+        },{
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971' # Cayuga
           ],
@@ -73,7 +69,7 @@
           'dependencies': [
             'test_framework',
             'webrtc_vp8',
-            '<(webrtc_root)/common_video/common_video.gyp:common_video',
+            '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/test/test.gyp:test_support_main',
@@ -104,6 +100,7 @@
           'dependencies': [
             'webrtc_vp8',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'include_dirs': [
@@ -112,13 +109,6 @@
           'sources': [
             'reference_picture_selection_unittest.cc',
             'temporal_layers_unittest.cc',
-          ],
-          'conditions': [
-            ['build_libvpx==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
-              ],
-            }],
           ],
         },
       ], # targets

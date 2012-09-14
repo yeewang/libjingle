@@ -77,7 +77,7 @@ unsigned long timeGetTime()
     return(val);
 }
 
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC_INTEL)
 
 #include <unistd.h>
 

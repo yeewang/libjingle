@@ -336,8 +336,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         "Init(external_adm=0x%p)", external_adm);
     CriticalSectionScoped cs(_shared->crit_sec());
 
-    WebRtcSpl_Init();
-
     if (_shared->statistics().Initialized())
     {
         return 0;

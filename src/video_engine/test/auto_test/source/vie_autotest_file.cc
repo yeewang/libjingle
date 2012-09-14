@@ -34,7 +34,7 @@ void ViEAutoTest::ViEFileStandardTest()
 {
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
     //***************************************************************
-    // Begin create/initialize WebRTC Video Engine for testing
+    //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
     {
         ViETest::Log("Starting a loopback call...");
@@ -171,7 +171,7 @@ void ViEAutoTest::ViEFileStandardTest()
 
         // Test debug information recording.
         EXPECT_EQ(0, ptrViEFile->StartDebugRecording(videoChannel,
-            (webrtc::test::OutputPath() + "vie_autotest_debug.yuv").c_str()));
+                     "vie_autotest_debug.yuv"));
 
         // testing StartRecordIncomingVideo and StopRecordIncomingVideo
         {

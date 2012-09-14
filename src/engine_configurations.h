@@ -80,6 +80,7 @@
 #define WEBRTC_VOICE_ENGINE_RTP_RTCP_API
 #define WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 #define WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
+#define WEBRTC_VOICE_ENGINE_FILE_API
 
 #ifndef WEBRTC_CHROMIUM_BUILD
 #define WEBRTC_VOICE_ENGINE_CALL_REPORT_API
@@ -118,6 +119,7 @@
 // ----------------------------------------------------------------------------
 
 #if defined(_WIN32)
+// #define DIRECTDRAW_RENDERING
 #define DIRECT3D9_RENDERING  // Requires DirectX 9.
 #endif
 
@@ -125,7 +127,7 @@
 //  VideoEngine MAC
 // ----------------------------------------------------------------------------
 
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#if defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
 // #define CARBON_RENDERING
 #define COCOA_RENDERING
 #endif
@@ -134,7 +136,7 @@
 //  VideoEngine Mobile iPhone
 // ----------------------------------------------------------------------------
 
-#if defined(WEBRTC_IOS)
+#if defined(MAC_IPHONE)
 #define EAGL_RENDERING
 #endif
 
