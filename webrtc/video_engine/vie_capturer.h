@@ -15,7 +15,7 @@
 
 #include "common_types.h"  // NOLINT
 #include "engine_configurations.h"  // NOLINT
-#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "modules/video_capture/main/interface/video_capture.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
@@ -116,9 +116,8 @@ class ViECapturer
 
   // Implements VideoCaptureDataCallback.
   virtual void OnIncomingCapturedFrame(const WebRtc_Word32 id,
-                                       I420VideoFrame& video_frame);
-  virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 capture_id,
-                                              VideoFrame& video_frame);
+                                       VideoFrame& video_frame,
+                                       VideoCodecType codec_type);
   virtual void OnCaptureDelayChanged(const WebRtc_Word32 id,
                                      const WebRtc_Word32 delay);
 
@@ -140,7 +139,7 @@ class ViECapturer
   virtual WebRtc_Word32 InitEncode(const VideoCodec* codec_settings,
                                    WebRtc_Word32 number_of_cores,
                                    WebRtc_UWord32 max_payload_size);
-  virtual WebRtc_Word32 Encode(const I420VideoFrame& input_image,
+  virtual WebRtc_Word32 Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
                                const std::vector<VideoFrameType>* frame_types);
   virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
@@ -154,7 +153,7 @@ class ViECapturer
 
   // Implements  VCMReceiveCallback.
   // TODO(mflodman) Change input argument to pointer.
-  virtual WebRtc_Word32 FrameToRender(I420VideoFrame& video_frame);  // NOLINT
+  virtual WebRtc_Word32 FrameToRender(VideoFrame& video_frame);  // NOLINT
 
   // Implements VideoCaptureFeedBack
   virtual void OnCaptureFrameRate(const WebRtc_Word32 id,
@@ -166,7 +165,7 @@ class ViECapturer
   static bool ViECaptureThreadFunction(void* obj);
   bool ViECaptureProcess();
 
-  void DeliverI420Frame(I420VideoFrame* video_frame);
+  void DeliverI420Frame(VideoFrame* video_frame);
   void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
@@ -183,9 +182,8 @@ class ViECapturer
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
-  I420VideoFrame captured_frame_;
-  I420VideoFrame deliver_frame_;
-  VideoFrame deliver_encoded_frame_;
+  VideoFrame captured_frame_;
+  VideoFrame deliver_frame_;
   VideoFrame encoded_frame_;
 
   // Image processing.
@@ -217,7 +215,7 @@ class ViECapturer
   bool decoder_initialized_;
   CaptureCapability requested_capability_;
 
-  I420VideoFrame capture_device_image_;
+  VideoFrame capture_device_image_;
 };
 
 }  // namespace webrtc

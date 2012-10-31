@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include "video_processing_impl.h"
 #include "critical_section_wrapper.h"
 #include "trace.h"
@@ -116,22 +115,29 @@ VideoProcessingModuleImpl::Reset()
 
 WebRtc_Word32
 VideoProcessingModule::GetFrameStats(FrameStats* stats,
-                                     const I420VideoFrame& frame)
+                                     const VideoFrame& frame)
 {
-    if (frame.IsZeroSize())
+    if (frame.Buffer() == NULL)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
-                     "zero size frame");
+                     "Null frame pointer");
         return VPM_PARAMETER_ERROR;
     }
     
-    int width = frame.width();
-    int height = frame.height();
+    int width = frame.Width();
+    int height = frame.Height();
+
+    if (width == 0 || height == 0)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
+                     "Invalid frame size");
+        return VPM_PARAMETER_ERROR;
+    }
 
     ClearFrameStats(stats); // The histogram needs to be zeroed out.
     SetSubSampling(stats, width, height);
 
-    const uint8_t* buffer = frame.buffer(kYPlane);
+    uint8_t* buffer = frame.Buffer();
     // Compute histogram and sum of frame
     for (int i = 0; i < height; i += (1 << stats->subSamplHeight))
     {
@@ -176,34 +182,33 @@ VideoProcessingModule::ClearFrameStats(FrameStats* stats)
 }
 
 WebRtc_Word32
-VideoProcessingModule::ColorEnhancement(I420VideoFrame* frame)
+VideoProcessingModule::ColorEnhancement(VideoFrame* frame)
 {
     return VideoProcessing::ColorEnhancement(frame);
 }
 
 WebRtc_Word32
-VideoProcessingModule::Brighten(I420VideoFrame* frame, int delta)
+VideoProcessingModule::Brighten(VideoFrame* frame, int delta)
 {
     return VideoProcessing::Brighten(frame, delta);
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::Deflickering(I420VideoFrame* frame,
-                                        FrameStats* stats)
+VideoProcessingModuleImpl::Deflickering(VideoFrame* frame, FrameStats* stats)
 {
     CriticalSectionScoped mutex(&_mutex);
     return _deflickering.ProcessFrame(frame, stats);
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::Denoising(I420VideoFrame* frame)
+VideoProcessingModuleImpl::Denoising(VideoFrame* frame)
 {
     CriticalSectionScoped mutex(&_mutex);
     return _denoising.ProcessFrame(frame);
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::BrightnessDetection(const I420VideoFrame& frame,
+VideoProcessingModuleImpl::BrightnessDetection(const VideoFrame& frame,
                                                const FrameStats& stats)
 {
     CriticalSectionScoped mutex(&_mutex);
@@ -268,8 +273,8 @@ VideoProcessingModuleImpl::DecimatedHeight() const
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::PreprocessFrame(const I420VideoFrame& frame,
-                                           I420VideoFrame **processedFrame)
+VideoProcessingModuleImpl::PreprocessFrame(const VideoFrame& frame,
+                                           VideoFrame **processedFrame)
 {
     CriticalSectionScoped mutex(&_mutex);
     return _framePreProcessor.PreprocessFrame(frame, processedFrame);

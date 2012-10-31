@@ -30,21 +30,21 @@ protected:
     virtual int Decode(int lossValue = 0);
 
     webrtc::VP8Decoder*     _decoder2;
-    webrtc::I420VideoFrame      _decodedVideoBuffer2;
-    static bool CheckIfBitExactFrames(const webrtc::I420VideoFrame& frame1,
-                                    const webrtc::I420VideoFrame& frame2);
+    webrtc::VideoFrame      _decodedVideoBuffer2;
+    static bool CheckIfBitExact(const void *ptrA, unsigned int aLengthBytes, 
+        const void *ptrB, unsigned int bLengthBytes);
 private:
 };
 
 class DualDecoderCompleteCallback : public webrtc::DecodedImageCallback
 {
 public:
-    DualDecoderCompleteCallback(webrtc::I420VideoFrame* buffer)
+    DualDecoderCompleteCallback(webrtc::VideoFrame* buffer)
     : _decodedVideoBuffer(buffer), _decodeComplete(false) {}
-    WebRtc_Word32 Decoded(webrtc::I420VideoFrame& decodedImage);
+    WebRtc_Word32 Decoded(webrtc::VideoFrame& decodedImage);
     bool DecodeComplete();
 private:
-    webrtc::I420VideoFrame* _decodedVideoBuffer;
+    webrtc::VideoFrame* _decodedVideoBuffer;
     bool _decodeComplete;
 };
 

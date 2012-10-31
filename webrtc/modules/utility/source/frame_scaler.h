@@ -15,7 +15,6 @@
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
-#include "common_video/interface/i420_video_frame.h"
 #include "engine_configurations.h"
 #include "modules/interface/module_common_types.h"
 #include "system_wrappers/interface/scoped_ptr.h"
@@ -32,13 +31,13 @@ class FrameScaler {
 
     // Re-sizes |video_frame| so that it has the width |out_width| and height
     // |out_height|.
-    int ResizeFrameIfNeeded(I420VideoFrame* video_frame,
-                            int out_width,
-                            int out_height);
+    int ResizeFrameIfNeeded(VideoFrame* video_frame,
+                            WebRtc_UWord32 out_width,
+                            WebRtc_UWord32 out_height);
 
  private:
     scoped_ptr<Scaler> scaler_;
-    I420VideoFrame scaled_frame_;
+    VideoFrame scaled_frame_;
 };
 
 }  // namespace webrtc

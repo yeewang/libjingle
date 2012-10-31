@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "modules/video_processing/main/test/unit_test/unit_test.h"
 #include "system_wrappers/interface/tick_util.h"
@@ -48,27 +47,21 @@ TEST_F(VideoProcessingModuleTest, Denoising)
         WebRtc_Word32 modifiedPixels = 0;
 
         frameNum = 0;
-        scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
-        while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
-            _frame_length)
+        while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) == _frameLength)
         {
-          _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                  _size_uv, video_buffer.get() + _size_y,
-                                  _size_uv,
-                                  video_buffer.get() + _size_y + _size_uv,
-                                  _width, _height,
-                                  _width, _half_width, _half_width);
             frameNum++;
-            WebRtc_UWord8* sourceBuffer = _videoFrame.buffer(kYPlane);
+            WebRtc_UWord8* sourceBuffer = _videoFrame.Buffer();
 
             // Add noise to a part in video stream
             // Random noise
             // TODO: investigate the effectiveness of this test.
 
-            for (int ir = 0; ir < _height; ir++)
+            //for(WebRtc_UWord32 ir = 0; ir < _frameLength; ir++)
+            //    sourceBuffer[ir] = 128
+            for (WebRtc_UWord32 ir = 0; ir < _height; ir++)
             {
                 WebRtc_UWord32 ik = ir * _width;
-                for (int ic = 0; ic < _width; ic++)
+                for (WebRtc_UWord32 ic = 0; ic < _width; ic++)
                 {
                     WebRtc_UWord8 r = rand() % 16;
                     r -= 8;
@@ -99,7 +92,8 @@ TEST_F(VideoProcessingModuleTest, Denoising)
 
             if (runIdx == 0)
             {
-              if (PrintI420VideoFrame(_videoFrame, noiseFile) < 0) {
+              if (fwrite(_videoFrame.Buffer(), 1, _frameLength,
+                         noiseFile) !=  _frameLength) {
                 return;
               }
             }
@@ -111,7 +105,8 @@ TEST_F(VideoProcessingModuleTest, Denoising)
 
             if (runIdx == 0)
             {
-              if (PrintI420VideoFrame(_videoFrame, noiseFile) < 0) {
+              if (fwrite(_videoFrame.Buffer(), 1, _frameLength,
+                         denoiseFile) !=  _frameLength) {
                 return;
               }
             }

@@ -40,13 +40,13 @@ void VCMDecodedFrameCallback::SetUserReceiveCallback(
     _receiveCallback = receiveCallback;
 }
 
-WebRtc_Word32 VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
+WebRtc_Word32 VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage)
 {
     // TODO(holmer): We should improve this so that we can handle multiple
     // callbacks from one call to Decode().
     CriticalSectionScoped cs(_critSect);
     VCMFrameInformation* frameInfo = static_cast<VCMFrameInformation*>(
-        _timestampMap.Pop(decodedImage.timestamp()));
+        _timestampMap.Pop(decodedImage.TimeStamp()));
     if (frameInfo == NULL)
     {
         // The map should never be empty or full if this callback is called.
@@ -54,14 +54,14 @@ WebRtc_Word32 VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     }
 
     _timing.StopDecodeTimer(
-        decodedImage.timestamp(),
+        decodedImage.TimeStamp(),
         frameInfo->decodeStartTimeMs,
         _clock->MillisecondTimestamp());
 
     if (_receiveCallback != NULL)
     {
-        _frame.SwapFrame(&decodedImage);
-        _frame.set_render_time_ms(frameInfo->renderTimeMs);
+        _frame.SwapFrame(decodedImage);
+        _frame.SetRenderTime(frameInfo->renderTimeMs);
         WebRtc_Word32 callbackReturn = _receiveCallback->FrameToRender(_frame);
         if (callbackReturn < 0)
         {

@@ -12,7 +12,6 @@
 
 #include <cmath>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/main/source/tick_time_base.h"
 #include "rtp_dump.h"
 #include "test_macros.h"
@@ -188,13 +187,13 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
 // Decoded Frame Callback Implementation
 
 WebRtc_Word32
-VCMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
+VCMDecodeCompleteCallback::FrameToRender(VideoFrame& videoFrame)
 {
-  if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
+  if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+             _decodedFile) !=  videoFrame.Length()) {
     return -1;
   }
-  _decodedBytes+= CalcBufferSize(kI420, videoFrame.width(),
-                                 videoFrame.height());
+  _decodedBytes+= videoFrame.Length();
   return VCM_OK;
  }
 

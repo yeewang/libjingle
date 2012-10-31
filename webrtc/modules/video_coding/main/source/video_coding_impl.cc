@@ -9,7 +9,6 @@
  */
 
 #include "video_coding_impl.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "common_types.h"
 #include "encoded_frame.h"
 #include "jitter_buffer.h"
@@ -653,7 +652,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
 
 // Add one raw video frame to the encoder, blocking.
 WebRtc_Word32
-VideoCodingModuleImpl::AddVideoFrame(const I420VideoFrame& videoFrame,
+VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                                      const VideoContentMetrics* contentMetrics,
                                      const CodecSpecificInfo* codecSpecificInfo)
 {
@@ -686,10 +685,10 @@ VideoCodingModuleImpl::AddVideoFrame(const I420VideoFrame& videoFrame,
                                              _nextFrameTypes);
         if (_encoderInputFile != NULL)
         {
-            if (PrintI420VideoFrame(videoFrame, _encoderInputFile) < 0)
-            {
-                return -1;
-            }
+          if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+                     _encoderInputFile) !=  videoFrame.Length()) {
+            return -1;
+          }
         }
         if (ret < 0)
         {

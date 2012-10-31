@@ -11,17 +11,16 @@
 #include <cstdio>
 #include <string>
 
-#include "common_video/interface/video_image.h"
 #include "common_video/jpeg/include/jpeg.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "common_video/interface/video_image.h"
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "modules/interface/module_common_types.h"
 
 namespace webrtc {
 
-const int kImageWidth = 640;
-const int kImageHeight = 480;
+const unsigned int kImageWidth = 640;
+const unsigned int kImageHeight = 480;
 
 class JpegTest: public testing::Test {
  protected:
@@ -73,30 +72,38 @@ class JpegTest: public testing::Test {
 
 TEST_F(JpegTest, Decode) {
   encoded_buffer_ = ReadEncodedImage(input_filename_);
-  I420VideoFrame image_buffer;
+  VideoFrame image_buffer;
   EXPECT_EQ(0, ConvertJpegToI420(*encoded_buffer_, &image_buffer));
-  EXPECT_FALSE(image_buffer.IsZeroSize());
-  EXPECT_EQ(kImageWidth, image_buffer.width());
-  EXPECT_EQ(kImageHeight, image_buffer.height());
+  EXPECT_GT(image_buffer.Length(), 0u);
+  EXPECT_EQ(kImageWidth, image_buffer.Width());
+  EXPECT_EQ(kImageHeight, image_buffer.Height());
+  image_buffer.Free();
 }
 
 TEST_F(JpegTest, EncodeInvalidInputs) {
-  I420VideoFrame empty;
-  empty.set_width(164);
-  empty.set_height(164);
+  VideoFrame empty;
+  empty.SetWidth(164);
+  empty.SetHeight(164);
   EXPECT_EQ(-1, encoder_->SetFileName(0));
-  // Test empty (null) frame.
   EXPECT_EQ(-1, encoder_->Encode(empty));
-  // Create empty frame (allocate memory) - arbitrary dimensions.
-  empty.CreateEmptyFrame(10, 10, 10, 5, 5);
-  empty.ResetSize();
+
+  empty.VerifyAndAllocate(0);
   EXPECT_EQ(-1, encoder_->Encode(empty));
+
+  empty.VerifyAndAllocate(10);
+  empty.SetHeight(0);
+  EXPECT_EQ(-1, encoder_->Encode(empty));
+
+  empty.SetHeight(164);
+  empty.SetWidth(0);
+  EXPECT_EQ(-1, encoder_->Encode(empty));
+  empty.Free();
 }
 
 TEST_F(JpegTest, Encode) {
   // Decode our input image then encode it again to a new file:
   encoded_buffer_ = ReadEncodedImage(input_filename_);
-  I420VideoFrame image_buffer;
+  VideoFrame image_buffer;
   EXPECT_EQ(0, ConvertJpegToI420(*encoded_buffer_, &image_buffer));
 
   EXPECT_EQ(0, encoder_->SetFileName(encoded_filename_.c_str()));
@@ -104,11 +111,13 @@ TEST_F(JpegTest, Encode) {
 
   // Save decoded image to file.
   FILE* save_file = fopen(decoded_filename_.c_str(), "wb");
-  if (PrintI420VideoFrame(image_buffer, save_file)) {
+  if (fwrite(image_buffer.Buffer(), 1,
+             image_buffer.Length(), save_file) != image_buffer.Length()) {
     return;
   }
   fclose(save_file);
 
+  image_buffer.Free();
 }
 
 }  // namespace webrtc

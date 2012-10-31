@@ -32,7 +32,15 @@
       'webrtc_root%': '<(webrtc_root)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
-      'include_opus%': 1,
+
+      # Enable opus for Chrome only right now.
+      'conditions': [
+        ['build_with_chromium==1', {
+          'include_opus%': 1,
+        }, {
+          'include_opus%': 0,
+        }],
+      ],
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'webrtc_root%': '<(webrtc_root)',
@@ -64,7 +72,7 @@
     'build_libyuv%': 1,
     'build_libvpx%': 1,
 
-    # Enable to use the Mozilla internal settings.
+    # Enable to use the Mozilla internal Opus version.
     'build_with_mozilla%': 0,
 
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
@@ -135,12 +143,6 @@
       #'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
     ],
     'conditions': [
-      ['build_with_mozilla==1', {
-        'defines': [
-          # Changes settings for Mozilla build.
-          'WEBRTC_MOZILLA_BUILD',
-         ],
-      }],
       ['build_with_chromium==1', {
         'defines': [
           # Changes settings for Chromium build.

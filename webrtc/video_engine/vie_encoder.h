@@ -84,7 +84,7 @@ class ViEEncoder
 
   // Implementing ViEFrameCallback.
   virtual void DeliverFrame(int id,
-                            I420VideoFrame* video_frame,
+                            VideoFrame* video_frame,
                             int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
   virtual void DelayChanged(int id, int frame_delay);

@@ -32,7 +32,7 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(I420VideoFrame* frame,
+    WebRtc_Word32 ProcessFrame(VideoFrame* frame,
                                VideoProcessingModule::FrameStats* stats);
 private:
     WebRtc_Word32 PreDetection(WebRtc_UWord32 timestamp,

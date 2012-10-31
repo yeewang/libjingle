@@ -54,6 +54,7 @@ class TestVideoCodingModule : public ::testing::Test {
 
   virtual void TearDown() {
     VideoCodingModule::Destroy(vcm_);
+    input_frame_.Free();
   }
 
   void ExpectIntraRequest(int stream) {
@@ -87,7 +88,7 @@ class TestVideoCodingModule : public ::testing::Test {
 
   VideoCodingModule* vcm_;
   NiceMock<MockVideoEncoder> encoder_;
-  I420VideoFrame input_frame_;
+  VideoFrame input_frame_;
   VideoCodec settings_;
 };
 

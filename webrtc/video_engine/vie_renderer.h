@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "video_engine/include/vie_render.h"
@@ -33,14 +33,13 @@ class ViEExternalRendererImpl : public VideoRenderCallback {
 
   // Implements VideoRenderCallback.
   virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 stream_id,
-                                    I420VideoFrame& video_frame);
+                                    VideoFrame& video_frame);
 
  private:
   ExternalRenderer* external_renderer_;
   RawVideoType external_renderer_format_;
-  int external_renderer_width_;
-  int external_renderer_height_;
-  // Converted_frame_ in color format specified by render_format_.
+  WebRtc_UWord32 external_renderer_width_;
+  WebRtc_UWord32 external_renderer_height_;
   scoped_ptr<VideoFrame> converted_frame_;
 };
 
@@ -61,7 +60,7 @@ class ViERenderer: public ViEFrameCallback {
   WebRtc_Word32 StopRender();
 
   WebRtc_Word32 GetLastRenderedFrame(const WebRtc_Word32 renderID,
-                                     I420VideoFrame& video_frame);
+                                     VideoFrame& video_frame);
 
   int SetExpectedRenderDelay(int render_delay);
 
@@ -78,9 +77,9 @@ class ViERenderer: public ViEFrameCallback {
                                 const bool mirror_xaxis,
                                 const bool mirror_yaxis);
 
-  WebRtc_Word32 SetTimeoutImage(const I420VideoFrame& timeout_image,
+  WebRtc_Word32 SetTimeoutImage(const VideoFrame& timeout_image,
                                 const WebRtc_Word32 timeout_value);
-  WebRtc_Word32 SetRenderStartImage(const I420VideoFrame& start_image);
+  WebRtc_Word32 SetRenderStartImage(const VideoFrame& start_image);
   WebRtc_Word32 SetExternalRenderer(const WebRtc_Word32 render_id,
                                     RawVideoType video_input_format,
                                     ExternalRenderer* external_renderer);
@@ -98,7 +97,7 @@ class ViERenderer: public ViEFrameCallback {
 
   // Implement ViEFrameCallback
   virtual void DeliverFrame(int id,
-                            I420VideoFrame* video_frame,
+                            VideoFrame* video_frame,
                             int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
   virtual void DelayChanged(int id, int frame_delay);

@@ -34,7 +34,7 @@ public:
                                      WebRtc_UWord32 maxPayloadSize);
 
     virtual WebRtc_Word32 Encode(
-        const webrtc::I420VideoFrame& inputImage,
+        const webrtc::VideoFrame& inputImage,
         const webrtc::CodecSpecificInfo* codecSpecificInfo,
         const std::vector<webrtc::VideoFrameType>* frameTypes);
 
@@ -117,7 +117,7 @@ public:
 
 private:
 
-    webrtc::I420VideoFrame _decodedImage;
+    webrtc::VideoFrame _decodedImage;
     WebRtc_Word32 _width;
     WebRtc_Word32 _height;
     bool _inited;

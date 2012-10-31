@@ -74,10 +74,10 @@ WebRtc_Word32 VideoCoder::SetDecodeCodec(VideoCodec& videoCodecInst,
     return 0;
 }
 
-WebRtc_Word32 VideoCoder::Decode(I420VideoFrame& decodedVideo,
+WebRtc_Word32 VideoCoder::Decode(VideoFrame& decodedVideo,
                                  const EncodedVideoData& encodedData)
 {
-    decodedVideo.ResetSize();
+    decodedVideo.SetLength(0);
     if(encodedData.payloadSize <= 0)
     {
         return -1;
@@ -92,7 +92,7 @@ WebRtc_Word32 VideoCoder::Decode(I420VideoFrame& decodedVideo,
 }
 
 
-WebRtc_Word32 VideoCoder::Encode(const I420VideoFrame& videoFrame,
+WebRtc_Word32 VideoCoder::Encode(const VideoFrame& videoFrame,
                                  EncodedVideoData& videoEncodedData)
 {
     // The AddVideoFrame(..) call will (indirectly) call SendData(). Store a
@@ -121,7 +121,7 @@ WebRtc_Word8 VideoCoder::DefaultPayloadType(const char* plName)
     return -1;
 }
 
-WebRtc_Word32 VideoCoder::FrameToRender(I420VideoFrame& videoFrame)
+WebRtc_Word32 VideoCoder::FrameToRender(VideoFrame& videoFrame)
 {
     return _decodedVideo->CopyFrame(videoFrame);
 }

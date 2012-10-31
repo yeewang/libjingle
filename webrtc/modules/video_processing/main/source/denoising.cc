@@ -72,7 +72,7 @@ VPMDenoising::Reset()
 }
 
 WebRtc_Word32
-VPMDenoising::ProcessFrame(I420VideoFrame* frame)
+VPMDenoising::ProcessFrame(VideoFrame* frame)
 {
     assert(frame);
     WebRtc_Word32     thevar;
@@ -84,15 +84,21 @@ VPMDenoising::ProcessFrame(I420VideoFrame* frame)
     WebRtc_UWord32    tmp;
     WebRtc_Word32     numPixelsChanged = 0;
 
-    if (frame->IsZeroSize())
+    if (frame->Buffer() == NULL)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
-                     "zero size frame");
+                     "Null frame pointer");
         return VPM_GENERAL_ERROR;
     }
 
-    int width = frame->width();
-    int height = frame->height();
+    int width = frame->Width();
+    int height = frame->Height();
+    if (width == 0 || height == 0)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Invalid frame size");
+        return VPM_GENERAL_ERROR;
+    }
 
     /* Size of luminance component */
     const WebRtc_UWord32 ysize  = height * width;
@@ -121,7 +127,7 @@ VPMDenoising::ProcessFrame(I420VideoFrame* frame)
     }
 
     /* Apply de-noising on each pixel, but update variance sub-sampled */
-    uint8_t* buffer = frame->buffer(kYPlane);
+    uint8_t* buffer = frame->Buffer();
     for (int i = 0; i < height; i++)
     { // Collect over height
         k = i * width;

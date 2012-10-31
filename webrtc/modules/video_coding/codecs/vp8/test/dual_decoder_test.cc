@@ -36,6 +36,8 @@ VP8DualDecoderTest::~VP8DualDecoderTest()
         _decoder2->Release();
         delete _decoder2;
     }
+
+    _decodedVideoBuffer2.Free();
 }
 
 void
@@ -44,6 +46,9 @@ VP8DualDecoderTest::Perform()
     _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     CodecSettings(352, 288, 30, _bitRate);
     Setup();
+    _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
+    _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
+    _decodedVideoBuffer2.VerifyAndAllocate(_lengthSourceFrame);
     if(_encoder->InitEncode(&_inst, 4, 1460) < 0)
     {
         exit(EXIT_FAILURE);
@@ -166,7 +171,9 @@ VP8DualDecoderTest::Decode(int lossValue)
         }
 
         // compare decoded images
-        if (!CheckIfBitExactFrames(_decodedVideoBuffer, _decodedVideoBuffer2))
+        if (!CheckIfBitExact(_decodedVideoBuffer.Buffer(),
+            _decodedVideoBuffer.Length(),
+            _decodedVideoBuffer2.Buffer(), _decodedVideoBuffer.Length()))
         {
             fprintf(stderr,"\n\nClone output different from master.\n\n");
             exit(EXIT_FAILURE);
@@ -178,10 +185,26 @@ VP8DualDecoderTest::Decode(int lossValue)
     return ret;
 }
 
-WebRtc_Word32 DualDecoderCompleteCallback::Decoded(webrtc::I420VideoFrame&
-                                                   image)
+
+bool
+VP8DualDecoderTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
+                                    const void* ptrB, unsigned int bLengthBytes)
 {
-    _decodedVideoBuffer->CopyFrame(image);
+    if (aLengthBytes != bLengthBytes)
+    {
+        return false;
+    }
+
+    return memcmp(ptrA, ptrB, aLengthBytes) == 0;
+}
+
+WebRtc_Word32 DualDecoderCompleteCallback::Decoded(webrtc::VideoFrame& image)
+{
+    _decodedVideoBuffer->VerifyAndAllocate(image.Length());
+    _decodedVideoBuffer->CopyFrame(image.Length(), image.Buffer());
+    _decodedVideoBuffer->SetWidth(image.Width());
+    _decodedVideoBuffer->SetHeight(image.Height());
+    _decodedVideoBuffer->SetTimeStamp(image.TimeStamp());
     _decodeComplete = true;
     return 0;
 }
@@ -194,22 +217,5 @@ bool DualDecoderCompleteCallback::DecodeComplete()
         return true;
     }
     return false;
-}
-
-bool
-VP8DualDecoderTest::CheckIfBitExactFrames(const webrtc::I420VideoFrame& frame1,
-                                const webrtc::I420VideoFrame& frame2) {
-  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
-    webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
-    int allocated_size1 = frame1.allocated_size(plane_type);
-    int allocated_size2 = frame2.allocated_size(plane_type);
-    if (allocated_size1 != allocated_size2)
-      return false;
-    const uint8_t* plane_buffer1 = frame1.buffer(plane_type);
-    const uint8_t* plane_buffer2 = frame2.buffer(plane_type);
-    if (memcmp(plane_buffer1, plane_buffer2, allocated_size1) != 0)
-      return false;
-  }
-  return true;
 }
 

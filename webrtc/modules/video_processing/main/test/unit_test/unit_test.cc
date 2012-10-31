@@ -23,21 +23,16 @@ namespace webrtc {
 // quality when the resampled frame is scaled back up/down to the
 // original/source size. |expected_psnr| is set to be  ~0.1/0.05dB lower than
 // actual PSNR verified under the same conditions.
-void TestSize(const I420VideoFrame& sourceFrame, int target_width,
+void TestSize(const VideoFrame& sourceFrame, int target_width,
               int target_height, int mode, double expected_psnr,
               VideoProcessingModule* vpm);
-bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                  const webrtc::I420VideoFrame& frame2);
 
 VideoProcessingModuleTest::VideoProcessingModuleTest() :
   _vpm(NULL),
   _sourceFile(NULL),
   _width(352),
-  _half_width((_width + 1) / 2),
   _height(288),
-  _size_y(_width * _height),
-  _size_uv(_half_width * ((_height + 1) / 2)),
-  _frame_length(CalcBufferSize(kI420, _width, _height))
+  _frameLength(CalcBufferSize(kI420, 352, 288))
 {
 }
 
@@ -46,8 +41,9 @@ void VideoProcessingModuleTest::SetUp()
   _vpm = VideoProcessingModule::Create(0);
   ASSERT_TRUE(_vpm != NULL);
 
-  ASSERT_EQ(0, _videoFrame.CreateEmptyFrame(_width, _height, _width,
-                                            _half_width, _half_width));
+  ASSERT_EQ(0, _videoFrame.VerifyAndAllocate(_frameLength));
+  _videoFrame.SetWidth(_width);
+  _videoFrame.SetHeight(_height);
 
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
@@ -71,12 +67,12 @@ void VideoProcessingModuleTest::TearDown()
 
 TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 {
-  // TODO(mikhal/stefan): Do we need this one?
   VideoProcessingModule::FrameStats stats;
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   // Video frame with unallocated buffer.
-  I420VideoFrame videoFrame;
-  videoFrame.set_width(_width);
-  videoFrame.set_height(_height);
+  VideoFrame videoFrame;
+  videoFrame.SetWidth(_width);
+  videoFrame.SetHeight(_height);
 
   EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, videoFrame));
 
@@ -92,15 +88,12 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 TEST_F(VideoProcessingModuleTest, HandleBadStats)
 {
   VideoProcessingModule::FrameStats stats;
-  scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
-                                 _sourceFile));
-  _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width);
 
+  ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
+                                _sourceFile));
+
+  _videoFrame.SetWidth(_width);
+  _videoFrame.SetHeight(_height);
   EXPECT_EQ(-1, _vpm->Deflickering(&_videoFrame, &stats));
 
   EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame, stats));
@@ -109,10 +102,23 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats)
 TEST_F(VideoProcessingModuleTest, HandleBadSize)
 {
   VideoProcessingModule::FrameStats stats;
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
 
-  _videoFrame.ResetSize();
-  _videoFrame.set_width(_width);
-  _videoFrame.set_height(0);
+  // Bad width
+  _videoFrame.SetWidth(0);
+  EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, _videoFrame));
+
+  EXPECT_EQ(-1, _vpm->ColorEnhancement(&_videoFrame));
+
+  EXPECT_EQ(-1, _vpm->Deflickering(&_videoFrame, &stats));
+
+  EXPECT_EQ(-1, _vpm->Denoising(&_videoFrame));
+
+  EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame, stats));
+
+  // Bad height
+  _videoFrame.SetWidth(_width);
+  _videoFrame.SetHeight(0);
   EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, _videoFrame));
 
   EXPECT_EQ(-1, _vpm->ColorEnhancement(&_videoFrame));
@@ -126,73 +132,58 @@ TEST_F(VideoProcessingModuleTest, HandleBadSize)
   EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->SetTargetResolution(0,0,0));
   EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->SetMaxFrameRate(0));
 
-  I420VideoFrame *outFrame = NULL;
+  VideoFrame *outFrame = NULL;
   EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->PreprocessFrame(_videoFrame,
                                                        &outFrame));
 }
 
 TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset)
 {
-  I420VideoFrame videoFrame2;
+  VideoFrame videoFrame2;
   VideoProcessingModule::FrameStats stats;
+
+  ASSERT_EQ(0, videoFrame2.VerifyAndAllocate(_frameLength));
+  videoFrame2.SetWidth(_width);
+  videoFrame2.SetHeight(_height);
+
   // Only testing non-static functions here.
-  scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
+  ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
-  ASSERT_EQ(0, _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width));
   ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
-  ASSERT_EQ(0, videoFrame2.CopyFrame(_videoFrame));
+  memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
   ASSERT_EQ(0, _vpm->Deflickering(&_videoFrame, &stats));
   _vpm->Reset();
   // Retrieve frame stats again in case Deflickering() has zeroed them.
   ASSERT_EQ(0, _vpm->GetFrameStats(&stats, videoFrame2));
   ASSERT_EQ(0, _vpm->Deflickering(&videoFrame2, &stats));
-  EXPECT_TRUE(CompareFrames(_videoFrame, videoFrame2));
+  EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), videoFrame2.Buffer(),
+                      _frameLength));
 
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
-                                 _sourceFile));
-  _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width);
-  videoFrame2.CopyFrame(_videoFrame);
-  EXPECT_TRUE(CompareFrames(_videoFrame, videoFrame2));
+  ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
+                                _sourceFile));
+  memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
   ASSERT_GE(_vpm->Denoising(&_videoFrame), 0);
   _vpm->Reset();
   ASSERT_GE(_vpm->Denoising(&videoFrame2), 0);
-  EXPECT_TRUE(CompareFrames(_videoFrame, videoFrame2));
+  EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), videoFrame2.Buffer(),
+                      _frameLength));
 
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
-                                 _sourceFile));
-  _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width);
+  ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
+                                _sourceFile));
   ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
-  videoFrame2.CopyFrame(_videoFrame);
+  memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
   ASSERT_EQ(0, _vpm->BrightnessDetection(_videoFrame, stats));
   _vpm->Reset();
   ASSERT_EQ(0, _vpm->BrightnessDetection(videoFrame2, stats));
-  EXPECT_TRUE(CompareFrames(_videoFrame, videoFrame2));
+  EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), videoFrame2.Buffer(),
+                      _frameLength));
 }
 
 TEST_F(VideoProcessingModuleTest, FrameStats)
 {
   VideoProcessingModule::FrameStats stats;
-  scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
-                                 _sourceFile));
-  _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width);
+  ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
+                                _sourceFile));
 
   EXPECT_FALSE(_vpm->ValidFrameStats(stats));
   EXPECT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
@@ -223,7 +214,7 @@ TEST_F(VideoProcessingModuleTest, PreprocessorLogic)
   // Disable spatial sampling
   _vpm->SetInputFrameResampleMode(kNoRescaling);
   ASSERT_EQ(VPM_OK, _vpm->SetTargetResolution(100, 100, 30));
-  I420VideoFrame *outFrame = NULL;
+  VideoFrame *outFrame = NULL;
   ASSERT_EQ(VPM_OK, _vpm->PreprocessFrame(_videoFrame, &outFrame));
   // No rescaling=> output frame = NULL
   ASSERT_TRUE(outFrame == NULL);
@@ -239,6 +230,9 @@ TEST_F(VideoProcessingModuleTest, Resampler)
   TickTime t0;
   TickTime t1;
   TickInterval accTicks;
+  WebRtc_Word32 height = 288;
+  WebRtc_Word32 width = 352;
+  WebRtc_Word32 lengthSourceFrame = width*height*3/2;
 
   rewind(_sourceFile);
   ASSERT_TRUE(_sourceFile != NULL) <<
@@ -250,15 +244,12 @@ TEST_F(VideoProcessingModuleTest, Resampler)
   _vpm->EnableTemporalDecimation(false);
 
   // Reading test frame
-  I420VideoFrame sourceFrame;
-  scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
-  ASSERT_EQ(_frame_length, fread(video_buffer.get(), 1, _frame_length,
-                                 _sourceFile));
-  sourceFrame.CreateFrame(_size_y, video_buffer.get(),
-                          _size_uv, video_buffer.get() + _size_y,
-                          _size_uv, video_buffer.get() + _size_y + _size_uv,
-                          _width, _height,
-                          _width, _half_width, _half_width);
+  VideoFrame sourceFrame;
+  ASSERT_EQ(0, sourceFrame.VerifyAndAllocate(lengthSourceFrame));
+  EXPECT_GT(fread(sourceFrame.Buffer(), 1, lengthSourceFrame, _sourceFile), 0u);
+  ASSERT_EQ(0, sourceFrame.SetLength(lengthSourceFrame));
+  sourceFrame.SetHeight(height);
+  sourceFrame.SetWidth(width);
 
   for (WebRtc_UWord32 runIdx = 0; runIdx < NumRuns; runIdx++)
   {
@@ -291,6 +282,8 @@ TEST_F(VideoProcessingModuleTest, Resampler)
     avgRuntime += accTicks.Microseconds();
   }
 
+  sourceFrame.Free();
+
   printf("\nAverage run time = %d us / frame\n",
          //static_cast<int>(avgRuntime / frameNum / NumRuns));
          static_cast<int>(avgRuntime));
@@ -299,12 +292,12 @@ TEST_F(VideoProcessingModuleTest, Resampler)
          static_cast<int>(minRuntime));
 }
 
-void TestSize(const I420VideoFrame& source_frame, int target_width,
+void TestSize(const VideoFrame& source_frame, int target_width,
               int target_height, int mode, double expected_psnr,
               VideoProcessingModule* vpm) {
-  int source_width = source_frame.width();
-  int source_height = source_frame.height();
-  I420VideoFrame* out_frame = NULL;
+  int source_width = source_frame.Width();
+  int source_height = source_frame.Height();
+  VideoFrame* out_frame = NULL;
 
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
   ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(source_frame, &out_frame));
@@ -316,6 +309,12 @@ void TestSize(const I420VideoFrame& source_frame, int target_width,
   // (3) write out the processed frame for viewing.
   if (target_width != static_cast<int>(source_width) ||
       target_height != static_cast<int>(source_height))  {
+    int target_half_width = (target_width + 1) >> 1;
+    int target_half_height = (target_height + 1) >> 1;
+    int required_size_resampled = target_width * target_height +
+        2 * (target_half_width * target_half_height);
+    ASSERT_EQ(required_size_resampled, static_cast<int>(out_frame->Length()));
+
     // Write the processed frame to file for visual inspection.
     std::ostringstream filename;
     filename << webrtc::test::OutputPath() << "Resampler_"<< mode << "_" <<
@@ -324,14 +323,15 @@ void TestSize(const I420VideoFrame& source_frame, int target_width,
     std::cout << "Watch " << filename.str() << " and verify that it is okay."
         << std::endl;
     FILE* stand_alone_file = fopen(filename.str().c_str(), "wb");
-    if (PrintI420VideoFrame(*out_frame, stand_alone_file) < 0) {
+    if (fwrite(out_frame->Buffer(), 1,
+               out_frame->Length(), stand_alone_file) != out_frame->Length()) {
       fprintf(stderr, "Failed to write frame for scaling to width/height: "
           " %d %d \n", target_width, target_height);
       return;
     }
     fclose(stand_alone_file);
 
-    I420VideoFrame resampled_source_frame;
+    VideoFrame resampled_source_frame;
     resampled_source_frame.CopyFrame(*out_frame);
 
     // Scale |resampled_source_frame| back to original/source size.
@@ -349,36 +349,24 @@ void TestSize(const I420VideoFrame& source_frame, int target_width,
     std::cout << "Watch " << filename2.str() << " and verify that it is okay."
                 << std::endl;
     stand_alone_file = fopen(filename2.str().c_str(), "wb");
-    if (PrintI420VideoFrame(*out_frame, stand_alone_file) < 0) {
+    if (fwrite(out_frame->Buffer(), 1,
+               out_frame->Length(), stand_alone_file) != out_frame->Length()) {
       fprintf(stderr, "Failed to write frame for scaling to width/height "
-              "%d %d \n", source_width, source_height);
+          "%d %d \n", source_width, source_height);
       return;
     }
     fclose(stand_alone_file);
 
     // Compute the PSNR and check expectation.
-    double psnr = I420PSNR(&source_frame, out_frame);
+    double psnr = I420PSNR(source_frame.Buffer(), out_frame->Buffer(),
+                           source_width, source_height);
     EXPECT_GT(psnr, expected_psnr);
     printf("PSNR: %f. PSNR is between source of size %d %d, and a modified "
         "source which is scaled down/up to: %d %d, and back to source size \n",
         psnr, source_width, source_height, target_width, target_height);
-  }
-}
 
-bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                   const webrtc::I420VideoFrame& frame2) {
-  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
-    webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
-    int allocated_size1 = frame1.allocated_size(plane_type);
-    int allocated_size2 = frame2.allocated_size(plane_type);
-    if (allocated_size1 != allocated_size2)
-      return false;
-    const uint8_t* plane_buffer1 = frame1.buffer(plane_type);
-    const uint8_t* plane_buffer2 = frame2.buffer(plane_type);
-    if (memcmp(plane_buffer1, plane_buffer2, allocated_size1))
-      return false;
+    resampled_source_frame.Free();
   }
-  return true;
 }
 
 }  // namespace webrtc

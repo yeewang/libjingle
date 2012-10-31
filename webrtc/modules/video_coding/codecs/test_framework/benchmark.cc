@@ -230,6 +230,9 @@ Benchmark::PerformNormalTest()
     CodecSettings(_target->GetWidth(), _target->GetHeight(), _target->GetFrameRate(), _bitRate);
     Setup();
     EventWrapper* waitEvent = EventWrapper::Create();
+
+    _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
+    _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     _encoder->InitEncode(&_inst, 4, 1440);
     CodecSpecific_InitBitrate();
     _decoder->InitDecode(&_inst,1);
@@ -279,7 +282,9 @@ Benchmark::PerformNormalTest()
         waitEvent->Wait(5);
     }
 
+    _inputVideoBuffer.Free();
     _encodedVideoBuffer.Free();
+    _decodedVideoBuffer.Free();
 
     _encoder->Release();
     _decoder->Release();

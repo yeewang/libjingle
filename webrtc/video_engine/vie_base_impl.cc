@@ -18,7 +18,7 @@
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/modules/video_render/include/video_render.h"
+#include "modules/video_render/main/interface/video_render.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_channel_manager.h"
@@ -397,7 +397,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
 
   // Add WebRTC Version.
   std::stringstream version_stream;
-  version_stream << "VideoEngine 3.15.0" << std::endl;
+  version_stream << "VideoEngine 3.14.0" << std::endl;
 
   // Add build info.
   version_stream << "Build: svn:" << WEBRTC_SVNREVISION << " " << BUILDINFO

@@ -35,9 +35,6 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   y_plane_.CreateEmptyPlane(size_y, stride_y, size_y);
   u_plane_.CreateEmptyPlane(size_u, stride_u, size_u);
   v_plane_.CreateEmptyPlane(size_v, stride_v, size_v);
-  // Creating empty frame - reset all values.
-  timestamp_ = 0;
-  render_time_ms_ = 0;
   return 0;
 }
 
@@ -131,7 +128,7 @@ int I420VideoFrame::set_height(int height) {
   return 0;
 }
 
-bool I420VideoFrame::IsZeroSize() const {
+bool I420VideoFrame::IsZeroSize() {
   return (y_plane_.IsZeroSize() && u_plane_.IsZeroSize() &&
     v_plane_.IsZeroSize());
 }

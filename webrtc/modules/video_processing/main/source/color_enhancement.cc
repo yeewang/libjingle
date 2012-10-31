@@ -18,35 +18,38 @@ namespace webrtc {
 namespace VideoProcessing
 { 
     WebRtc_Word32
-    ColorEnhancement(I420VideoFrame* frame)
+    ColorEnhancement(VideoFrame* frame)
     {
         assert(frame);
         // pointers to U and V color pixels
         WebRtc_UWord8* ptrU;
         WebRtc_UWord8* ptrV;
         WebRtc_UWord8 tempChroma;
+        const unsigned int size_y = frame->Width() * frame->Height();
+        const unsigned int size_uv = ((frame->Width() + 1) / 2) *
+            ((frame->Height() + 1 ) / 2);
 
-        if (frame->IsZeroSize())
+
+        if (frame->Buffer() == NULL)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing,
                          -1, "Null frame pointer");
             return VPM_GENERAL_ERROR;
         }
 
-        if (frame->width() == 0 || frame->height() == 0)
+        if (frame->Width() == 0 || frame->Height() == 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing,
                          -1, "Invalid frame size");
             return VPM_GENERAL_ERROR;
         }
-
+        
         // set pointers to first U and V pixels (skip luminance)
-        ptrU = frame->buffer(kUPlane);
-        ptrV = frame->buffer(kVPlane);
-        int size_uv = ((frame->width() + 1) / 2) * ((frame->height() + 1) / 2);
+        ptrU = frame->Buffer() + size_y;
+        ptrV = ptrU + size_uv;
 
         // loop through all chrominance pixels and modify color
-        for (int ix = 0; ix < size_uv; ix++)
+        for (unsigned int ix = 0; ix < size_uv; ix++)
         {
             tempChroma = colorTable[*ptrU][*ptrV];
             *ptrV = colorTable[*ptrV][*ptrU];

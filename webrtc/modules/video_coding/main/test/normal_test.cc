@@ -16,7 +16,6 @@
 #include <time.h>
 
 #include "../source/event.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "common_types.h"
 #include "modules/video_coding/main/source/mock/fake_tick_time.h"
 #include "test_callbacks.h"
@@ -153,13 +152,13 @@ VCMNTDecodeCompleCallback::~VCMNTDecodeCompleCallback()
     fclose(_decodedFile);
 }
  WebRtc_Word32
-VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
+VCMNTDecodeCompleCallback::FrameToRender(webrtc::VideoFrame& videoFrame)
 {
-    if (videoFrame.width() != _currentWidth ||
-        videoFrame.height() != _currentHeight)
+    if (videoFrame.Width() != _currentWidth ||
+        videoFrame.Height() != _currentHeight)
     {
-        _currentWidth = videoFrame.width();
-        _currentHeight = videoFrame.height();
+        _currentWidth = videoFrame.Width();
+        _currentHeight = videoFrame.Height();
         if (_decodedFile != NULL)
         {
             fclose(_decodedFile);
@@ -167,11 +166,11 @@ VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
         }
         _decodedFile = fopen(_outname.c_str(), "wb");
     }
-    if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
+    if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+               _decodedFile) !=  videoFrame.Length()) {
       return -1;
     }
-    _decodedBytes+= webrtc::CalcBufferSize(webrtc::kI420,
-                                   videoFrame.width(), videoFrame.height());
+    _decodedBytes+= videoFrame.Length();
     return VCM_OK;
 }
 
@@ -271,13 +270,8 @@ NormalTest::Perform(CmdArgs& args)
     ///////////////////////
     /// Start Test
     ///////////////////////
-    I420VideoFrame sourceFrame;
-    int size_y = _width * _height;
-    int half_width = (_width + 1) / 2;
-    int half_height = (_height + 1) / 2;
-    int size_uv = half_width * half_height;
-    sourceFrame.CreateEmptyFrame(_width, _height,
-                                 _width, half_width, half_width);
+    VideoFrame sourceFrame;
+    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
     double startTime = clock()/(double)CLOCKS_PER_SEC;
     _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 0);
@@ -294,29 +288,23 @@ NormalTest::Perform(CmdArgs& args)
         TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0 ||
              feof(_sourceFile));
         _frameCnt++;
-        sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                size_uv, tmpBuffer + size_y,
-                                size_uv, tmpBuffer + size_y + size_uv,
-                                _width, _height,
-                                _width, half_width, half_width);
+        sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
+        sourceFrame.SetHeight(_height);
+        sourceFrame.SetWidth(_width);
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_sendCodec.maxFramerate));
-        sourceFrame.set_timestamp(_timeStamp);
-        _encodeTimes[int(sourceFrame.timestamp())] =
-            clock()/(double)CLOCKS_PER_SEC;
+        sourceFrame.SetTimeStamp(_timeStamp);
+        _encodeTimes[int(sourceFrame.TimeStamp())] = clock()/(double)CLOCKS_PER_SEC;
         WebRtc_Word32 ret = _vcm->AddVideoFrame(sourceFrame);
-        double encodeTime = clock()/(double)CLOCKS_PER_SEC -
-                            _encodeTimes[int(sourceFrame.timestamp())];
+        double encodeTime = clock()/(double)CLOCKS_PER_SEC - _encodeTimes[int(sourceFrame.TimeStamp())];
         _totalEncodeTime += encodeTime;
         if (ret < 0)
         {
             printf("Error in AddFrame: %d\n", ret);
             //exit(1);
         }
-        _decodeTimes[int(sourceFrame.timestamp())] =
-            clock()/(double)CLOCKS_PER_SEC;
+        _decodeTimes[int(sourceFrame.TimeStamp())] = clock()/(double)CLOCKS_PER_SEC; // same timestamp value for encode and decode
         ret = _vcm->Decode();
-        _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC -
-                            _decodeTimes[int(sourceFrame.timestamp())];
+        _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC - _decodeTimes[int(sourceFrame.TimeStamp())];
         if (ret < 0)
         {
             printf("Error in Decode: %d\n", ret);

@@ -14,11 +14,9 @@
 #include <vector>
 
 #include "common_types.h"
-#include "common_video/interface/i420_video_frame.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/video_coding/codecs/interface/video_error_codes.h"
 #include "common_video/interface/video_image.h"
-
 #include "typedefs.h"
 
 namespace webrtc
@@ -104,7 +102,7 @@ public:
     // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0
     //                                otherwise.
     virtual WebRtc_Word32 Encode(
-        const I420VideoFrame& inputImage,
+        const VideoFrame& inputImage,
         const CodecSpecificInfo* codecSpecificInfo,
         const std::vector<VideoFrameType>* frame_types) = 0;
 
@@ -169,7 +167,7 @@ public:
     //          - decodedImage         : The decoded image.
     //
     // Return value                    : 0 if OK, < 0 otherwise.
-    virtual WebRtc_Word32 Decoded(I420VideoFrame& decodedImage) = 0;
+    virtual WebRtc_Word32 Decoded(VideoFrame& decodedImage) = 0;
 
     virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId) {return -1;}
 

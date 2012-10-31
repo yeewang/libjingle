@@ -36,13 +36,10 @@ protected:
     }
     VideoProcessingModule* _vpm;
     FILE* _sourceFile;
-    I420VideoFrame _videoFrame;
-    const int _width;
-    const int _half_width;
-    const int _height;
-    const int _size_y;
-    const int _size_uv;
-    const unsigned int _frame_length;
+    VideoFrame _videoFrame;
+    const WebRtc_UWord32 _width;
+    const WebRtc_UWord32 _height;
+    const WebRtc_UWord32 _frameLength;
 };
 
 }  // namespace webrtc

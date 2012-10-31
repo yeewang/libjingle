@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "modules/video_processing/main/test/unit_test/unit_test.h"
 #include "system_wrappers/interface/tick_util.h"
@@ -43,7 +42,6 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
         "Could not open output file: " << output_file << "\n";
 
     printf("\nRun time [us / frame]:\n");
-    scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
     for (WebRtc_UWord32 runIdx = 0; runIdx < NumRuns; runIdx++)
     {
         TickTime t0;
@@ -52,17 +50,10 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
         WebRtc_UWord32 timeStamp = 1;
 
         frameNum = 0;
-        while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
-               _frame_length)
+        while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) == _frameLength)
         {
             frameNum++;
-            _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                   _size_uv, video_buffer.get() + _size_y,
-                                   _size_uv, video_buffer.get() + _size_y +
-                                   _size_uv,
-                                   _width, _height,
-                                   _width, _half_width, _half_width);
-            _videoFrame.set_timestamp(timeStamp);
+            _videoFrame.SetTimeStamp(timeStamp);
 
             t0 = TickTime::Now();
             VideoProcessingModule::FrameStats stats;
@@ -73,7 +64,8 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
 
             if (runIdx == 0)
             {
-              if (PrintI420VideoFrame(_videoFrame, deflickerFile) < 0) {
+              if (fwrite(_videoFrame.Buffer(), 1, _frameLength,
+                         deflickerFile) !=  _frameLength) {
                 return;
               }
             }

@@ -94,12 +94,12 @@ private:
 class UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback
 {
 public:
-    UnitTestDecodeCompleteCallback(webrtc::I420VideoFrame* buffer) :
+    UnitTestDecodeCompleteCallback(webrtc::VideoFrame* buffer) :
         _decodedVideoBuffer(buffer), _decodeComplete(false) {}
-    WebRtc_Word32 Decoded(webrtc::I420VideoFrame& image);
+    WebRtc_Word32 Decoded(webrtc::VideoFrame& image);
     bool DecodeComplete();
 private:
-    webrtc::I420VideoFrame* _decodedVideoBuffer;
+    webrtc::VideoFrame* _decodedVideoBuffer;
     bool _decodeComplete;
 };
 

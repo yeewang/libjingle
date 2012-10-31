@@ -32,6 +32,7 @@ VPMFramePreprocessor::~VPMFramePreprocessor()
     delete _spatialResampler;
     delete _ca;
     delete _vd;
+    _resampledFrame.Free(); // is this needed?
 }
 
 WebRtc_Word32
@@ -135,10 +136,10 @@ VPMFramePreprocessor::DecimatedHeight() const
 
 
 WebRtc_Word32
-VPMFramePreprocessor::PreprocessFrame(const I420VideoFrame& frame,
-                                      I420VideoFrame** processedFrame)
+VPMFramePreprocessor::PreprocessFrame(const VideoFrame& frame,
+                                      VideoFrame** processedFrame)
 {
-    if (frame.IsZeroSize())
+    if (frame.Buffer() == NULL || frame.Height() == 0 || frame.Width() == 0)
     {
         return VPM_PARAMETER_ERROR;
     }
@@ -156,9 +157,9 @@ VPMFramePreprocessor::PreprocessFrame(const I420VideoFrame& frame,
     // Note that we must make a copy of it.
     // We are not allowed to resample the input frame.
     *processedFrame = NULL;
-    if (_spatialResampler->ApplyResample(frame.width(), frame.height()))  {
+    if (_spatialResampler->ApplyResample(frame.Width(), frame.Height()))  {
       WebRtc_Word32 ret = _spatialResampler->ResampleFrame(frame,
-                                                           &_resampledFrame);
+                                                           _resampledFrame);
       if (ret != VPM_OK)
         return ret;
       *processedFrame = &_resampledFrame;

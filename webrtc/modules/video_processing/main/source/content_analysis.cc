@@ -56,23 +56,25 @@ VPMContentAnalysis::~VPMContentAnalysis()
 
 
 VideoContentMetrics*
-VPMContentAnalysis::ComputeContentMetrics(const I420VideoFrame& inputFrame)
+VPMContentAnalysis::ComputeContentMetrics(const VideoFrame& inputFrame)
 {
-    if (inputFrame.IsZeroSize())
+    if (inputFrame.Buffer() == NULL)
     {
         return NULL;
     }
 
     // Init if needed (native dimension change)
-    if (_width != inputFrame.width() || _height != inputFrame.height())
+    if (_width != static_cast<int>(inputFrame.Width()) ||
+        _height != static_cast<int>(inputFrame.Height()))
     {
-        if (VPM_OK != Initialize(inputFrame.width(), inputFrame.height()))
+        if (VPM_OK != Initialize(static_cast<int>(inputFrame.Width()),
+                                 static_cast<int>(inputFrame.Height())))
         {
             return NULL;
         }
     }
-    // Only interested in the Y plane.
-    _origFrame = inputFrame.buffer(kYPlane);
+
+    _origFrame = inputFrame.Buffer();
 
     // compute spatial metrics: 3 spatial prediction errors
     (this->*ComputeSpatialMetrics)();

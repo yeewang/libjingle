@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 
 #include "typedefs.h"
-#include "common_video/interface/i420_video_frame.h"
 #include "modules/interface/module_common_types.h"
 
 namespace webrtc {
@@ -97,7 +96,7 @@ class VCMFrameStorageCallback {
 // Callback class used for passing decoded frames which are ready to be rendered.
 class VCMReceiveCallback {
  public:
-  virtual WebRtc_Word32 FrameToRender(I420VideoFrame& videoFrame) = 0;
+  virtual WebRtc_Word32 FrameToRender(VideoFrame& videoFrame) = 0;
   virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(
       const WebRtc_UWord64 pictureId) {
     return -1;

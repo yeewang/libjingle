@@ -20,6 +20,8 @@
 
 namespace webrtc {
 
+enum { kPacketOverheadBytes = 28 };
+
 ViEReceiver::ViEReceiver(const int32_t channel_id,
                          VideoCodingModule* module_vcm,
                          RemoteBitrateEstimator* remote_bitrate_estimator)
@@ -125,7 +127,10 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
 
   // TODO(holmer): Make sure packets reconstructed using FEC are not passed to
   // the bandwidth estimator.
-  const int packet_size = payload_size + rtp_header->header.paddingLength;
+  // Add headers, ideally we would like to include for instance
+  // Ethernet header here as well.
+  const int packet_size = payload_size + kPacketOverheadBytes +
+      rtp_header->header.headerLength + rtp_header->header.paddingLength;
   uint32_t compensated_timestamp = rtp_header->header.timestamp +
       rtp_header->extension.transmissionTimeOffset;
   remote_bitrate_estimator_->IncomingPacket(rtp_header->header.ssrc,

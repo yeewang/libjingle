@@ -11,7 +11,7 @@
 #include "common_types.h"  // NOLINT
 #include "engine_configurations.h"  // NOLINT
 #include "gflags/gflags.h"
-#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "modules/video_capture/main/interface/video_capture_factory.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "video_engine/include/vie_base.h"
 #include "video_engine/include/vie_capture.h"
@@ -84,7 +84,7 @@ class CaptureEffectFilter : public webrtc::ViEEffectFilter {
 
   // Implements video_engineEffectFilter.
   virtual int Transform(int size, unsigned char* frame_buffer,
-                        unsigned int timeStamp90KHz, unsigned int width,
+                        unsigned int time_stamp90KHz, unsigned int width,
                         unsigned int height) {
     EXPECT_TRUE(frame_buffer != NULL);
     EXPECT_EQ(expected_width_, width);
