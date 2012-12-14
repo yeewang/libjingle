@@ -8,15 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_amr.h"
-
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
-#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "acm_amr.h"
+#include "acm_common_defs.h"
+#include "acm_neteq.h"
+#include "audio_coding_module_typedefs.h"
+#include "rw_lock_wrapper.h"
+#include "trace.h"
+#include "webrtc_neteq.h"
+#include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_AMR
 // NOTE! GSM AMR is not included in the open-source package. The following
@@ -26,23 +25,23 @@
 //
 // The API in the header file should match the one below.
 //
-// int16_t WebRtcAmr_CreateEnc(AMR_encinst_t_** enc_inst);
-// int16_t WebRtcAmr_CreateDec(AMR_decinst_t_** dec_inst);
-// int16_t WebRtcAmr_FreeEnc(AMR_encinst_t_* enc_inst);
-// int16_t WebRtcAmr_FreeDec(AMR_decinst_t_* dec_inst);
-// int16_t WebRtcAmr_Encode(AMR_encinst_t_* enc_inst,
+// int16_t WebRtcAmr_CreateEnc(AMR_encinst_t_** encInst);
+// int16_t WebRtcAmr_CreateDec(AMR_decinst_t_** decInst);
+// int16_t WebRtcAmr_FreeEnc(AMR_encinst_t_* encInst);
+// int16_t WebRtcAmr_FreeDec(AMR_decinst_t_* decInst);
+// int16_t WebRtcAmr_Encode(AMR_encinst_t_* encInst,
 //                          int16_t* input,
 //                          int16_t len,
 //                          int16_t*output,
 //                          int16_t mode);
-//  int16_t WebRtcAmr_EncoderInit(AMR_encinst_t_* enc_inst,
-//                               int16_t dtx_mode);
-// int16_t WebRtcAmr_EncodeBitmode(AMR_encinst_t_* enc_inst,
+//  int16_t WebRtcAmr_EncoderInit(AMR_encinst_t_* encInst,
+//                               int16_t dtxMode);
+// int16_t WebRtcAmr_EncodeBitmode(AMR_encinst_t_* encInst,
 //                                 int format);
-// int16_t WebRtcAmr_Decode(AMR_decinst_t_* dec_inst);
-// int16_t WebRtcAmr_DecodePlc(AMR_decinst_t_* dec_inst);
-// int16_t WebRtcAmr_DecoderInit(AMR_decinst_t_* dec_inst);
-// int16_t WebRtcAmr_DecodeBitmode(AMR_decinst_t_* dec_inst,
+// int16_t WebRtcAmr_Decode(AMR_decinst_t_* decInst);
+// int16_t WebRtcAmr_DecodePlc(AMR_decinst_t_* decInst);
+// int16_t WebRtcAmr_DecoderInit(AMR_decinst_t_* decInst);
+// int16_t WebRtcAmr_DecodeBitmode(AMR_decinst_t_* decInst,
 //                                 int format);
 #include "amr_interface.h"
 #endif
@@ -50,13 +49,13 @@
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_AMR
-ACMAMR::ACMAMR(WebRtc_Word16 /* codec_id */)
-    : encoder_inst_ptr_(NULL),
-      decoder_inst_ptr_(NULL),
-      encoding_mode_(-1),  // Invalid value.
-      encoding_rate_(0),  // Invalid value.
-      encoder_packing_format_(AMRBandwidthEfficient),
-      decoder_packing_format_(AMRBandwidthEfficient) {
+ACMAMR::ACMAMR(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _encodingMode(-1),  // Invalid value.
+      _encodingRate(0),  // Invalid value.
+      _encoderPackingFormat(AMRBandwidthEfficient),
+      _decoderPackingFormat(AMRBandwidthEfficient) {
   return;
 }
 
@@ -64,16 +63,16 @@ ACMAMR::~ACMAMR() {
   return;
 }
 
-WebRtc_Word16 ACMAMR::InternalEncode(WebRtc_UWord8* /* bitstream */,
-                                     WebRtc_Word16* /* bitstream_len_byte */) {
+WebRtc_Word16 ACMAMR::InternalEncode(WebRtc_UWord8* /* bitStream */,
+                                     WebRtc_Word16* /* bitStreamLenByte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMAMR::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                 WebRtc_Word16 /* bitstream_len_byte */,
+WebRtc_Word16 ACMAMR::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+                                 WebRtc_Word16 /* bitStreamLenByte */,
                                  WebRtc_Word16* /* audio */,
-                                 WebRtc_Word16* /* audio_samples */,
-                                 WebRtc_Word8* /* speech_type */) {
+                                 WebRtc_Word16* /* audioSamples */,
+                                 WebRtc_Word8* /* speechType */) {
   return -1;
 }
 
@@ -86,17 +85,17 @@ WebRtc_Word16 ACMAMR::DisableDTX() {
 }
 
 WebRtc_Word16 ACMAMR::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
 WebRtc_Word16 ACMAMR::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
-WebRtc_Word32 ACMAMR::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def */,
-                               const CodecInst& /* codec_inst */) {
+WebRtc_Word32 ACMAMR::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef */,
+                               const CodecInst& /* codecInst */) {
   return -1;
 }
 
@@ -124,12 +123,12 @@ WebRtc_Word16 ACMAMR::SetBitRateSafe(const WebRtc_Word32 /* rate */) {
   return -1;
 }
 
-void ACMAMR::InternalDestructEncoderInst(void* /* ptr_inst */) {
+void ACMAMR::InternalDestructEncoderInst(void* /* ptrInst */) {
   return;
 }
 
 WebRtc_Word16 ACMAMR::SetAMREncoderPackingFormat(
-    ACMAMRPackingFormat /* packing_format */) {
+    ACMAMRPackingFormat /* packingFormat */) {
   return -1;
 }
 
@@ -138,7 +137,7 @@ ACMAMRPackingFormat ACMAMR::AMREncoderPackingFormat() const {
 }
 
 WebRtc_Word16 ACMAMR::SetAMRDecoderPackingFormat(
-    ACMAMRPackingFormat /* packing_format */) {
+    ACMAMRPackingFormat /* packingFormat */) {
   return -1;
 }
 
@@ -157,78 +156,78 @@ ACMAMRPackingFormat ACMAMR::AMRDecoderPackingFormat() const {
 #define WEBRTC_AMR_MR102  6
 #define WEBRTC_AMR_MR122  7
 
-ACMAMR::ACMAMR(WebRtc_Word16 codec_id)
-    : encoder_inst_ptr_(NULL),
-      decoder_inst_ptr_(NULL),
-      encoding_mode_(-1),  // invalid value
-      encoding_rate_(0) {  // invalid value
-  codec_id_ = codec_id;
-  has_internal_dtx_ = true;
-  encoder_packing_format_ = AMRBandwidthEfficient;
-  decoder_packing_format_ = AMRBandwidthEfficient;
+ACMAMR::ACMAMR(WebRtc_Word16 codecID)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _encodingMode(-1), // invalid value
+      _encodingRate(0) { // invalid value
+  _codecID = codecID;
+  _hasInternalDTX = true;
+  _encoderPackingFormat = AMRBandwidthEfficient;
+  _decoderPackingFormat = AMRBandwidthEfficient;
   return;
 }
 
 ACMAMR::~ACMAMR() {
-  if (encoder_inst_ptr_ != NULL) {
-    WebRtcAmr_FreeEnc(encoder_inst_ptr_);
-    encoder_inst_ptr_ = NULL;
+  if (_encoderInstPtr != NULL) {
+    WebRtcAmr_FreeEnc(_encoderInstPtr);
+    _encoderInstPtr = NULL;
   }
-  if (decoder_inst_ptr_ != NULL) {
-    WebRtcAmr_FreeDec(decoder_inst_ptr_);
-    decoder_inst_ptr_ = NULL;
+  if (_decoderInstPtr != NULL) {
+    WebRtcAmr_FreeDec(_decoderInstPtr);
+    _decoderInstPtr = NULL;
   }
   return;
 }
 
-WebRtc_Word16 ACMAMR::InternalEncode(WebRtc_UWord8* bitstream,
-                                     WebRtc_Word16* bitstream_len_byte) {
-  WebRtc_Word16 vad_decision = 1;
+WebRtc_Word16 ACMAMR::InternalEncode(WebRtc_UWord8* bitStream,
+                                     WebRtc_Word16* bitStreamLenByte) {
+  WebRtc_Word16 vadDecision = 1;
   // sanity check, if the rate is set correctly. we might skip this
   // sanity check. if rate is not set correctly, initialization flag
   // should be false and should not be here.
-  if ((encoding_mode_ < WEBRTC_AMR_MR475) ||
-      (encoding_mode_ > WEBRTC_AMR_MR122)) {
-    *bitstream_len_byte = 0;
+  if ((_encodingMode < WEBRTC_AMR_MR475) ||
+      (_encodingMode > WEBRTC_AMR_MR122)) {
+    *bitStreamLenByte = 0;
     return -1;
   }
-  *bitstream_len_byte = WebRtcAmr_Encode(encoder_inst_ptr_,
-                                         &in_audio_[in_audio_ix_read_],
-                                         frame_len_smpl_,
-                                         (WebRtc_Word16*)bitstream,
-                                         encoding_mode_);
+  *bitStreamLenByte = WebRtcAmr_Encode(_encoderInstPtr,
+                                       &_inAudio[_inAudioIxRead],
+                                       _frameLenSmpl,
+                                       (WebRtc_Word16*) bitStream,
+                                       _encodingMode);
 
   // Update VAD, if internal DTX is used
-  if (has_internal_dtx_ && dtx_enabled_) {
-    if (*bitstream_len_byte <= (7 * frame_len_smpl_ / 160)) {
-      vad_decision = 0;
+  if (_hasInternalDTX && _dtxEnabled) {
+    if (*bitStreamLenByte <= (7 * _frameLenSmpl / 160)) {
+      vadDecision = 0;
     }
     for (WebRtc_Word16 n = 0; n < MAX_FRAME_SIZE_10MSEC; n++) {
-      vad_label_[n] = vad_decision;
+      _vadLabel[n] = vadDecision;
     }
   }
   // increment the read index
-  in_audio_ix_read_ += frame_len_smpl_;
-  return *bitstream_len_byte;
+  _inAudioIxRead += _frameLenSmpl;
+  return *bitStreamLenByte;
 }
 
-WebRtc_Word16 ACMAMR::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                 WebRtc_Word16 /* bitstream_len_byte */,
+WebRtc_Word16 ACMAMR::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+                                 WebRtc_Word16 /* bitStreamLenByte */,
                                  WebRtc_Word16* /* audio */,
-                                 WebRtc_Word16* /* audio_samples */,
-                                 WebRtc_Word8* /* speech_type */) {
+                                 WebRtc_Word16* /* audioSamples */,
+                                 WebRtc_Word8* /* speechType */) {
   return 0;
 }
 
 WebRtc_Word16 ACMAMR::EnableDTX() {
-  if (dtx_enabled_) {
+  if (_dtxEnabled) {
     return 0;
-  } else if (encoder_exist_) {  // check if encoder exist
+  } else if (_encoderExist) { // check if encoder exist
     // enable DTX
-    if (WebRtcAmr_EncoderInit(encoder_inst_ptr_, 1) < 0) {
+    if (WebRtcAmr_EncoderInit(_encoderInstPtr, 1) < 0) {
       return -1;
     }
-    dtx_enabled_ = true;
+    _dtxEnabled = true;
     return 0;
   } else {
     return -1;
@@ -236,14 +235,14 @@ WebRtc_Word16 ACMAMR::EnableDTX() {
 }
 
 WebRtc_Word16 ACMAMR::DisableDTX() {
-  if (!dtx_enabled_) {
+  if (!_dtxEnabled) {
     return 0;
-  } else if (encoder_exist_) {  // check if encoder exist
+  } else if (_encoderExist) { // check if encoder exist
     // disable DTX
-    if (WebRtcAmr_EncoderInit(encoder_inst_ptr_, 0) < 0) {
+    if (WebRtcAmr_EncoderInit(_encoderInstPtr, 0) < 0) {
       return -1;
     }
-    dtx_enabled_ = false;
+    _dtxEnabled = false;
     return 0;
   } else {
     // encoder doesn't exists, therefore disabling is harmless
@@ -251,26 +250,26 @@ WebRtc_Word16 ACMAMR::DisableDTX() {
   }
 }
 
-WebRtc_Word16 ACMAMR::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
-  WebRtc_Word16 status = SetBitRateSafe((codec_params->codec_inst).rate);
+WebRtc_Word16 ACMAMR::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
+  WebRtc_Word16 status = SetBitRateSafe((codecParams->codecInstant).rate);
   status += (WebRtcAmr_EncoderInit(
-      encoder_inst_ptr_, ((codec_params->enable_dtx) ? 1 : 0)) < 0) ? -1 : 0;
+      _encoderInstPtr, ((codecParams->enableDTX) ? 1 : 0)) < 0) ? -1 : 0;
   status += (WebRtcAmr_EncodeBitmode(
-      encoder_inst_ptr_, encoder_packing_format_) < 0) ? -1 : 0;
+      _encoderInstPtr, _encoderPackingFormat) < 0) ? -1 : 0;
   return (status < 0) ? -1 : 0;
 }
 
 WebRtc_Word16 ACMAMR::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   WebRtc_Word16 status =
-      ((WebRtcAmr_DecoderInit(decoder_inst_ptr_) < 0) ? -1 : 0);
-  status += WebRtcAmr_DecodeBitmode(decoder_inst_ptr_, decoder_packing_format_);
+      ((WebRtcAmr_DecoderInit(_decoderInstPtr) < 0) ? -1 : 0);
+  status += WebRtcAmr_DecodeBitmode(_decoderInstPtr, _decoderPackingFormat);
   return (status < 0) ? -1 : 0;
 }
 
-WebRtc_Word32 ACMAMR::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                               const CodecInst& codec_inst) {
-  if (!decoder_initialized_) {
+WebRtc_Word32 ACMAMR::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                               const CodecInst& codecInst) {
+  if (!_decoderInitialized) {
     // Todo:
     // log error
     return -1;
@@ -279,9 +278,9 @@ WebRtc_Word32 ACMAMR::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
   // "SET_CODEC_PAR" & "SET_AMR_FUNCTION."
   // Then call NetEQ to add the codec to it's
   // database.
-  SET_CODEC_PAR((codec_def), kDecoderAMR, codec_inst.pltype, decoder_inst_ptr_,
+  SET_CODEC_PAR((codecDef), kDecoderAMR, codecInst.pltype, _decoderInstPtr,
                 8000);
-  SET_AMR_FUNCTIONS((codec_def));
+  SET_AMR_FUNCTIONS((codecDef));
   return 0;
 }
 
@@ -290,75 +289,75 @@ ACMGenericCodec* ACMAMR::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMAMR::InternalCreateEncoder() {
-  return WebRtcAmr_CreateEnc(&encoder_inst_ptr_);
+  return WebRtcAmr_CreateEnc(&_encoderInstPtr);
 }
 
 void ACMAMR::DestructEncoderSafe() {
-  if (encoder_inst_ptr_ != NULL) {
-    WebRtcAmr_FreeEnc(encoder_inst_ptr_);
-    encoder_inst_ptr_ = NULL;
+  if (_encoderInstPtr != NULL) {
+    WebRtcAmr_FreeEnc(_encoderInstPtr);
+    _encoderInstPtr = NULL;
   }
   // there is no encoder set the following
-  encoder_exist_ = false;
-  encoder_initialized_ = false;
-  encoding_mode_ = -1;  // invalid value
-  encoding_rate_ = 0;  // invalid value
+  _encoderExist = false;
+  _encoderInitialized = false;
+  _encodingMode = -1; // invalid value
+  _encodingRate = 0; // invalid value
 }
 
 WebRtc_Word16 ACMAMR::InternalCreateDecoder() {
-  return WebRtcAmr_CreateDec(&decoder_inst_ptr_);
+  return WebRtcAmr_CreateDec(&_decoderInstPtr);
 }
 
 void ACMAMR::DestructDecoderSafe() {
-  if (decoder_inst_ptr_ != NULL) {
-    WebRtcAmr_FreeDec(decoder_inst_ptr_);
-    decoder_inst_ptr_ = NULL;
+  if (_decoderInstPtr != NULL) {
+    WebRtcAmr_FreeDec(_decoderInstPtr);
+    _decoderInstPtr = NULL;
   }
   // there is no encoder instance set the followings
-  decoder_exist_ = false;
-  decoder_initialized_ = false;
+  _decoderExist = false;
+  _decoderInitialized = false;
 }
 
 WebRtc_Word16 ACMAMR::SetBitRateSafe(const WebRtc_Word32 rate) {
   switch (rate) {
     case 4750: {
-      encoding_mode_ = WEBRTC_AMR_MR475;
-      encoding_rate_ = 4750;
+      _encodingMode = WEBRTC_AMR_MR475;
+      _encodingRate = 4750;
       break;
     }
     case 5150: {
-      encoding_mode_ = WEBRTC_AMR_MR515;
-      encoding_rate_ = 5150;
+      _encodingMode = WEBRTC_AMR_MR515;
+      _encodingRate = 5150;
       break;
     }
     case 5900: {
-      encoding_mode_ = WEBRTC_AMR_MR59;
-      encoding_rate_ = 5900;
+      _encodingMode = WEBRTC_AMR_MR59;
+      _encodingRate = 5900;
       break;
     }
     case 6700: {
-      encoding_mode_ = WEBRTC_AMR_MR67;
-      encoding_rate_ = 6700;
+      _encodingMode = WEBRTC_AMR_MR67;
+      _encodingRate = 6700;
       break;
     }
     case 7400: {
-      encoding_mode_ = WEBRTC_AMR_MR74;
-      encoding_rate_ = 7400;
+      _encodingMode = WEBRTC_AMR_MR74;
+      _encodingRate = 7400;
       break;
     }
     case 7950: {
-      encoding_mode_ = WEBRTC_AMR_MR795;
-      encoding_rate_ = 7950;
+      _encodingMode = WEBRTC_AMR_MR795;
+      _encodingRate = 7950;
       break;
     }
     case 10200: {
-      encoding_mode_ = WEBRTC_AMR_MR102;
-      encoding_rate_ = 10200;
+      _encodingMode = WEBRTC_AMR_MR102;
+      _encodingRate = 10200;
       break;
     }
     case 12200: {
-      encoding_mode_ = WEBRTC_AMR_MR122;
-      encoding_rate_ = 12200;
+      _encodingMode = WEBRTC_AMR_MR122;
+      _encodingRate = 12200;
       break;
     }
     default: {
@@ -368,57 +367,58 @@ WebRtc_Word16 ACMAMR::SetBitRateSafe(const WebRtc_Word32 rate) {
   return 0;
 }
 
-void ACMAMR::InternalDestructEncoderInst(void* ptr_inst) {
-  // Free the memory where ptr_inst is pointing to
-  if (ptr_inst != NULL) {
-    WebRtcAmr_FreeEnc(reinterpret_cast<AMR_encinst_t_*>(ptr_inst));
+void ACMAMR::InternalDestructEncoderInst(void* ptrInst) {
+  // Free the memory where ptrInst is pointing to
+  if (ptrInst != NULL) {
+    WebRtcAmr_FreeEnc(reinterpret_cast<AMR_encinst_t_*>(ptrInst));
   }
   return;
 }
 
 WebRtc_Word16 ACMAMR::SetAMREncoderPackingFormat(
-    ACMAMRPackingFormat packing_format) {
-  if ((packing_format != AMRBandwidthEfficient) &&
-      (packing_format != AMROctetAlligned) &&
-      (packing_format != AMRFileStorage)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+    ACMAMRPackingFormat packingFormat) {
+  if ((packingFormat != AMRBandwidthEfficient) &&
+      (packingFormat != AMROctetAlligned) &&
+      (packingFormat != AMRFileStorage)) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "Invalid AMR Encoder packing-format.");
     return -1;
   } else {
-    if (WebRtcAmr_EncodeBitmode(encoder_inst_ptr_, packing_format) < 0) {
+    if (WebRtcAmr_EncodeBitmode(_encoderInstPtr, packingFormat) < 0) {
       return -1;
     } else {
-      encoder_packing_format_ = packing_format;
+      _encoderPackingFormat = packingFormat;
       return 0;
     }
   }
 }
 
 ACMAMRPackingFormat ACMAMR::AMREncoderPackingFormat() const {
-  return encoder_packing_format_;
+  return _encoderPackingFormat;
 }
 
 WebRtc_Word16 ACMAMR::SetAMRDecoderPackingFormat(
-    ACMAMRPackingFormat packing_format) {
-  if ((packing_format != AMRBandwidthEfficient) &&
-      (packing_format != AMROctetAlligned) &&
-      (packing_format != AMRFileStorage)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+    ACMAMRPackingFormat packingFormat) {
+  if ((packingFormat != AMRBandwidthEfficient) &&
+      (packingFormat != AMROctetAlligned) &&
+      (packingFormat != AMRFileStorage)) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "Invalid AMR decoder packing-format.");
     return -1;
   } else {
-    if (WebRtcAmr_DecodeBitmode(decoder_inst_ptr_, packing_format) < 0) {
+    if (WebRtcAmr_DecodeBitmode(_decoderInstPtr, packingFormat) < 0) {
       return -1;
     } else {
-      decoder_packing_format_ = packing_format;
+      _decoderPackingFormat = packingFormat;
       return 0;
     }
   }
 }
 
 ACMAMRPackingFormat ACMAMR::AMRDecoderPackingFormat() const {
-  return decoder_packing_format_;
+  return _decoderPackingFormat;
 }
 
 #endif
+
 }

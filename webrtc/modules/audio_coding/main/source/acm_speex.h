@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_SPEEX_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_SPEEX_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "acm_generic_codec.h"
 
 // forward declaration
 struct SPEEX_encinst_t_;
@@ -21,28 +21,27 @@ namespace webrtc {
 
 class ACMSPEEX : public ACMGenericCodec {
  public:
-  explicit ACMSPEEX(WebRtc_Word16 codec_id);
+  ACMSPEEX(WebRtc_Word16 codecID);
   ~ACMSPEEX();
-
   // for FEC
   ACMGenericCodec* CreateInstance(void);
 
   WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
-                               WebRtc_Word16* bitstream_len_byte);
+                               WebRtc_Word16* bitStreamLenByte);
 
-  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
  protected:
-  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitstream,
-                           WebRtc_Word16 bitstream_len_byte,
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
                            WebRtc_Word16* audio,
-                           WebRtc_Word16* audio_samples,
-                           WebRtc_Word8* speech_type);
+                           WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                         const CodecInst& codec_inst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
   void DestructEncoderSafe();
 
@@ -52,7 +51,7 @@ class ACMSPEEX : public ACMGenericCodec {
 
   WebRtc_Word16 InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
   WebRtc_Word16 SetBitRateSafe(const WebRtc_Word32 rate);
 
@@ -68,13 +67,13 @@ class ACMSPEEX : public ACMGenericCodec {
   WebRtc_Word16 SetComplMode(WebRtc_Word16 mode);
 #endif
 
-  SPEEX_encinst_t_* encoder_inst_ptr_;
-  SPEEX_decinst_t_* decoder_inst_ptr_;
-  WebRtc_Word16 compl_mode_;
-  bool vbr_enabled_;
-  WebRtc_Word32 encoding_rate_;
-  WebRtc_Word16 sampling_frequency_;
-  WebRtc_UWord16 samples_in_20ms_audio_;
+  SPEEX_encinst_t_* _encoderInstPtr;
+  SPEEX_decinst_t_* _decoderInstPtr;
+  WebRtc_Word16 _complMode;
+  bool _vbrEnabled;
+  WebRtc_Word32 _encodingRate;
+  WebRtc_Word16 _samplingFrequency;
+  WebRtc_UWord16 _samplesIn20MsAudio;
 };
 
 }  // namespace webrtc

@@ -8,9 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_dtmf_detection.h"
-
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "acm_dtmf_detection.h"
+#include "audio_coding_module_typedefs.h"
 
 namespace webrtc {
 
@@ -27,12 +26,12 @@ WebRtc_Word16 ACMDTMFDetection::Disable() {
 }
 
 WebRtc_Word16 ACMDTMFDetection::Detect(
-    const WebRtc_Word16* /* in_audio_buff */,
-    const WebRtc_UWord16 /* in_buff_len_word16 */,
-    const WebRtc_Word32 /* in_freq_hz */,
-    bool& /* tone_detected */,
+    const WebRtc_Word16* /* inAudioBuff */,
+    const WebRtc_UWord16 /* inBuffLenWord16 */,
+    const WebRtc_Word32 /* inFreqHz */,
+    bool& /* toneDetected */,
     WebRtc_Word16& /* tone  */) {
   return -1;
 }
 
-}  // namespace webrtc
+} // namespace webrtc

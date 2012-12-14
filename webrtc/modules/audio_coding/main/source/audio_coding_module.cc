@@ -8,13 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/source/acm_dtmf_detection.h"
-#include "webrtc/modules/audio_coding/main/source/audio_coding_module_impl.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "acm_dtmf_detection.h"
+#include "audio_coding_module.h"
+#include "audio_coding_module_impl.h"
+#include "trace.h"
 
 namespace webrtc {
 
@@ -34,10 +31,10 @@ WebRtc_UWord8 AudioCodingModule::NumberOfCodecs() {
 }
 
 // Get supported codec param with id
-WebRtc_Word32 AudioCodingModule::Codec(const WebRtc_UWord8 list_id,
+WebRtc_Word32 AudioCodingModule::Codec(const WebRtc_UWord8 listId,
                                        CodecInst& codec) {
   // Get the codec settings for the codec with the given list ID
-  return ACMCodecDB::Codec(list_id, &codec);
+  return ACMCodecDB::Codec(listId, &codec);
 }
 
 // Get supported codec Param with name, frequency and number of channels.
@@ -77,13 +74,13 @@ WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
 
 // Checks the validity of the parameters of the given codec
 bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
-  int mirror_id;
-  char err_msg[500];
+  int mirrorID;
+  char errMsg[500];
 
-  int codec_number = ACMCodecDB::CodecNumber(&codec, &mirror_id, err_msg, 500);
+  int codecNumber = ACMCodecDB::CodecNumber(&codec, &mirrorID, errMsg, 500);
 
-  if (codec_number < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1, err_msg);
+  if (codecNumber < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1, errMsg);
     return false;
   } else {
     return true;

@@ -89,7 +89,6 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest \
-    libwebrtc_test_support \
     libprotobuf-cpp-2.3.0-lite
 
 LOCAL_SHARED_LIBRARIES := \
@@ -114,7 +113,8 @@ LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
     $(call all-proto-files-under, test) \
-    test/unit_test.cc
+    test/unit_test.cc \
+    ../../test/testsupport/fileutils.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -136,7 +136,6 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest \
-    libwebrtc_test_support \
     libprotobuf-cpp-2.3.0-lite
 
 LOCAL_SHARED_LIBRARIES := \

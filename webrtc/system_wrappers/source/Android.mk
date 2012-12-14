@@ -29,7 +29,6 @@ LOCAL_SRC_FILES := \
     cpu_info.cc \
     critical_section.cc \
     event.cc \
-    event_tracer.cc \
     file_impl.cc \
     list_no_stl.cc \
     rw_lock.cc \

@@ -20,7 +20,6 @@
 #include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 class FrameDropDetector;
-struct NetworkParameters;
 class TbInterfaces;
 
 // Initializes the Video engine and its components, runs video playback using
@@ -34,7 +33,8 @@ void TestFullStack(const TbInterfaces& interfaces,
                    int width,
                    int height,
                    int bit_rate_kbps,
-                   const NetworkParameters& network,
+                   int packet_loss_percent,
+                   int network_delay_ms,
                    FrameDropDetector* frame_drop_detector,
                    ViEToFileRenderer* remote_file_renderer,
                    ViEToFileRenderer* local_file_renderer);
@@ -148,8 +148,7 @@ class FrameDropDetector {
         timestamp_diff_(0) {}
 
   // Reports a frame has reached a state in the frame life cycle.
-  void ReportFrameState(State state, unsigned int timestamp,
-                        int64_t report_time_us);
+  void ReportFrameState(State state, unsigned int timestamp);
 
   // Uses all the gathered timestamp information to calculate which frames have
   // been dropped during the test and where they were dropped. Not until

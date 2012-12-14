@@ -90,8 +90,7 @@ LOCAL_SRC_FILES := \
     filterbanks_neon.S \
     filters_neon.S \
     lattice_neon.S \
-    lpc_masking_model_neon.S \
-    transform_neon.S
+    lpc_masking_model_neon.S
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -120,7 +119,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_SRC_FILES:= ../test/kenny.cc
+LOCAL_SRC_FILES:= ../test/kenny.c
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := $(MY_WEBRTC_COMMON_DEFS)
@@ -132,8 +131,7 @@ LOCAL_C_INCLUDES := \
 LOCAL_STATIC_LIBRARIES := \
     libwebrtc_isacfix \
     libwebrtc_spl \
-    libwebrtc_system_wrappers \
-    libwebrtc_test_support
+    libwebrtc_system_wrappers
 
 ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
 LOCAL_STATIC_LIBRARIES += \

@@ -13,16 +13,14 @@
 class NetEQTest : public AfterStreamingFixture {
  protected:
   void SetUp() {
-    additional_channel_[0] = voe_base_->CreateChannel();
-    additional_channel_[1] = voe_base_->CreateChannel();
+    additional_channel_ = voe_base_->CreateChannel();
   }
 
   void TearDown() {
-    voe_base_->DeleteChannel(additional_channel_[0]);
-    voe_base_->DeleteChannel(additional_channel_[1]);
+    voe_base_->DeleteChannel(additional_channel_);
   }
 
-  int additional_channel_[2];
+  int additional_channel_;
 };
 
 TEST_F(NetEQTest, GetNetEQPlayoutModeReturnsDefaultModeByDefault) {
@@ -33,37 +31,22 @@ TEST_F(NetEQTest, GetNetEQPlayoutModeReturnsDefaultModeByDefault) {
 
 TEST_F(NetEQTest, SetNetEQPlayoutModeActuallySetsTheModeForTheChannel) {
   webrtc::NetEqModes mode;
-  // Set for the first channel but leave the others.
+  // Set for the first channel but leave the second.
   EXPECT_EQ(0, voe_base_->SetNetEQPlayoutMode(channel_, webrtc::kNetEqFax));
   EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(channel_, mode));
   EXPECT_EQ(webrtc::kNetEqFax, mode);
 
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[0], mode));
-  EXPECT_EQ(webrtc::kNetEqDefault, mode);
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[1], mode));
+  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_, mode));
   EXPECT_EQ(webrtc::kNetEqDefault, mode);
 
-  // Set the second channel, leave the others.
+  // Set the second channel, leave the first.
   EXPECT_EQ(0, voe_base_->SetNetEQPlayoutMode(
-      additional_channel_[0], webrtc::kNetEqStreaming));
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[0], mode));
+      additional_channel_, webrtc::kNetEqStreaming));
+  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_, mode));
   EXPECT_EQ(webrtc::kNetEqStreaming, mode);
 
   EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(channel_, mode));
   EXPECT_EQ(webrtc::kNetEqFax, mode);
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[1], mode));
-  EXPECT_EQ(webrtc::kNetEqDefault, mode);
-
-  // Set the third channel, leave the others.
-  EXPECT_EQ(0, voe_base_->SetNetEQPlayoutMode(
-      additional_channel_[1], webrtc::kNetEqOff));
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[1], mode));
-  EXPECT_EQ(webrtc::kNetEqOff, mode);
-
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(channel_, mode));
-  EXPECT_EQ(webrtc::kNetEqFax, mode);
-  EXPECT_EQ(0, voe_base_->GetNetEQPlayoutMode(additional_channel_[0], mode));
-  EXPECT_EQ(webrtc::kNetEqStreaming, mode);
 }
 
 TEST_F(NetEQTest, GetNetEQBgnModeReturnsBgnOnByDefault) {
@@ -95,9 +78,5 @@ TEST_F(NetEQTest, ManualSetEQPlayoutModeStillProducesOkAudio) {
 
   EXPECT_EQ(0, voe_base_->SetNetEQPlayoutMode(channel_, webrtc::kNetEqFax));
   TEST_LOG("NetEQ fax playout mode enabled => should hear OK audio.\n");
-  Sleep(2000);
-
-  EXPECT_EQ(0, voe_base_->SetNetEQPlayoutMode(channel_, webrtc::kNetEqOff));
-  TEST_LOG("NetEQ off playout mode enabled => should hear OK audio.\n");
   Sleep(2000);
 }

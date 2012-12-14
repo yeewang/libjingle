@@ -59,7 +59,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                  configuration.audio_messages,
                  configuration.paced_sender),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
-                   this, configuration.audio_messages),
+                   this),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
                   this),
       _rtcpReceiver(configuration.id, configuration.clock, this),
@@ -103,6 +103,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   _rtcpReceiver.RegisterRtcpObservers(configuration.intra_frame_callback,
                                       configuration.bandwidth_callback,
                                       configuration.rtcp_feedback);
+  _rtpReceiver.RegisterIncomingAudioCallback(configuration.audio_messages);
+
   _rtcpSender.RegisterSendTransport(configuration.outgoing_transport);
 
   // make sure that RTCP objects are aware of our SSRC
@@ -1547,15 +1549,15 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetTelephoneEventStatus(
                " detectEndOfTone:%d)", enable, forwardToDecoder,
                detectEndOfTone);
 
-  return _rtpReceiver.GetAudioReceiver()->SetTelephoneEventStatus(
-      enable, forwardToDecoder, detectEndOfTone);
+  return _rtpReceiver.SetTelephoneEventStatus(enable, forwardToDecoder,
+                                              detectEndOfTone);
 }
 
 // Is outband TelephoneEvent turned on/off?
 bool ModuleRtpRtcpImpl::TelephoneEvent() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "TelephoneEvent()");
 
-  return _rtpReceiver.GetAudioReceiver()->TelephoneEvent();
+  return _rtpReceiver.TelephoneEvent();
 }
 
 // Is forwarding of outband telephone events turned on/off?
@@ -1563,7 +1565,7 @@ bool ModuleRtpRtcpImpl::TelephoneEventForwardToDecoder() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
                "TelephoneEventForwardToDecoder()");
 
-  return _rtpReceiver.GetAudioReceiver()->TelephoneEventForwardToDecoder();
+  return _rtpReceiver.TelephoneEventForwardToDecoder();
 }
 
 // Send a TelephoneEvent tone using RFC 2833 (4733)

@@ -24,7 +24,6 @@ public:
     CodecTest(std::string name, std::string description,
               WebRtc_UWord32 bitRate);
     virtual ~CodecTest() {};
-    virtual void Setup();
     virtual void Perform()=0;
     virtual void Print();
     void SetEncoder(webrtc::VideoEncoder *encoder);
@@ -32,6 +31,7 @@ public:
     void SetLog(std::fstream* log);
 
 protected:
+    virtual void Setup();
     virtual void CodecSettings(int width,
                                int height,
                                WebRtc_UWord32 frameRate=30,

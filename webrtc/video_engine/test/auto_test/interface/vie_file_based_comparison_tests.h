@@ -14,7 +14,6 @@
 #include <string>
 
 class FrameDropDetector;
-struct NetworkParameters;
 class ViEToFileRenderer;
 
 // This class contains comparison tests, which will exercise video engine
@@ -49,7 +48,8 @@ class ViEFileBasedComparisonTests {
       int width,
       int height,
       int bit_rate_kbps,
-      const NetworkParameters& network,
+      int packet_loss_percent,
+      int network_delay_ms,
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer,
       FrameDropDetector* frame_drop_detector);

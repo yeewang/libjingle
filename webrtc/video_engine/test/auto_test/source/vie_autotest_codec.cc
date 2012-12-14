@@ -180,7 +180,7 @@ void ViEAutoTest::ViECodecStandardTest() {
     TestCodecObserver codec_observer;
     EXPECT_EQ(0, codec->RegisterDecoderObserver(video_channel, codec_observer));
     ViETest::Log("Loop through all codecs for %d seconds",
-                 kAutoTestSleepTimeMs / 1000);
+                 KAutoTestSleepTimeMs / 1000);
 
     for (int i = 0; i < codec->NumberOfCodecs() - 2; i++) {
       EXPECT_EQ(0, codec->GetCodec(i, video_codec));
@@ -196,7 +196,7 @@ void ViEAutoTest::ViECodecStandardTest() {
       RenderFilter frame_counter;
       EXPECT_EQ(0, image_process->RegisterRenderEffectFilter(video_channel,
                                                              frame_counter));
-      AutoTestSleep(kAutoTestSleepTimeMs);
+      AutoTestSleep(KAutoTestSleepTimeMs);
 
       // Verify we've received and decoded correct payload.
       EXPECT_EQ(video_codec.codecType,
@@ -229,12 +229,7 @@ void ViEAutoTest::ViECodecStandardTest() {
       break;
     }
   }
-  AutoTestSleep(kAutoTestSleepTimeMs);
-
-  // Verify the delay estimate is larger than 0.
-  int delay_ms = 0;
-  EXPECT_EQ(0, codec->GetReceiveSideDelay(video_channel, &delay_ms));
-  EXPECT_GT(delay_ms, 0);
+  AutoTestSleep(KAutoTestSleepTimeMs);
 
   EXPECT_EQ(0, base->StopSend(video_channel));
   EXPECT_EQ(0, codec->DeregisterEncoderObserver(video_channel));
@@ -408,7 +403,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
     EXPECT_EQ(0, video_engine.base->StartReceive(video_channel_2));
     EXPECT_EQ(0, video_engine.base->StartSend(video_channel_2));
 
-    AutoTestSleep(kAutoTestSleepTimeMs);
+    AutoTestSleep(KAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, video_engine.base->StopReceive(video_channel_1));
     EXPECT_EQ(0, video_engine.base->StopSend(video_channel_1));
@@ -523,7 +518,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
     channel.StartSend();
 
     ViETest::Log("Using internal I420 codec");
-    AutoTestSleep(kAutoTestSleepTimeMs / 2);
+    AutoTestSleep(KAutoTestSleepTimeMs / 2);
 
     webrtc::ViEExternalCodec* vie_external_codec =
         webrtc::ViEExternalCodec::GetInterface(ViE.video_engine);
@@ -571,7 +566,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
                                              __FUNCTION__, __LINE__);
 
       ViETest::Log("Using external I420 codec");
-      AutoTestSleep(kAutoTestSleepTimeMs);
+      AutoTestSleep(KAutoTestSleepTimeMs);
 
       // Test to deregister on wrong channel
       error = vie_external_codec->DeRegisterExternalSendCodec(
@@ -663,7 +658,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-      AutoTestSleep(kAutoTestSleepTimeMs / 2);
+      AutoTestSleep(KAutoTestSleepTimeMs / 2);
 
       /// **************************************************************
       //  Testing finished. Tear down Video Engine
@@ -719,7 +714,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
     }  // tbI420Encoder and ext_decoder goes out of scope.
 
     ViETest::Log("Using internal I420 codec");
-    AutoTestSleep(kAutoTestSleepTimeMs / 2);
+    AutoTestSleep(KAutoTestSleepTimeMs / 2);
   }
   if (number_of_errors > 0) {
     // Test failed

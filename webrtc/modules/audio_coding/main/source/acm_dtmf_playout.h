@@ -11,33 +11,32 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "acm_generic_codec.h"
 
 namespace webrtc {
 
 class ACMDTMFPlayout: public ACMGenericCodec {
  public:
-  explicit ACMDTMFPlayout(WebRtc_Word16 codec_id);
+  ACMDTMFPlayout(WebRtc_Word16 codecID);
   ~ACMDTMFPlayout();
-
   // for FEC
   ACMGenericCodec* CreateInstance(void);
 
   WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
-                               WebRtc_Word16* bitstream_len_byte);
+                               WebRtc_Word16* bitStreamLenByte);
 
-  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
  protected:
-  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitstream,
-                           WebRtc_Word16 bitstream_len_byte,
-                           WebRtc_Word16* audio, WebRtc_Word16* audio_samples,
-                           WebRtc_Word8* speech_type);
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
+                           WebRtc_Word16* audio, WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                         const CodecInst& codec_inst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
   void DestructEncoderSafe();
 
@@ -47,9 +46,9 @@ class ACMDTMFPlayout: public ACMGenericCodec {
 
   WebRtc_Word16 InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
+  void InternalDestructEncoderInst(void* ptrInst);
 };
 
-}  // namespace webrtc
+} // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_

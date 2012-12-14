@@ -20,15 +20,13 @@
 #include "scoped_ptr.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
-class ModuleRtpRtcpImpl;
 class ReceiverFEC;
-class RTPReceiver;
+class ModuleRtpRtcpImpl;
+class CriticalSectionWrapper;
 
 class RTPReceiverVideo {
  public:
   RTPReceiverVideo(const WebRtc_Word32 id,
-                   RTPReceiver* parent,
                    ModuleRtpRtcpImpl* owner);
 
   virtual ~RTPReceiverVideo();
@@ -56,6 +54,25 @@ class RTPReceiverVideo {
   void SetPacketOverHead(WebRtc_UWord16 packetOverHead);
 
  protected:
+  virtual WebRtc_Word32 CallbackOfReceivedPayloadData(
+      const WebRtc_UWord8* payloadData,
+      const WebRtc_UWord16 payloadSize,
+      const WebRtcRTPHeader* rtpHeader) = 0;
+
+  virtual WebRtc_UWord32 TimeStamp() const = 0;
+  virtual WebRtc_UWord16 SequenceNumber() const = 0;
+
+  virtual WebRtc_UWord32 PayloadTypeToPayload(
+      const WebRtc_UWord8 payloadType,
+      ModuleRTPUtility::Payload*& payload) const = 0;
+
+  virtual bool RetransmitOfOldPacket(
+      const WebRtc_UWord16 sequenceNumber,
+      const WebRtc_UWord32 rtpTimeStamp) const  = 0;
+
+  virtual WebRtc_Word8 REDPayloadType() const = 0;
+  virtual bool HaveNotReceivedPackets() const = 0;
+
   WebRtc_Word32 SetCodecType(const RtpVideoCodecTypes videoType,
                              WebRtcRTPHeader* rtpHeader) const;
 
@@ -78,7 +95,6 @@ class RTPReceiverVideo {
 
  private:
   WebRtc_Word32             _id;
-  RTPReceiver*              _parent;
 
   CriticalSectionWrapper*   _criticalSectionReceiverVideo;
 

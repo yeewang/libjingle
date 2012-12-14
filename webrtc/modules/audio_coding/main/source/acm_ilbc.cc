@@ -7,25 +7,25 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/audio_coding/main/source/acm_ilbc.h"
 
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "acm_common_defs.h"
+#include "acm_ilbc.h"
+#include "acm_neteq.h"
+#include "trace.h"
+#include "webrtc_neteq.h"
+#include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_ILBC
-#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#include "ilbc.h"
 #endif
 
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_ILBC
 
-ACMILBC::ACMILBC(WebRtc_Word16 /* codec_id */)
-    : encoder_inst_ptr_(NULL),
-      decoder_inst_ptr_(NULL) {
+ACMILBC::ACMILBC(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
   return;
 }
 
@@ -33,32 +33,31 @@ ACMILBC::~ACMILBC() {
   return;
 }
 
-WebRtc_Word16 ACMILBC::InternalEncode(
-    WebRtc_UWord8* /* bitstream */,
-    WebRtc_Word16* /* bitstream_len_byte */) {
+WebRtc_Word16 ACMILBC::InternalEncode(WebRtc_UWord8* /* bitStream */,
+                                      WebRtc_Word16* /* bitStreamLenByte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMILBC::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                  WebRtc_Word16 /* bitstream_len_byte */,
+WebRtc_Word16 ACMILBC::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+                                  WebRtc_Word16 /* bitStreamLenByte */,
                                   WebRtc_Word16* /* audio */,
-                                  WebRtc_Word16* /* audio_samples */,
-                                  WebRtc_Word8* /* speech_type */) {
+                                  WebRtc_Word16* /* audioSamples */,
+                                  WebRtc_Word8* /* speechType */) {
   return -1;
 }
 
 WebRtc_Word16 ACMILBC::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
 WebRtc_Word16 ACMILBC::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
-WebRtc_Word32 ACMILBC::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def  */,
-                                const CodecInst& /* codec_inst */) {
+WebRtc_Word32 ACMILBC::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef  */,
+                                const CodecInst& /* codecInst */) {
   return -1;
 }
 
@@ -82,7 +81,7 @@ void ACMILBC::DestructDecoderSafe() {
   return;
 }
 
-void ACMILBC::InternalDestructEncoderInst(void* /* ptr_inst */) {
+void ACMILBC::InternalDestructEncoderInst(void* /* ptrInst */) {
   return;
 }
 
@@ -92,88 +91,88 @@ WebRtc_Word16 ACMILBC::SetBitRateSafe(const WebRtc_Word32 /* rate */) {
 
 #else  //===================== Actual Implementation =======================
 
-ACMILBC::ACMILBC(WebRtc_Word16 codec_id)
-    : encoder_inst_ptr_(NULL),
-      decoder_inst_ptr_(NULL) {
-  codec_id_ = codec_id;
+ACMILBC::ACMILBC(WebRtc_Word16 codecID)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
+  _codecID = codecID;
   return;
 }
 
 ACMILBC::~ACMILBC() {
-  if (encoder_inst_ptr_ != NULL) {
-    WebRtcIlbcfix_EncoderFree(encoder_inst_ptr_);
-    encoder_inst_ptr_ = NULL;
+  if (_encoderInstPtr != NULL) {
+    WebRtcIlbcfix_EncoderFree(_encoderInstPtr);
+    _encoderInstPtr = NULL;
   }
-  if (decoder_inst_ptr_ != NULL) {
-    WebRtcIlbcfix_DecoderFree(decoder_inst_ptr_);
-    decoder_inst_ptr_ = NULL;
+  if (_decoderInstPtr != NULL) {
+    WebRtcIlbcfix_DecoderFree(_decoderInstPtr);
+    _decoderInstPtr = NULL;
   }
   return;
 }
 
-WebRtc_Word16 ACMILBC::InternalEncode(WebRtc_UWord8* bitstream,
-                                      WebRtc_Word16* bitstream_len_byte) {
-  *bitstream_len_byte = WebRtcIlbcfix_Encode(encoder_inst_ptr_,
-                                             &in_audio_[in_audio_ix_read_],
-                                             frame_len_smpl_,
-                                             (WebRtc_Word16*)bitstream);
-  if (*bitstream_len_byte < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+WebRtc_Word16 ACMILBC::InternalEncode(WebRtc_UWord8* bitStream,
+                                      WebRtc_Word16* bitStreamLenByte) {
+  *bitStreamLenByte = WebRtcIlbcfix_Encode(_encoderInstPtr,
+                                           &_inAudio[_inAudioIxRead],
+                                           _frameLenSmpl,
+                                           (WebRtc_Word16*) bitStream);
+  if (*bitStreamLenByte < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "InternalEncode: error in encode for ILBC");
     return -1;
   }
   // increment the read index this tell the caller that how far
   // we have gone forward in reading the audio buffer
-  in_audio_ix_read_ += frame_len_smpl_;
-  return *bitstream_len_byte;
+  _inAudioIxRead += _frameLenSmpl;
+  return *bitStreamLenByte;
 }
 
-WebRtc_Word16 ACMILBC::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                  WebRtc_Word16 /* bitstream_len_byte */,
+WebRtc_Word16 ACMILBC::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+                                  WebRtc_Word16 /* bitStreamLenByte */,
                                   WebRtc_Word16* /* audio */,
-                                  WebRtc_Word16* /* audio_samples */,
-                                  WebRtc_Word8* /* speech_type */) {
+                                  WebRtc_Word16* /* audioSamples */,
+                                  WebRtc_Word8* /* speechType */) {
   return 0;
 }
 
-WebRtc_Word16 ACMILBC::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
+WebRtc_Word16 ACMILBC::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
   // initialize with a correct processing block length
-  if ((160 == (codec_params->codec_inst).pacsize) ||
-      (320 == (codec_params->codec_inst).pacsize)) {
+  if ((160 == (codecParams->codecInstant).pacsize) ||
+      (320 == (codecParams->codecInstant).pacsize)) {
     // processing block of 20ms
-    return WebRtcIlbcfix_EncoderInit(encoder_inst_ptr_, 20);
-  } else if ((240 == (codec_params->codec_inst).pacsize) ||
-      (480 == (codec_params->codec_inst).pacsize)) {
+    return WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 20);
+  } else if ((240 == (codecParams->codecInstant).pacsize) ||
+      (480 == (codecParams->codecInstant).pacsize)) {
     // processing block of 30ms
-    return WebRtcIlbcfix_EncoderInit(encoder_inst_ptr_, 30);
+    return WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 30);
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "InternalInitEncoder: invalid processing block");
     return -1;
   }
 }
 
-WebRtc_Word16 ACMILBC::InternalInitDecoder(WebRtcACMCodecParams* codec_params) {
+WebRtc_Word16 ACMILBC::InternalInitDecoder(WebRtcACMCodecParams* codecParams) {
   // initialize with a correct processing block length
-  if ((160 == (codec_params->codec_inst).pacsize) ||
-      (320 == (codec_params->codec_inst).pacsize)) {
+  if ((160 == (codecParams->codecInstant).pacsize) ||
+      (320 == (codecParams->codecInstant).pacsize)) {
     // processing block of 20ms
-    return WebRtcIlbcfix_DecoderInit(decoder_inst_ptr_, 20);
-  } else if ((240 == (codec_params->codec_inst).pacsize) ||
-      (480 == (codec_params->codec_inst).pacsize)) {
+    return WebRtcIlbcfix_DecoderInit(_decoderInstPtr, 20);
+  } else if ((240 == (codecParams->codecInstant).pacsize) ||
+      (480 == (codecParams->codecInstant).pacsize)) {
     // processing block of 30ms
-    return WebRtcIlbcfix_DecoderInit(decoder_inst_ptr_, 30);
+    return WebRtcIlbcfix_DecoderInit(_decoderInstPtr, 30);
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "InternalInitDecoder: invalid processing block");
     return -1;
   }
 }
 
-WebRtc_Word32 ACMILBC::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                                const CodecInst& codec_inst) {
-  if (!decoder_initialized_) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+WebRtc_Word32 ACMILBC::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                                const CodecInst& codecInst) {
+  if (!_decoderInitialized) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "CodeDef: decoder not initialized for ILBC");
     return -1;
   }
@@ -181,9 +180,9 @@ WebRtc_Word32 ACMILBC::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
   // "SET_CODEC_PAR" & "SET_ILBC_FUNCTION."
   // Then return the structure back to NetEQ to add the codec to it's
   // database.
-  SET_CODEC_PAR((codec_def), kDecoderILBC, codec_inst.pltype, decoder_inst_ptr_,
+  SET_CODEC_PAR((codecDef), kDecoderILBC, codecInst.pltype, _decoderInstPtr,
                 8000);
-  SET_ILBC_FUNCTIONS((codec_def));
+  SET_ILBC_FUNCTIONS((codecDef));
   return 0;
 }
 
@@ -192,46 +191,44 @@ ACMGenericCodec* ACMILBC::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMILBC::InternalCreateEncoder() {
-  if (WebRtcIlbcfix_EncoderCreate(&encoder_inst_ptr_) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
-                 "InternalCreateEncoder: cannot create instance for ILBC "
-                 "encoder");
+  if (WebRtcIlbcfix_EncoderCreate(&_encoderInstPtr) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+        "InternalCreateEncoder: cannot create instance for ILBC encoder");
     return -1;
   }
   return 0;
 }
 
 void ACMILBC::DestructEncoderSafe() {
-  encoder_initialized_ = false;
-  encoder_exist_ = false;
-  if (encoder_inst_ptr_ != NULL) {
-    WebRtcIlbcfix_EncoderFree(encoder_inst_ptr_);
-    encoder_inst_ptr_ = NULL;
+  _encoderInitialized = false;
+  _encoderExist = false;
+  if (_encoderInstPtr != NULL) {
+    WebRtcIlbcfix_EncoderFree(_encoderInstPtr);
+    _encoderInstPtr = NULL;
   }
 }
 
 WebRtc_Word16 ACMILBC::InternalCreateDecoder() {
-  if (WebRtcIlbcfix_DecoderCreate(&decoder_inst_ptr_) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
-                 "InternalCreateDecoder: cannot create instance for ILBC "
-                 "decoder");
+  if (WebRtcIlbcfix_DecoderCreate(&_decoderInstPtr) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+        "InternalCreateDecoder: cannot create instance for ILBC decoder");
     return -1;
   }
   return 0;
 }
 
 void ACMILBC::DestructDecoderSafe() {
-  decoder_initialized_ = false;
-  decoder_exist_ = false;
-  if (decoder_inst_ptr_ != NULL) {
-    WebRtcIlbcfix_DecoderFree(decoder_inst_ptr_);
-    decoder_inst_ptr_ = NULL;
+  _decoderInitialized = false;
+  _decoderExist = false;
+  if (_decoderInstPtr != NULL) {
+    WebRtcIlbcfix_DecoderFree(_decoderInstPtr);
+    _decoderInstPtr = NULL;
   }
 }
 
-void ACMILBC::InternalDestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    WebRtcIlbcfix_EncoderFree((iLBC_encinst_t_*) ptr_inst);
+void ACMILBC::InternalDestructEncoderInst(void* ptrInst) {
+  if (ptrInst != NULL) {
+    WebRtcIlbcfix_EncoderFree((iLBC_encinst_t_*) ptrInst);
   }
   return;
 }
@@ -239,13 +236,13 @@ void ACMILBC::InternalDestructEncoderInst(void* ptr_inst) {
 WebRtc_Word16 ACMILBC::SetBitRateSafe(const WebRtc_Word32 rate) {
   // Check that rate is valid. No need to store the value
   if (rate == 13300) {
-    WebRtcIlbcfix_EncoderInit(encoder_inst_ptr_, 30);
+    WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 30);
   } else if (rate == 15200) {
-    WebRtcIlbcfix_EncoderInit(encoder_inst_ptr_, 20);
+    WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 20);
   } else {
     return -1;
   }
-  encoder_params_.codec_inst.rate = rate;
+  _encoderParams.codecInstant.rate = rate;
 
   return 0;
 }

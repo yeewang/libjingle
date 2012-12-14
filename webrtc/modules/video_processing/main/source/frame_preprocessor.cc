@@ -152,8 +152,9 @@ VPMFramePreprocessor::PreprocessFrame(const I420VideoFrame& frame,
         return 1;  // drop 1 frame
     }
 
-    // Resizing incoming frame if needed. Otherwise, remains NULL.
-    // We are not allowed to resample the input frame (must make a copy of it).
+    // Resizing incoming frame if needed.
+    // Note that we must make a copy of it.
+    // We are not allowed to resample the input frame.
     *processedFrame = NULL;
     if (_spatialResampler->ApplyResample(frame.width(), frame.height()))  {
       WebRtc_Word32 ret = _spatialResampler->ResampleFrame(frame,

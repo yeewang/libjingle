@@ -13,11 +13,10 @@
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
-#include "webrtc/video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
-#include "webrtc/video_engine/test/auto_test/primitives/framedrop_primitives.h"
-#include "webrtc/video_engine/test/libvietest/include/tb_external_transport.h"
-#include "webrtc/video_engine/test/libvietest/include/vie_to_file_renderer.h"
+#include "video_engine/test/auto_test/interface/vie_autotest.h"
+#include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
+#include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 namespace {
 
@@ -116,7 +115,8 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
                                    public ::testing::WithParamInterface<int> {
  protected:
   struct TestParameters {
-    NetworkParameters network;
+    int packet_loss_rate;
+    int one_way_delay;
     int bitrate;
     double avg_psnr_threshold;
     double avg_ssim_threshold;
@@ -125,32 +125,22 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
 
   void SetUp() {
     int i = 0;
-    parameter_table_[i].network.packet_loss_rate = 0;
-    parameter_table_[i].network.mean_one_way_delay = 0;
-    parameter_table_[i].network.std_dev_one_way_delay = 0;
+    parameter_table_[i].packet_loss_rate = 0;
+    parameter_table_[i].one_way_delay = 0;
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (0, 0), plr 0";
+    parameter_table_[i].test_label = "net delay 0, plr 0";
     ++i;
-    parameter_table_[i].network.packet_loss_rate = 5;
-    parameter_table_[i].network.mean_one_way_delay = 50;
-    parameter_table_[i].network.std_dev_one_way_delay = 5;
+    parameter_table_[i].packet_loss_rate = 5;
+    parameter_table_[i].one_way_delay = 50;
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (50, 5), plr 5";
-    ++i;
-    parameter_table_[i].network.packet_loss_rate = 0;
-    parameter_table_[i].network.mean_one_way_delay = 100;
-    parameter_table_[i].network.std_dev_one_way_delay = 10;
-    parameter_table_[i].bitrate = 300;
-    parameter_table_[i].avg_psnr_threshold = 35;
-    parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (100, 10), plr 0";
+    parameter_table_[i].test_label = "net delay 50, plr 5";
   }
 
-  TestParameters parameter_table_[3];
+  TestParameters parameter_table_[2];
 };
 
 TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
@@ -160,8 +150,6 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
   // However, it's hard to make 100% stringent requirements on the video engine
   // since for instance the jitter buffer has non-deterministic elements. If it
   // breaks five times in a row though, you probably introduced a bug.
-  const double kReasonablePsnr = webrtc::test::kMetricsPerfectPSNR - 2.0f;
-  const double kReasonableSsim = 0.99f;
   const int kNumAttempts = 5;
   for (int attempt = 0; attempt < kNumAttempts; ++attempt) {
     InitializeFileRenderers();
@@ -178,7 +166,8 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
 
     TearDownFileRenderers();
 
-    if (actual_psnr > kReasonablePsnr && actual_ssim > kReasonableSsim) {
+    if (actual_psnr == webrtc::test::kMetricsInfinitePSNR &&
+        actual_ssim == 1.0f) {
       // Test successful.
       return;
     } else {
@@ -186,7 +175,7 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
     }
   }
 
-  FAIL() << "Failed to achieve near-perfect PSNR and SSIM results after " <<
+  FAIL() << "Failed to achieve perfect PSNR and SSIM results after " <<
       kNumAttempts << " attempts.";
 }
 
@@ -206,14 +195,15 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   // Set a low bit rate so the encoder budget will be tight, causing it to drop
   // frames every now and then.
   const int kBitRateKbps = parameter_table_[GetParam()].bitrate;
-  const NetworkParameters network = parameter_table_[GetParam()].network;
+  const int kPacketLossPercent = parameter_table_[GetParam()].packet_loss_rate;
+  const int kNetworkDelayMs = parameter_table_[GetParam()].one_way_delay;
   int width = 352;
   int height = 288;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
-  ViETest::Log("Packet loss  : %5d %%", network.packet_loss_rate);
-  ViETest::Log("Network delay: mean=%dms std dev=%d ms",
-               network.mean_one_way_delay, network.std_dev_one_way_delay);
-  tests_.TestFullStack(input_file_, width, height, kBitRateKbps, network,
+  ViETest::Log("Packet loss  : %5d %%", kPacketLossPercent);
+  ViETest::Log("Network delay: %5d ms", kNetworkDelayMs);
+  tests_.TestFullStack(input_file_, width, height, kBitRateKbps,
+                       kPacketLossPercent, kNetworkDelayMs,
                        local_file_renderer_, remote_file_renderer_, &detector);
   const std::string reference_file = local_file_renderer_->GetFullOutputPath();
   const std::string output_file = remote_file_renderer_->GetFullOutputPath();
@@ -268,6 +258,6 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
 }
 
 INSTANTIATE_TEST_CASE_P(FullStackTests, ParameterizedFullStackTest,
-                        ::testing::Values(0, 1, 2));
+                        ::testing::Values(0, 1));
 
 }  // namespace

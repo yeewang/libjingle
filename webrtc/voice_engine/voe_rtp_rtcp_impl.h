@@ -111,8 +111,7 @@ public:
                                      bool markerBit,
                                      const char* payloadData,
                                      unsigned short payloadSize);
-    virtual int GetLastRemoteTimeStamp(int channel,
-                                       uint32_t* lastRemoteTimeStamp);
+
 protected:
     VoERTP_RTCPImpl(voe::SharedData* shared);
     virtual ~VoERTP_RTCPImpl();

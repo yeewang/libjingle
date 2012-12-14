@@ -107,8 +107,6 @@ typedef struct
                                          * acceleration (in Q14). */
     int32_t clockDriftPPM;              /* Average clock-drift in parts-per-
                                          * million (positive or negative). */
-    int addedSamples;                   /* Number of zero samples added in off
-                                         * mode */
 } WebRtcNetEQ_NetworkStatistics;
 
 /*

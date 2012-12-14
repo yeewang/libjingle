@@ -166,7 +166,6 @@
              '../../codecs/isac/fix/source/filters_unittest.cc',
              '../../codecs/isac/fix/source/filterbanks_unittest.cc',
              '../../codecs/isac/fix/source/lpc_masking_model_unittest.cc',
-             '../../codecs/isac/fix/source/transform_unittest.cc',
           ],
         }, # audio_coding_unittests
       ],

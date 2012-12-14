@@ -11,34 +11,33 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_PCM16B_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_PCM16B_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "acm_generic_codec.h"
 
 namespace webrtc {
 
 class ACMPCM16B : public ACMGenericCodec {
  public:
-  explicit ACMPCM16B(WebRtc_Word16 codec_id);
+  ACMPCM16B(WebRtc_Word16 codecID);
   ~ACMPCM16B();
-
   // for FEC
   ACMGenericCodec* CreateInstance(void);
 
   WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
-                               WebRtc_Word16* bitstream_len_byte);
+                               WebRtc_Word16* bitStreamLenByte);
 
-  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codec_params);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
  protected:
-  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitstream,
-                           WebRtc_Word16 bitstream_len_byte,
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
                            WebRtc_Word16* audio,
-                           WebRtc_Word16* audio_samples,
-                           WebRtc_Word8* speech_type);
+                           WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                         const CodecInst& codec_inst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
   void DestructEncoderSafe();
 
@@ -48,11 +47,11 @@ class ACMPCM16B : public ACMGenericCodec {
 
   WebRtc_Word16 InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
   void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
 
-  WebRtc_Word32 sampling_freq_hz_;
+  WebRtc_Word32 _samplingFreqHz;
 };
 
 }  // namespace webrtc

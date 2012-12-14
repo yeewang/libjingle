@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
 
-#include "webrtc/common_audio/resampler/include/resampler.h"
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "acm_generic_codec.h"
+#include "resampler.h"
 
 struct WebRtcOpusEncInst;
 struct WebRtcOpusDecInst;
@@ -21,26 +21,22 @@ namespace webrtc {
 
 class ACMOpus : public ACMGenericCodec {
  public:
-  explicit ACMOpus(int16_t codec_id);
+  ACMOpus(int16_t codecID);
   ~ACMOpus();
 
   ACMGenericCodec* CreateInstance(void);
 
-  int16_t InternalEncode(uint8_t* bitstream, int16_t* bitstream_len_byte);
+  int16_t InternalEncode(uint8_t* bitstream, int16_t* bitStreamLenByte);
 
-  int16_t InternalInitEncoder(WebRtcACMCodecParams *codec_params);
+  int16_t InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-  int16_t InternalInitDecoder(WebRtcACMCodecParams *codec_params);
+  int16_t InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
  protected:
-  int16_t DecodeSafe(uint8_t* bitstream,
-                     int16_t bitstream_len_byte,
-                     int16_t* audio,
-                     int16_t* audio_samples,
-                     int8_t* speech_type);
+  int16_t DecodeSafe(uint8_t* bitStream, int16_t bitStreamLenByte,
+                     int16_t* audio, int16_t* audioSamples, int8_t* speechType);
 
-  int32_t CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                   const CodecInst& codec_inst);
+  int32_t CodecDef(WebRtcNetEQ_CodecDef& codecDef, const CodecInst& codecInst);
 
   void DestructEncoderSafe();
 
@@ -50,7 +46,7 @@ class ACMOpus : public ACMGenericCodec {
 
   int16_t InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
   int16_t SetBitRateSafe(const int32_t rate);
 
@@ -58,11 +54,11 @@ class ACMOpus : public ACMGenericCodec {
 
   void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
 
-  WebRtcOpusEncInst* encoder_inst_ptr_;
-  WebRtcOpusDecInst* decoder_inst_ptr_;
-  uint16_t sample_freq_;
-  uint16_t bitrate_;
-  int channels_;
+  WebRtcOpusEncInst* _encoderInstPtr;
+  WebRtcOpusDecInst* _decoderInstPtr;
+  uint16_t _sampleFreq;
+  uint16_t _bitrate;
+  int _channels;
 };
 
 }  // namespace webrtc

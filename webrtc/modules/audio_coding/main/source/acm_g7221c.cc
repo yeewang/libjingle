@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_g7221c.h"
-
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
-#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "acm_g7221c.h"
+#include "acm_codec_database.h"
+#include "acm_common_defs.h"
+#include "acm_neteq.h"
+#include "webrtc_neteq.h"
+#include "webrtc_neteq_help_macros.h"
+#include "trace.h"
 
 #ifdef WEBRTC_CODEC_G722_1C
 // NOTE! G.722.1C is not included in the open-source package. The following
@@ -25,63 +24,62 @@
 //
 // The API in the header file should match the one below.
 //
-
-// int16_t WebRtcG7221C_CreateEnc24(G722_1C_24_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_CreateEnc32(G722_1C_32_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_CreateEnc48(G722_1C_48_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_CreateDec24(G722_1C_24_decinst_t_** dec_inst);
-// int16_t WebRtcG7221C_CreateDec32(G722_1C_32_decinst_t_** dec_inst);
-// int16_t WebRtcG7221C_CreateDec48(G722_1C_48_decinst_t_** dec_inst);
+// int16_t WebRtcG7221C_CreateEnc24(G722_1C_24_encinst_t_** encInst);
+// int16_t WebRtcG7221C_CreateEnc32(G722_1C_32_encinst_t_** encInst);
+// int16_t WebRtcG7221C_CreateEnc48(G722_1C_48_encinst_t_** encInst);
+// int16_t WebRtcG7221C_CreateDec24(G722_1C_24_decinst_t_** decInst);
+// int16_t WebRtcG7221C_CreateDec32(G722_1C_32_decinst_t_** decInst);
+// int16_t WebRtcG7221C_CreateDec48(G722_1C_48_decinst_t_** decInst);
 //
-// int16_t WebRtcG7221C_FreeEnc24(G722_1C_24_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_FreeEnc32(G722_1C_32_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_FreeEnc48(G722_1C_48_encinst_t_** enc_inst);
-// int16_t WebRtcG7221C_FreeDec24(G722_1C_24_decinst_t_** dec_inst);
-// int16_t WebRtcG7221C_FreeDec32(G722_1C_32_decinst_t_** dec_inst);
-// int16_t WebRtcG7221C_FreeDec48(G722_1C_48_decinst_t_** dec_inst);
+// int16_t WebRtcG7221C_FreeEnc24(G722_1C_24_encinst_t_** encInst);
+// int16_t WebRtcG7221C_FreeEnc32(G722_1C_32_encinst_t_** encInst);
+// int16_t WebRtcG7221C_FreeEnc48(G722_1C_48_encinst_t_** encInst);
+// int16_t WebRtcG7221C_FreeDec24(G722_1C_24_decinst_t_** decInst);
+// int16_t WebRtcG7221C_FreeDec32(G722_1C_32_decinst_t_** decInst);
+// int16_t WebRtcG7221C_FreeDec48(G722_1C_48_decinst_t_** decInst);
 //
-// int16_t WebRtcG7221C_EncoderInit24(G722_1C_24_encinst_t_* enc_inst);
-// int16_t WebRtcG7221C_EncoderInit32(G722_1C_32_encinst_t_* enc_inst);
-// int16_t WebRtcG7221C_EncoderInit48(G722_1C_48_encinst_t_* enc_inst);
-// int16_t WebRtcG7221C_DecoderInit24(G722_1C_24_decinst_t_* dec_inst);
-// int16_t WebRtcG7221C_DecoderInit32(G722_1C_32_decinst_t_* dec_inst);
-// int16_t WebRtcG7221C_DecoderInit48(G722_1C_48_decinst_t_* dec_inst);
+// int16_t WebRtcG7221C_EncoderInit24(G722_1C_24_encinst_t_* encInst);
+// int16_t WebRtcG7221C_EncoderInit32(G722_1C_32_encinst_t_* encInst);
+// int16_t WebRtcG7221C_EncoderInit48(G722_1C_48_encinst_t_* encInst);
+// int16_t WebRtcG7221C_DecoderInit24(G722_1C_24_decinst_t_* decInst);
+// int16_t WebRtcG7221C_DecoderInit32(G722_1C_32_decinst_t_* decInst);
+// int16_t WebRtcG7221C_DecoderInit48(G722_1C_48_decinst_t_* decInst);
 //
-// int16_t WebRtcG7221C_Encode24(G722_1C_24_encinst_t_* enc_inst,
+// int16_t WebRtcG7221C_Encode24(G722_1C_24_encinst_t_* encInst,
 //                               int16_t* input,
 //                               int16_t len,
 //                               int16_t* output);
-// int16_t WebRtcG7221C_Encode32(G722_1C_32_encinst_t_* enc_inst,
+// int16_t WebRtcG7221C_Encode32(G722_1C_32_encinst_t_* encInst,
 //                               int16_t* input,
 //                               int16_t len,
 //                               int16_t* output);
-// int16_t WebRtcG7221C_Encode48(G722_1C_48_encinst_t_* enc_inst,
+// int16_t WebRtcG7221C_Encode48(G722_1C_48_encinst_t_* encInst,
 //                               int16_t* input,
 //                               int16_t len,
 //                               int16_t* output);
 //
-// int16_t WebRtcG7221C_Decode24(G722_1C_24_decinst_t_* dec_inst,
+// int16_t WebRtcG7221C_Decode24(G722_1C_24_decinst_t_* decInst,
 //                               int16_t* bitstream,
 //                               int16_t len,
 //                               int16_t* output);
-// int16_t WebRtcG7221C_Decode32(G722_1C_32_decinst_t_* dec_inst,
+// int16_t WebRtcG7221C_Decode32(G722_1C_32_decinst_t_* decInst,
 //                               int16_t* bitstream,
 //                               int16_t len,
 //                               int16_t* output);
-// int16_t WebRtcG7221C_Decode48(G722_1C_48_decinst_t_* dec_inst,
+// int16_t WebRtcG7221C_Decode48(G722_1C_48_decinst_t_* decInst,
 //                               int16_t* bitstream,
 //                               int16_t len,
 //                               int16_t* output);
 //
-// int16_t WebRtcG7221C_DecodePlc24(G722_1C_24_decinst_t_* dec_inst,
+// int16_t WebRtcG7221C_DecodePlc24(G722_1C_24_decinst_t_* decInst,
 //                                  int16_t* output,
-//                                  int16_t nr_lost_frames);
-// int16_t WebRtcG7221C_DecodePlc32(G722_1C_32_decinst_t_* dec_inst,
+//                                  int16_t nrLostFrames);
+// int16_t WebRtcG7221C_DecodePlc32(G722_1C_32_decinst_t_* decInst,
 //                                  int16_t* output,
-//                                  int16_t nr_lost_frames);
-// int16_t WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* dec_inst,
+//                                  int16_t nrLostFrames);
+// int16_t WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* decInst,
 //                                  int16_t* output,
-//                                  int16_t nr_lost_frames);
+//                                  int16_t nrLostFrames);
 #include "g7221c_interface.h"
 #endif
 
@@ -89,20 +87,20 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722_1C
 
-ACMG722_1C::ACMG722_1C(WebRtc_Word16 /* codec_id */)
-    : operational_rate_(-1),
-      encoder_inst_ptr_(NULL),
-      encoder_inst_ptr_right_(NULL),
-      decoder_inst_ptr_(NULL),
-      encoder_inst24_ptr_(NULL),
-      encoder_inst24_ptr_right_(NULL),
-      encoder_inst32_ptr_(NULL),
-      encoder_inst32_ptr_right_(NULL),
-      encoder_inst48_ptr_(NULL),
-      encoder_inst48_ptr_right_(NULL),
-      decoder_inst24_ptr_(NULL),
-      decoder_inst32_ptr_(NULL),
-      decoder_inst48_ptr_(NULL) {
+ACMG722_1C::ACMG722_1C(WebRtc_Word16 /* codecID */)
+    : _operationalRate(-1),
+      _encoderInstPtr(NULL),
+      _encoderInstPtrRight(NULL),
+      _decoderInstPtr(NULL),
+      _encoderInst24Ptr(NULL),
+      _encoderInst24PtrR(NULL),
+      _encoderInst32Ptr(NULL),
+      _encoderInst32PtrR(NULL),
+      _encoderInst48Ptr(NULL),
+      _encoderInst48PtrR(NULL),
+      _decoderInst24Ptr(NULL),
+      _decoderInst32Ptr(NULL),
+      _decoderInst48Ptr(NULL) {
   return;
 }
 
@@ -111,31 +109,31 @@ ACMG722_1C::~ACMG722_1C() {
 }
 
 WebRtc_Word16 ACMG722_1C::InternalEncode(
-    WebRtc_UWord8* /* bitstream */,
-    WebRtc_Word16* /* bitstream_len_byte */) {
+    WebRtc_UWord8* /* bitStream */,
+    WebRtc_Word16* /* bitStreamLenByte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMG722_1C::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                     WebRtc_Word16 /* bitstream_len_byte */,
-                                     WebRtc_Word16* /* audio */,
-                                     WebRtc_Word16* /* audio_samples */,
-                                     WebRtc_Word8* /* speech_type */) {
+WebRtc_Word16 ACMG722_1C::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+    WebRtc_Word16 /* bitStreamLenByte */,
+    WebRtc_Word16* /* audio */,
+    WebRtc_Word16* /* audioSamples */,
+    WebRtc_Word8* /* speechType */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG722_1C::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG722_1C::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codec_params */) {
+    WebRtcACMCodecParams* /* codecParams */) {
   return -1;
 }
 
-WebRtc_Word32 ACMG722_1C::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def */,
-                                   const CodecInst& /* codec_inst */) {
+WebRtc_Word32 ACMG722_1C::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef */,
+    const CodecInst& /* codecInst */) {
   return -1;
 }
 
@@ -159,74 +157,66 @@ void ACMG722_1C::DestructDecoderSafe() {
   return;
 }
 
-void ACMG722_1C::InternalDestructEncoderInst(void* /* ptr_inst */) {
+void ACMG722_1C::InternalDestructEncoderInst(void* /* ptrInst */) {
   return;
 }
 
 #else     //===================== Actual Implementation =======================
-ACMG722_1C::ACMG722_1C(WebRtc_Word16 codec_id)
-    : encoder_inst_ptr_(NULL),
-      encoder_inst_ptr_right_(NULL),
-      decoder_inst_ptr_(NULL),
-      encoder_inst24_ptr_(NULL),
-      encoder_inst24_ptr_right_(NULL),
-      encoder_inst32_ptr_(NULL),
-      encoder_inst32_ptr_right_(NULL),
-      encoder_inst48_ptr_(NULL),
-      encoder_inst48_ptr_right_(NULL),
-      decoder_inst24_ptr_(NULL),
-      decoder_inst32_ptr_(NULL),
-      decoder_inst48_ptr_(NULL) {
-  codec_id_ = codec_id;
-  if (codec_id_ == ACMCodecDB::kG722_1C_24) {
-    operational_rate_ = 24000;
-  } else if (codec_id_ == ACMCodecDB::kG722_1C_32) {
-    operational_rate_ = 32000;
-  } else if (codec_id_ == ACMCodecDB::kG722_1C_48) {
-    operational_rate_ = 48000;
+ACMG722_1C::ACMG722_1C(WebRtc_Word16 codecID) :
+  _encoderInstPtr(NULL), _encoderInstPtrRight(NULL), _decoderInstPtr(NULL),
+      _encoderInst24Ptr(NULL), _encoderInst24PtrR(NULL), _encoderInst32Ptr(NULL),
+      _encoderInst32PtrR(NULL), _encoderInst48Ptr(NULL), _encoderInst48PtrR(NULL),
+      _decoderInst24Ptr(NULL), _decoderInst32Ptr(NULL), _decoderInst48Ptr(NULL) {
+  _codecID = codecID;
+  if (_codecID == ACMCodecDB::kG722_1C_24) {
+    _operationalRate = 24000;
+  } else if (_codecID == ACMCodecDB::kG722_1C_32) {
+    _operationalRate = 32000;
+  } else if (_codecID == ACMCodecDB::kG722_1C_48) {
+    _operationalRate = 48000;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "Wrong codec id for G722_1c.");
-    operational_rate_ = -1;
+    _operationalRate = -1;
   }
   return;
 }
 
 ACMG722_1C::~ACMG722_1C() {
-  if (encoder_inst_ptr_ != NULL) {
-    delete encoder_inst_ptr_;
-    encoder_inst_ptr_ = NULL;
+  if (_encoderInstPtr != NULL) {
+    delete _encoderInstPtr;
+    _encoderInstPtr = NULL;
   }
-  if (encoder_inst_ptr_right_ != NULL) {
-    delete encoder_inst_ptr_right_;
-    encoder_inst_ptr_right_ = NULL;
+  if (_encoderInstPtrRight != NULL) {
+    delete _encoderInstPtrRight;
+    _encoderInstPtrRight = NULL;
   }
-  if (decoder_inst_ptr_ != NULL) {
-    delete decoder_inst_ptr_;
-    decoder_inst_ptr_ = NULL;
+  if (_decoderInstPtr != NULL) {
+    delete _decoderInstPtr;
+    _decoderInstPtr = NULL;
   }
 
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      encoder_inst24_ptr_ = NULL;
-      encoder_inst24_ptr_right_ = NULL;
-      decoder_inst24_ptr_ = NULL;
+      _encoderInst24Ptr = NULL;
+      _encoderInst24PtrR = NULL;
+      _decoderInst24Ptr = NULL;
       break;
     }
     case 32000: {
-      encoder_inst32_ptr_ = NULL;
-      encoder_inst32_ptr_right_ = NULL;
-      decoder_inst32_ptr_ = NULL;
+      _encoderInst32Ptr = NULL;
+      _encoderInst32PtrR = NULL;
+      _decoderInst32Ptr = NULL;
       break;
     }
     case 48000: {
-      encoder_inst48_ptr_ = NULL;
-      encoder_inst48_ptr_right_ = NULL;
-      decoder_inst48_ptr_ = NULL;
+      _encoderInst48Ptr = NULL;
+      _encoderInst48PtrR = NULL;
+      _decoderInst48Ptr = NULL;
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "Wrong rate for G722_1c.");
       break;
     }
@@ -234,107 +224,104 @@ ACMG722_1C::~ACMG722_1C() {
   return;
 }
 
-WebRtc_Word16 ACMG722_1C::InternalEncode(WebRtc_UWord8* bitstream,
-                                         WebRtc_Word16* bitstream_len_byte) {
-  WebRtc_Word16 left_channel[640];
-  WebRtc_Word16 right_channel[640];
-  WebRtc_Word16 len_in_bytes;
-  WebRtc_Word16 out_bits[240];
+WebRtc_Word16 ACMG722_1C::InternalEncode(WebRtc_UWord8* bitStream,
+                                         WebRtc_Word16* bitStreamLenByte) {
+  WebRtc_Word16 leftChannel[640];
+  WebRtc_Word16 rightChannel[640];
+  WebRtc_Word16 lenInBytes;
+  WebRtc_Word16 outB[240];
 
   // If stereo, split input signal in left and right channel before encoding
-  if (num_channels_ == 2) {
-    for (int i = 0, j = 0; i < frame_len_smpl_ * 2; i += 2, j++) {
-      left_channel[j] = in_audio_[in_audio_ix_read_ + i];
-      right_channel[j] = in_audio_[in_audio_ix_read_ + i + 1];
+  if (_noChannels == 2) {
+    for (int i = 0, j = 0; i < _frameLenSmpl * 2; i += 2, j++) {
+      leftChannel[j] = _inAudio[_inAudioIxRead + i];
+      rightChannel[j] = _inAudio[_inAudioIxRead + i + 1];
     }
   } else {
-    memcpy(left_channel, &in_audio_[in_audio_ix_read_], 640);
+    memcpy(leftChannel, &_inAudio[_inAudioIxRead], 640);
   }
 
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      len_in_bytes = WebRtcG7221C_Encode24(encoder_inst24_ptr_, left_channel,
-                                           640, &out_bits[0]);
-      if (num_channels_ == 2) {
-        len_in_bytes += WebRtcG7221C_Encode24(encoder_inst24_ptr_right_,
-                                              right_channel, 640,
-                                              &out_bits[len_in_bytes / 2]);
+      lenInBytes = WebRtcG7221C_Encode24(_encoderInst24Ptr, leftChannel, 640,
+                                         &outB[0]);
+      if (_noChannels == 2) {
+        lenInBytes += WebRtcG7221C_Encode24(_encoderInst24PtrR, rightChannel,
+                                            640, &outB[lenInBytes / 2]);
       }
       break;
     }
     case 32000: {
-      len_in_bytes = WebRtcG7221C_Encode32(encoder_inst32_ptr_, left_channel,
-                                           640, &out_bits[0]);
-      if (num_channels_ == 2) {
-        len_in_bytes += WebRtcG7221C_Encode32(encoder_inst32_ptr_right_,
-                                              right_channel, 640,
-                                              &out_bits[len_in_bytes / 2]);
+      lenInBytes = WebRtcG7221C_Encode32(_encoderInst32Ptr, leftChannel, 640,
+                                         &outB[0]);
+      if (_noChannels == 2) {
+        lenInBytes += WebRtcG7221C_Encode32(_encoderInst32PtrR, rightChannel,
+                                            640, &outB[lenInBytes / 2]);
       }
       break;
     }
     case 48000: {
-      len_in_bytes = WebRtcG7221C_Encode48(encoder_inst48_ptr_, left_channel,
-                                           640, &out_bits[0]);
-      if (num_channels_ == 2) {
-        len_in_bytes += WebRtcG7221C_Encode48(encoder_inst48_ptr_right_,
-                                              right_channel, 640,
-                                              &out_bits[len_in_bytes / 2]);
+      lenInBytes = WebRtcG7221C_Encode48(_encoderInst48Ptr, leftChannel, 640,
+                                         &outB[0]);
+      if (_noChannels == 2) {
+        lenInBytes += WebRtcG7221C_Encode48(_encoderInst48PtrR, rightChannel,
+                                            640, &outB[lenInBytes / 2]);
       }
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "InternalEncode: Wrong rate for G722_1c.");
       return -1;
     }
   }
 
-  memcpy(bitstream, out_bits, len_in_bytes);
-  *bitstream_len_byte = len_in_bytes;
+  memcpy(bitStream, outB, lenInBytes);
+  *bitStreamLenByte = lenInBytes;
 
   // increment the read index this tell the caller that how far
   // we have gone forward in reading the audio buffer
-  in_audio_ix_read_ += 640 * num_channels_;
+  _inAudioIxRead += 640 * _noChannels;
 
-  return *bitstream_len_byte;
+  return *bitStreamLenByte;
 }
 
-WebRtc_Word16 ACMG722_1C::DecodeSafe(WebRtc_UWord8* /* bitstream */,
-                                     WebRtc_Word16 /* bitstream_len_byte */,
+WebRtc_Word16 ACMG722_1C::DecodeSafe(WebRtc_UWord8* /* bitStream */,
+                                     WebRtc_Word16 /* bitStreamLenByte */,
                                      WebRtc_Word16* /* audio */,
-                                     WebRtc_Word16* /* audio_samples */,
-                                     WebRtc_Word8* /* speech_type */) {
+                                     WebRtc_Word16* /* audioSamples */,
+                                     WebRtc_Word8* /* speechType */) {
   return 0;
 }
 
 WebRtc_Word16 ACMG722_1C::InternalInitEncoder(
-    WebRtcACMCodecParams* codec_params) {
+    WebRtcACMCodecParams* codecParams) {
   WebRtc_Word16 ret;
 
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      ret = WebRtcG7221C_EncoderInit24(encoder_inst24_ptr_right_);
+      ret = WebRtcG7221C_EncoderInit24(_encoderInst24PtrR);
       if (ret < 0) {
         return ret;
       }
-      return WebRtcG7221C_EncoderInit24(encoder_inst24_ptr_);
+      return WebRtcG7221C_EncoderInit24(_encoderInst24Ptr);
     }
     case 32000: {
-      ret = WebRtcG7221C_EncoderInit32(encoder_inst32_ptr_right_);
+      ret = WebRtcG7221C_EncoderInit32(_encoderInst32PtrR);
       if (ret < 0) {
         return ret;
       }
-      return WebRtcG7221C_EncoderInit32(encoder_inst32_ptr_);
+      return WebRtcG7221C_EncoderInit32(_encoderInst32Ptr);
     }
     case 48000: {
-      ret = WebRtcG7221C_EncoderInit48(encoder_inst48_ptr_right_);
+      ret = WebRtcG7221C_EncoderInit48(_encoderInst48PtrR);
       if (ret < 0) {
         return ret;
       }
-      return WebRtcG7221C_EncoderInit48(encoder_inst48_ptr_);
+      return WebRtcG7221C_EncoderInit48(_encoderInst48Ptr);
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "InternalInitEncode: Wrong rate for G722_1c.");
       return -1;
     }
@@ -342,29 +329,30 @@ WebRtc_Word16 ACMG722_1C::InternalInitEncoder(
 }
 
 WebRtc_Word16 ACMG722_1C::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codec_params */) {
-  switch (operational_rate_) {
+    WebRtcACMCodecParams* /* codecParams */) {
+  switch (_operationalRate) {
     case 24000: {
-      return WebRtcG7221C_DecoderInit24(decoder_inst24_ptr_);
+      return WebRtcG7221C_DecoderInit24(_decoderInst24Ptr);
     }
     case 32000: {
-      return WebRtcG7221C_DecoderInit32(decoder_inst32_ptr_);
+      return WebRtcG7221C_DecoderInit32(_decoderInst32Ptr);
     }
     case 48000: {
-      return WebRtcG7221C_DecoderInit48(decoder_inst48_ptr_);
+      return WebRtcG7221C_DecoderInit48(_decoderInst48Ptr);
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "InternalInitDecoder: Wrong rate for G722_1c.");
       return -1;
     }
   }
 }
 
-WebRtc_Word32 ACMG722_1C::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                                   const CodecInst& codec_inst) {
-  if (!decoder_initialized_) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+WebRtc_Word32 ACMG722_1C::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                                   const CodecInst& codecInst) {
+
+  if (!_decoderInitialized) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "CodeDef: decoder not initialized for G722_1c");
     return -1;
   }
@@ -376,27 +364,27 @@ WebRtc_Word32 ACMG722_1C::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
   // "SET_CODEC_PAR" & "SET_G722_1_XX_FUNCTION."
   // Then return the structure back to NetEQ to add the codec to it's
   // database.
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      SET_CODEC_PAR((codec_def), kDecoderG722_1C_24, codec_inst.pltype,
-                    decoder_inst24_ptr_, 32000);
-      SET_G722_1C_24_FUNCTIONS((codec_def));
+      SET_CODEC_PAR((codecDef), kDecoderG722_1C_24, codecInst.pltype,
+          _decoderInst24Ptr, 32000);
+      SET_G722_1C_24_FUNCTIONS((codecDef));
       break;
     }
     case 32000: {
-      SET_CODEC_PAR((codec_def), kDecoderG722_1C_32, codec_inst.pltype,
-                    decoder_inst32_ptr_, 32000);
-      SET_G722_1C_32_FUNCTIONS((codec_def));
+      SET_CODEC_PAR((codecDef), kDecoderG722_1C_32, codecInst.pltype,
+          _decoderInst32Ptr, 32000);
+      SET_G722_1C_32_FUNCTIONS((codecDef));
       break;
     }
     case 48000: {
-      SET_CODEC_PAR((codec_def), kDecoderG722_1C_32, codec_inst.pltype,
-                    decoder_inst48_ptr_, 32000);
-      SET_G722_1C_48_FUNCTIONS((codec_def));
+      SET_CODEC_PAR((codecDef), kDecoderG722_1C_32, codecInst.pltype,
+          _decoderInst48Ptr, 32000);
+      SET_G722_1C_48_FUNCTIONS((codecDef));
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "CodeDef: Wrong rate for G722_1c.");
       return -1;
     }
@@ -410,27 +398,27 @@ ACMG722_1C::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMG722_1C::InternalCreateEncoder() {
-  if ((encoder_inst_ptr_ == NULL) || (encoder_inst_ptr_right_ == NULL)) {
+  if ((_encoderInstPtr == NULL) || (_encoderInstPtrRight == NULL)) {
     return -1;
   }
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      WebRtcG7221C_CreateEnc24(&encoder_inst24_ptr_);
-      WebRtcG7221C_CreateEnc24(&encoder_inst24_ptr_right_);
+      WebRtcG7221C_CreateEnc24(&_encoderInst24Ptr);
+      WebRtcG7221C_CreateEnc24(&_encoderInst24PtrR);
       break;
     }
     case 32000: {
-      WebRtcG7221C_CreateEnc32(&encoder_inst32_ptr_);
-      WebRtcG7221C_CreateEnc32(&encoder_inst32_ptr_right_);
+      WebRtcG7221C_CreateEnc32(&_encoderInst32Ptr);
+      WebRtcG7221C_CreateEnc32(&_encoderInst32PtrR);
       break;
     }
     case 48000: {
-      WebRtcG7221C_CreateEnc48(&encoder_inst48_ptr_);
-      WebRtcG7221C_CreateEnc48(&encoder_inst48_ptr_right_);
+      WebRtcG7221C_CreateEnc48(&_encoderInst48Ptr);
+      WebRtcG7221C_CreateEnc48(&_encoderInst48PtrR);
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "InternalCreateEncoder: Wrong rate for G722_1c.");
       return -1;
     }
@@ -439,42 +427,42 @@ WebRtc_Word16 ACMG722_1C::InternalCreateEncoder() {
 }
 
 void ACMG722_1C::DestructEncoderSafe() {
-  encoder_exist_ = false;
-  encoder_initialized_ = false;
-  if (encoder_inst_ptr_ != NULL) {
-    delete encoder_inst_ptr_;
-    encoder_inst_ptr_ = NULL;
+  _encoderExist = false;
+  _encoderInitialized = false;
+  if (_encoderInstPtr != NULL) {
+    delete _encoderInstPtr;
+    _encoderInstPtr = NULL;
   }
-  if (encoder_inst_ptr_right_ != NULL) {
-    delete encoder_inst_ptr_right_;
-    encoder_inst_ptr_right_ = NULL;
+  if (_encoderInstPtrRight != NULL) {
+    delete _encoderInstPtrRight;
+    _encoderInstPtrRight = NULL;
   }
-  encoder_inst24_ptr_ = NULL;
-  encoder_inst32_ptr_ = NULL;
-  encoder_inst48_ptr_ = NULL;
+  _encoderInst24Ptr = NULL;
+  _encoderInst32Ptr = NULL;
+  _encoderInst48Ptr = NULL;
 }
 
 WebRtc_Word16 ACMG722_1C::InternalCreateDecoder() {
-  if (decoder_inst_ptr_ == NULL) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+  if (_decoderInstPtr == NULL) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "InternalCreateEncoder: cannot create decoder");
     return -1;
   }
-  switch (operational_rate_) {
+  switch (_operationalRate) {
     case 24000: {
-      WebRtcG7221C_CreateDec24(&decoder_inst24_ptr_);
+      WebRtcG7221C_CreateDec24(&_decoderInst24Ptr);
       break;
     }
     case 32000: {
-      WebRtcG7221C_CreateDec32(&decoder_inst32_ptr_);
+      WebRtcG7221C_CreateDec32(&_decoderInst32Ptr);
       break;
     }
     case 48000: {
-      WebRtcG7221C_CreateDec48(&decoder_inst48_ptr_);
+      WebRtcG7221C_CreateDec48(&_decoderInst48Ptr);
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                    "InternalCreateEncoder: Wrong rate for G722_1c.");
       return -1;
     }
@@ -483,24 +471,24 @@ WebRtc_Word16 ACMG722_1C::InternalCreateDecoder() {
 }
 
 void ACMG722_1C::DestructDecoderSafe() {
-  decoder_exist_ = false;
-  decoder_initialized_ = false;
-  if (decoder_inst_ptr_ != NULL) {
-    delete decoder_inst_ptr_;
-    decoder_inst_ptr_ = NULL;
+  _decoderExist = false;
+  _decoderInitialized = false;
+  if (_decoderInstPtr != NULL) {
+    delete _decoderInstPtr;
+    _decoderInstPtr = NULL;
   }
-  decoder_inst24_ptr_ = NULL;
-  decoder_inst32_ptr_ = NULL;
-  decoder_inst48_ptr_ = NULL;
+  _decoderInst24Ptr = NULL;
+  _decoderInst32Ptr = NULL;
+  _decoderInst48Ptr = NULL;
 }
 
-void ACMG722_1C::InternalDestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    delete ptr_inst;
+void ACMG722_1C::InternalDestructEncoderInst(void* ptrInst) {
+  if (ptrInst != NULL) {
+    delete ptrInst;
   }
   return;
 }
 
 #endif
 
-}  // namespace webrtc
+} // namespace webrtc
