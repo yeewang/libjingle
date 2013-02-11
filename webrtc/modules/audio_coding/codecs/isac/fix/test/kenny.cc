@@ -811,7 +811,7 @@ int main(int argc, char* argv[])
   printf("\n\n_______________________________________________\n");
 
   // Record the results with Perf test tools.
-  webrtc::test::PrintResult("isac", "", "time_per_10ms_frame",
+  webrtc::test::PrintResult("time_per_10ms_frame", "", "isac",
                             (runtime * 10000) / length_file, "us", false);
 
   fclose(inp);
