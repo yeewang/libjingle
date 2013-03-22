@@ -18,13 +18,9 @@
 // any gtest based tests that are linked into your executable.
 
 #include "system_wrappers/interface/constructor_magic.h"
-#include "system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace test {
-
-class TraceCallbackImpl;
-
 class TestSuite {
  public:
   TestSuite(int argc, char** argv);
@@ -39,11 +35,7 @@ class TestSuite {
   virtual void Shutdown();
 
   DISALLOW_COPY_AND_ASSIGN(TestSuite);
-
- private:
-  scoped_ptr<TraceCallbackImpl> trace_callback_;
 };
-
 }  // namespace test
 }  // namespace webrtc
 
