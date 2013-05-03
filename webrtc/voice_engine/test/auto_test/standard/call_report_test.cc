@@ -42,8 +42,7 @@ TEST_F(CallReportTest, GetRoundTripTimeSummaryReturnsAllMinusOnesIfRtcpIsOff) {
   EXPECT_EQ(-1, delays.max);
 }
 
-// Flaky: https://code.google.com/p/webrtc/issues/detail?id=1719
-TEST_F(CallReportTest, DISABLED_GetRoundTripTimesReturnsValuesIfRtcpIsOn) {
+TEST_F(CallReportTest, GetRoundTripTimesReturnsValuesIfRtcpIsOn) {
   voe_rtp_rtcp_->SetRTCPStatus(channel_, true);
   Sleep(1000);
 

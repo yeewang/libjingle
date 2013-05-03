@@ -71,6 +71,7 @@ class VieRemb : public RemoteBitrateObserver {
 
   // The last bitrate update.
   unsigned int bitrate_;
+  std::vector<unsigned int> ssrcs_;
 };
 
 }  // namespace webrtc
