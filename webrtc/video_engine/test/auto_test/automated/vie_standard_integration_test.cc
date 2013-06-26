@@ -47,6 +47,10 @@ TEST_F(ViEStandardIntegrationTest, RunsEncryptionTestWithoutErrors)  {
   tests_->ViEEncryptionStandardTest();
 }
 
+TEST_F(ViEStandardIntegrationTest, RunsFileTestWithoutErrors)  {
+  tests_->ViEFileStandardTest();
+}
+
 TEST_F(ViEStandardIntegrationTest, RunsImageProcessTestWithoutErrors)  {
   tests_->ViEImageProcessStandardTest();
 }

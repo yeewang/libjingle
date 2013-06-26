@@ -137,6 +137,8 @@ class StreamGenerator {
   // it possible to simulate different types of channels.
   int64_t GenerateFrame(RtpStream::PacketList* packets, int64_t time_now_us);
 
+  void Rtcps(RtcpList* rtcps, int64_t time_now_us) const;
+
  private:
   typedef std::map<unsigned int, RtpStream*> StreamMap;
 
@@ -208,6 +210,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   static const unsigned int kDefaultSsrc;
 
   SimulatedClock clock_;  // Time at the receiver.
+  bool align_streams_;
   scoped_ptr<testing::TestBitrateObserver> bitrate_observer_;
   scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
   scoped_ptr<testing::StreamGenerator> stream_generator_;

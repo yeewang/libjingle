@@ -49,12 +49,8 @@ namespace webrtc {
 namespace ModuleRTPUtility {
 
 enum {
-  kRtcpExpectedVersion = 2,
   kRtcpMinHeaderLength = 4,
-  kRtcpMinParseLength = 8,
-
-  kRtpExpectedVersion = 2,
-  kRtpMinParseLength = 12
+  kRtcpExpectedVersion = 2
 };
 
 /*
@@ -295,39 +291,11 @@ bool RTPHeaderParser::RTCP() const {
   return RTCP;
 }
 
-bool RTPHeaderParser::ParseRtcp(RTPHeader* header) const {
-  assert(header != NULL);
-
-  const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
-  if (length < kRtcpMinParseLength) {
-    return false;
-  }
-
-  const uint8_t V = _ptrRTPDataBegin[0] >> 6;
-  if (V != kRtcpExpectedVersion) {
-    return false;
-  }
-
-  const uint8_t PT = _ptrRTPDataBegin[1];
-  const uint16_t len = (_ptrRTPDataBegin[2] << 8) + _ptrRTPDataBegin[3];
-  const uint8_t* ptr = &_ptrRTPDataBegin[4];
-
-  uint32_t SSRC = *ptr++ << 24;
-  SSRC += *ptr++ << 16;
-  SSRC += *ptr++ << 8;
-  SSRC += *ptr++;
-
-  header->payloadType  = PT;
-  header->ssrc         = SSRC;
-  header->headerLength = 4 + (len << 2);
-
-  return true;
-}
-
 bool RTPHeaderParser::Parse(RTPHeader& header,
                             RtpHeaderExtensionMap* ptrExtensionMap) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
-  if (length < kRtpMinParseLength) {
+
+  if (length < 12) {
     return false;
   }
 
@@ -357,7 +325,7 @@ bool RTPHeaderParser::Parse(RTPHeader& header,
   SSRC += *ptr++ << 8;
   SSRC += *ptr++;
 
-  if (V != kRtpExpectedVersion) {
+  if (V != 2) {
     return false;
   }
 

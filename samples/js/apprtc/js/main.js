@@ -51,13 +51,6 @@
   }
 
   function maybeRequestTurn() {
-    // Skipping TURN Http request for Firefox version <=22.
-    // Firefox does not support TURN for version <=22.
-    if (webrtcDetectedBrowser === 'firefox' && webrtcDetectedVersion <=22) {
-      turnDone = true;
-      return;
-    }
-
     for (var i = 0, len = pcConfig.iceServers.length; i < len; i++) {
       if (pcConfig.iceServers[i].url.substr(0, 5) === 'turn:') {
         turnDone = true;
@@ -88,10 +81,8 @@
       var turnServer = JSON.parse(xmlhttp.responseText);
       // Create a turnUri using the polyfill (adapter.js).
       var iceServer = createIceServer(turnServer.uris[0], turnServer.username,
-                                      turnServer.password);
-      if (iceServer !== null) {
-        pcConfig.iceServers.push(iceServer);
-      }
+                                    turnServer.password);
+      pcConfig.iceServers.push(iceServer);
     } else {
       console.log('Request for TURN server failed.');
     }

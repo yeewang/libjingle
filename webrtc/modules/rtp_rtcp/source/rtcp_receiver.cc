@@ -1334,7 +1334,13 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       }
     }
     if(_cbRtcpFeedback) {
-      if(!(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr)) {
+      if(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr) {
+        _cbRtcpFeedback->OnSendReportReceived(_id,
+            rtcpPacketInformation.remoteSSRC,
+            rtcpPacketInformation.ntp_secs,
+            rtcpPacketInformation.ntp_frac,
+            rtcpPacketInformation.rtp_timestamp);
+      } else {
         _cbRtcpFeedback->OnReceiveReportReceived(_id,
             rtcpPacketInformation.remoteSSRC);
       }
