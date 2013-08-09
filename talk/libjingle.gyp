@@ -86,7 +86,6 @@
                   'app/webrtc/java/src/org/webrtc/AudioTrack.java',
                   'app/webrtc/java/src/org/webrtc/DataChannel.java',
                   'app/webrtc/java/src/org/webrtc/IceCandidate.java',
-                  'app/webrtc/java/src/org/webrtc/Logging.java',
                   'app/webrtc/java/src/org/webrtc/MediaConstraints.java',
                   'app/webrtc/java/src/org/webrtc/MediaSource.java',
                   'app/webrtc/java/src/org/webrtc/MediaStream.java',

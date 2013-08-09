@@ -223,9 +223,8 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
   // No need to go through the APM, demultiplex the data to each VoE channel,
   // encode and send to the network.
   for (int i = 0; i < number_of_voe_channels; ++i) {
-    voe::ChannelOwner ch =
-        _shared->channel_manager().GetChannel(voe_channels[i]);
-    voe::Channel* channel_ptr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), voe_channels[i]);
+    voe::Channel* channel_ptr = sc.ChannelPtr();
     if (!channel_ptr)
       continue;
 
@@ -256,12 +255,14 @@ int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
     }
 
     // Register the observer in all active channels
-    for (voe::ChannelManager::Iterator it(&_shared->channel_manager());
-         it.IsValid();
-         it.Increment()) {
-      it.GetChannel()->RegisterVoiceEngineObserver(observer);
+    voe::ScopedChannel sc(_shared->channel_manager());
+    void* iterator(NULL);
+    voe::Channel* channelPtr = sc.GetFirstChannel(iterator);
+    while (channelPtr != NULL)
+    {
+        channelPtr->RegisterVoiceEngineObserver(observer);
+        channelPtr = sc.GetNextChannel(iterator);
     }
-
     _shared->transmit_mixer()->RegisterVoiceEngineObserver(observer);
 
     _voiceEngineObserverPtr = &observer;
@@ -286,10 +287,13 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
     _voiceEngineObserverPtr = NULL;
 
     // Deregister the observer in all active channels
-    for (voe::ChannelManager::Iterator it(&_shared->channel_manager());
-         it.IsValid();
-         it.Increment()) {
-      it.GetChannel()->DeRegisterVoiceEngineObserver();
+    voe::ScopedChannel sc(_shared->channel_manager());
+    void* iterator(NULL);
+    voe::Channel* channelPtr = sc.GetFirstChannel(iterator);
+    while (channelPtr != NULL)
+    {
+        channelPtr->DeRegisterVoiceEngineObserver();
+        channelPtr = sc.GetNextChannel(iterator);
     }
 
     return 0;
@@ -534,6 +538,18 @@ int VoEBaseImpl::Terminate()
     return TerminateInternal();
 }
 
+int VoEBaseImpl::MaxNumOfChannels()
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "MaxNumOfChannels()");
+    int32_t maxNumOfChannels =
+        _shared->channel_manager().MaxNumOfChannels();
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "MaxNumOfChannels() => %d", maxNumOfChannels);
+    return (maxNumOfChannels);
+}
+
 int VoEBaseImpl::CreateChannel()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -546,40 +562,55 @@ int VoEBaseImpl::CreateChannel()
         return -1;
     }
 
-    voe::ChannelOwner channel_owner =
-        _shared->channel_manager().CreateChannel();
+    int32_t channelId = -1;
 
-    if (channel_owner.channel()->SetEngineInformation(
-            _shared->statistics(),
-            *_shared->output_mixer(),
-            *_shared->transmit_mixer(),
-            *_shared->process_thread(),
-            *_shared->audio_device(),
-            _voiceEngineObserverPtr,
-            &_callbackCritSect) != 0) {
-      _shared->SetLastError(
-          VE_CHANNEL_NOT_CREATED,
-          kTraceError,
-          "CreateChannel() failed to associate engine and channel."
-          " Destroying channel.");
-      _shared->channel_manager()
-          .DestroyChannel(channel_owner.channel()->ChannelId());
-      return -1;
-    } else if (channel_owner.channel()->Init() != 0) {
-      _shared->SetLastError(
-          VE_CHANNEL_NOT_CREATED,
-          kTraceError,
-          "CreateChannel() failed to initialize channel. Destroying"
-          " channel.");
-      _shared->channel_manager()
-          .DestroyChannel(channel_owner.channel()->ChannelId());
-      return -1;
+    if (!_shared->channel_manager().CreateChannel(channelId))
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_CREATED, kTraceError,
+            "CreateChannel() failed to allocate memory for channel");
+        return -1;
     }
 
+    bool destroyChannel(false);
+    {
+        voe::ScopedChannel sc(_shared->channel_manager(), channelId);
+        voe::Channel* channelPtr = sc.ChannelPtr();
+        if (channelPtr == NULL)
+        {
+            _shared->SetLastError(VE_CHANNEL_NOT_CREATED, kTraceError,
+                "CreateChannel() failed to allocate memory for channel");
+            return -1;
+        }
+        else if (channelPtr->SetEngineInformation(_shared->statistics(),
+                                                  *_shared->output_mixer(),
+                                                  *_shared->transmit_mixer(),
+                                                  *_shared->process_thread(),
+                                                  *_shared->audio_device(),
+                                                  _voiceEngineObserverPtr,
+                                                  &_callbackCritSect) != 0)
+        {
+            destroyChannel = true;
+            _shared->SetLastError(VE_CHANNEL_NOT_CREATED, kTraceError,
+                "CreateChannel() failed to associate engine and channel."
+                " Destroying channel.");
+        }
+        else if (channelPtr->Init() != 0)
+        {
+            destroyChannel = true;
+            _shared->SetLastError(VE_CHANNEL_NOT_CREATED, kTraceError,
+                "CreateChannel() failed to initialize channel. Destroying"
+                " channel.");
+        }
+    }
+    if (destroyChannel)
+    {
+        _shared->channel_manager().DestroyChannel(channelId);
+        return -1;
+    }
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),
-        "CreateChannel() => %d", channel_owner.channel()->ChannelId());
-    return channel_owner.channel()->ChannelId();
+        "CreateChannel() => %d", channelId);
+    return channelId;
 }
 
 int VoEBaseImpl::DeleteChannel(int channel)
@@ -595,8 +626,8 @@ int VoEBaseImpl::DeleteChannel(int channel)
     }
 
     {
-        voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-        voe::Channel* channelPtr = ch.channel();
+        voe::ScopedChannel sc(_shared->channel_manager(), channel);
+        voe::Channel* channelPtr = sc.ChannelPtr();
         if (channelPtr == NULL)
         {
             _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -605,7 +636,12 @@ int VoEBaseImpl::DeleteChannel(int channel)
         }
     }
 
-    _shared->channel_manager().DestroyChannel(channel);
+    if (_shared->channel_manager().DestroyChannel(channel) != 0)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "DeleteChannel() failed to destroy channel");
+        return -1;
+    }
 
     if (StopSend() != 0)
     {
@@ -630,8 +666,8 @@ int VoEBaseImpl::StartReceive(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -651,8 +687,8 @@ int VoEBaseImpl::StopReceive(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -672,8 +708,8 @@ int VoEBaseImpl::StartPlayout(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -703,8 +739,8 @@ int VoEBaseImpl::StopPlayout(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -730,8 +766,8 @@ int VoEBaseImpl::StartSend(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -761,8 +797,8 @@ int VoEBaseImpl::StopSend(int channel)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -907,8 +943,8 @@ int VoEBaseImpl::SetNetEQPlayoutMode(int channel, NetEqModes mode)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -927,8 +963,8 @@ int VoEBaseImpl::GetNetEQPlayoutMode(int channel, NetEqModes& mode)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -948,8 +984,8 @@ int VoEBaseImpl::SetOnHoldStatus(int channel, bool enable, OnHoldModes mode)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -968,8 +1004,8 @@ int VoEBaseImpl::GetOnHoldStatus(int channel, bool& enabled, OnHoldModes& mode)
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -1007,21 +1043,47 @@ int32_t VoEBaseImpl::StartPlayout()
     return 0;
 }
 
-int32_t VoEBaseImpl::StopPlayout() {
-  WEBRTC_TRACE(kTraceInfo,
-               kTraceVoice,
-               VoEId(_shared->instance_id(), -1),
-               "VoEBaseImpl::StopPlayout()");
-  // Stop audio-device playing if no channel is playing out
-  if (_shared->NumOfSendingChannels() == 0) {
-    if (_shared->audio_device()->StopPlayout() != 0) {
-      _shared->SetLastError(VE_CANNOT_STOP_PLAYOUT,
-                            kTraceError,
-                            "StopPlayout() failed to stop playout");
-      return -1;
+int32_t VoEBaseImpl::StopPlayout()
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "VoEBaseImpl::StopPlayout()");
+
+    int32_t numOfChannels = _shared->channel_manager().NumOfChannels();
+    if (numOfChannels <= 0)
+    {
+        return 0;
     }
-  }
-  return 0;
+
+    uint16_t nChannelsPlaying(0);
+    int32_t* channelsArray = new int32_t[numOfChannels];
+
+    // Get number of playing channels
+    _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
+    for (int i = 0; i < numOfChannels; i++)
+    {
+        voe::ScopedChannel sc(_shared->channel_manager(), channelsArray[i]);
+        voe::Channel* chPtr = sc.ChannelPtr();
+        if (chPtr)
+        {
+            if (chPtr->Playing())
+            {
+                nChannelsPlaying++;
+            }
+        }
+    }
+    delete[] channelsArray;
+
+    // Stop audio-device playing if no channel is playing out
+    if (nChannelsPlaying == 0)
+    {
+        if (_shared->audio_device()->StopPlayout() != 0)
+        {
+            _shared->SetLastError(VE_CANNOT_STOP_PLAYOUT, kTraceError,
+                "StopPlayout() failed to stop playout");
+            return -1;
+        }
+    }
+    return 0;
 }
 
 int32_t VoEBaseImpl::StartSend()
@@ -1080,7 +1142,17 @@ int32_t VoEBaseImpl::TerminateInternal()
                  "VoEBaseImpl::TerminateInternal()");
 
     // Delete any remaining channel objects
-    _shared->channel_manager().DestroyAllChannels();
+    int32_t numOfChannels = _shared->channel_manager().NumOfChannels();
+    if (numOfChannels > 0)
+    {
+        int32_t* channelsArray = new int32_t[numOfChannels];
+        _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
+        for (int i = 0; i < numOfChannels; i++)
+        {
+            DeleteChannel(channelsArray[i]);
+        }
+        delete[] channelsArray;
+    }
 
     if (_shared->process_thread())
     {

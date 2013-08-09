@@ -98,8 +98,7 @@ class NetEq {
     kDecodedTooMuch,
     kFrameSplitError,
     kRedundancySplitError,
-    kPacketBufferCorruption,
-    kOversizePacket
+    kPacketBufferCorruption
   };
 
   static const int kMaxNumPacketsInBuffer = 240;  // TODO(hlundin): Remove.
@@ -164,6 +163,9 @@ class NetEq {
 
   // Not implemented.
   virtual int CurrentDelay() = 0;
+
+  // Enables playout of DTMF tones.
+  virtual int EnableDtmf() = 0;
 
   // Sets the playout mode to |mode|.
   virtual void SetPlayoutMode(NetEqPlayoutMode mode) = 0;

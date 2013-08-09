@@ -86,14 +86,11 @@
 
     if (xmlhttp.status === 200) {
       var turnServer = JSON.parse(xmlhttp.responseText);
-      for (i = 0; i < turnServer.uris.length; i++) {
-        // Create a turnUri using the polyfill (adapter.js).
-        var iceServer = createIceServer(turnServer.uris[i],
-                                        turnServer.username,
-                                        turnServer.password);
-        if (iceServer !== null) {
-          pcConfig.iceServers.push(iceServer);
-        }
+      // Create a turnUri using the polyfill (adapter.js).
+      var iceServer = createIceServer(turnServer.uris[0], turnServer.username,
+                                      turnServer.password);
+      if (iceServer !== null) {
+        pcConfig.iceServers.push(iceServer);
       }
     } else {
       console.log('Request for TURN server failed.');
@@ -126,6 +123,10 @@
   }
 
   function createPeerConnection() {
+    // For FF, use Mozilla STUN server.
+    if (webrtcDetectedBrowser === "firefox") {
+      pcConfig = {"iceServers":[{"url":"stun:stun.services.mozilla.com"}]};
+    }
     try {
       // Create an RTCPeerConnection via the polyfill (adapter.js).
       pc = new RTCPeerConnection(pcConfig, pcConstraints);

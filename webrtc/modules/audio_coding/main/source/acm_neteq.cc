@@ -49,8 +49,7 @@ ACMNetEQ::ACMNetEQ()
       min_of_buffer_size_bytes_(0),
       per_packet_overhead_bytes_(0),
       av_sync_(false),
-      minimum_delay_ms_(0),
-      maximum_delay_ms_(0) {
+      minimum_delay_ms_(0) {
   for (int n = 0; n < MAX_NUM_SLAVE_NETEQ + 1; n++) {
     is_initialized_[n] = false;
     ptr_vadinst_[n] = NULL;
@@ -1075,10 +1074,6 @@ int16_t ACMNetEQ::AddSlave(const WebRtcNetEQDecoder* used_codecs,
     // Set minimum delay.
     if (minimum_delay_ms_ > 0)
       WebRtcNetEQ_SetMinimumDelay(inst_[slave_idx], minimum_delay_ms_);
-
-    // Set maximum delay.
-    if (maximum_delay_ms_ > 0)
-      WebRtcNetEQ_SetMaximumDelay(inst_[slave_idx], maximum_delay_ms_);
   }
 
   return 0;
@@ -1111,17 +1106,6 @@ int ACMNetEQ::SetMinimumDelay(int minimum_delay_ms) {
       return -1;
   }
   minimum_delay_ms_ = minimum_delay_ms;
-  return 0;
-}
-
-int ACMNetEQ::SetMaximumDelay(int maximum_delay_ms) {
-  CriticalSectionScoped lock(neteq_crit_sect_);
-  for (int i = 0; i < num_slaves_ + 1; ++i) {
-    assert(is_initialized_[i]);
-    if (WebRtcNetEQ_SetMaximumDelay(inst_[i], maximum_delay_ms) < 0)
-      return -1;
-  }
-  maximum_delay_ms_ = maximum_delay_ms;
   return 0;
 }
 

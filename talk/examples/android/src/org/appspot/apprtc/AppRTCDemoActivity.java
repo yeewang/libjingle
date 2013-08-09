@@ -44,7 +44,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
-import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
@@ -59,7 +58,6 @@ import org.webrtc.VideoRenderer.I420Frame;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -99,12 +97,6 @@ public class AppRTCDemoActivity extends Activity
             System.exit(-1);
           }
         });
-
-    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
-    // Logging.enableTracing(
-    //     "/sdcard/trace.txt",
-    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
-    //     Logging.Severity.LS_SENSITIVE);
 
     PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
     wakeLock = powerManager.newWakeLock(

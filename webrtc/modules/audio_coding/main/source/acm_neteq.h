@@ -301,11 +301,6 @@ class ACMNetEQ {
   int SetMinimumDelay(int minimum_delay_ms);
 
   //
-  // Set a maximum delay in NetEq.
-  //
-  int SetMaximumDelay(int maximum_delay_ms);
-
-  //
   // The shortest latency, in milliseconds, required by jitter buffer. This
   // is computed based on inter-arrival times and playout mode of NetEq. The
   // actual delay is the maximum of least-required-delay and the minimum-delay
@@ -389,7 +384,6 @@ class ACMNetEQ {
   bool av_sync_;
 
   int minimum_delay_ms_;
-  int maximum_delay_ms_;
 };
 
 }  // namespace webrtc
