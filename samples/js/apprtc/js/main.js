@@ -18,8 +18,6 @@
                           'OfferToReceiveVideo': true }};
   var isVideoMuted = false;
   var isAudioMuted = false;
-  // Types of gathered ICE Candidates.
-  var gatheredIceCandidateTypes = { Local: {}, Remote: {} };
 
   function initialize() {
     console.log('Initializing; room=' + roomKey + '.');
@@ -232,7 +230,6 @@
     } else if (message.type === 'candidate') {
       var candidate = new RTCIceCandidate({sdpMLineIndex: message.label,
                                            candidate: message.candidate});
-      noteIceCandidate("Remote", iceCandidateType(message.candidate));
       pc.addIceCandidate(candidate);
     } else if (message.type === 'bye') {
       onRemoteHangup();
@@ -289,23 +286,12 @@
           error.code + '.');
   }
 
-  function iceCandidateType(candidateSDP) {
-    if (candidateSDP.indexOf("typ relay ") >= 0)
-      return "TURN";
-    if (candidateSDP.indexOf("typ srflx ") >= 0)
-      return "STUN";
-    if (candidateSDP.indexOf("typ host ") >= 0)
-      return "HOST";
-    return "UNKNOWN";
-  }
-
   function onIceCandidate(event) {
     if (event.candidate) {
       sendMessage({type: 'candidate',
                    label: event.candidate.sdpMLineIndex,
                    id: event.candidate.sdpMid,
                    candidate: event.candidate.candidate});
-      noteIceCandidate("Local", iceCandidateType(event.candidate.candidate));
     } else {
       console.log('End of candidates.');
     }
@@ -393,37 +379,6 @@
     container.webkitRequestFullScreen();
   }
 
-  function noteIceCandidate(location, type) {
-    if (gatheredIceCandidateTypes[location][type])
-      return;
-    gatheredIceCandidateTypes[location][type] = 1;
-    updateInfoDiv();
-  }
-
-  function getInfoDiv() {
-    return document.getElementById("infoDiv");
-  }
-
-  function updateInfoDiv() {
-    var contents = "<pre>Gathered ICE Candidates\n";
-    for (var endpoint in gatheredIceCandidateTypes) {
-      contents += endpoint + ":\n";
-      for (var type in gatheredIceCandidateTypes[endpoint])
-        contents += "  " + type + "\n";
-    }
-    var div = getInfoDiv();
-    div.innerHTML = contents + "</pre>";
-  }
-
-  function toggleInfoDivDisplay() {
-    var div = getInfoDiv();
-    if (div.style.display == "block") {
-      div.style.display = "none";
-    } else {
-      div.style.display = "block";
-    }
-  }
-
   function toggleVideoMute() {
     // Call the getVideoTracks method via adapter.js.
     videoTracks = localStream.getVideoTracks();
@@ -472,30 +427,28 @@
     isAudioMuted = !isAudioMuted;
   }
 
-  // Mac: hotkey is Command.
-  // Non-Mac: hotkey is Control.
-  // <hotkey>-D: toggle audio mute.
-  // <hotkey>-E: toggle video mute.
-  // <hotkey>-I: toggle Info box.
+  // Ctrl-D: toggle audio mute; Ctrl-E: toggle video mute.
+  // On Mac, Command key is instead of Ctrl.
   // Return false to screen out original Chrome shortcuts.
   document.onkeydown = function(event) {
-    var hotkey = event.ctrlKey;
-    if (navigator.appVersion.indexOf('Mac') != -1)
-      hotkey = event.metaKey;
-    if (!hotkey)
-      return;
-    switch (event.keyCode) {
-      case 68:
+    if (navigator.appVersion.indexOf('Mac') != -1) {
+      if (event.metaKey && event.keyCode === 68) {
         toggleAudioMute();
         return false;
-      case 69:
+      }
+      if (event.metaKey && event.keyCode === 69) {
         toggleVideoMute();
         return false;
-      case 73:
-        toggleInfoDivDisplay();
+      }
+    } else {
+      if (event.ctrlKey && event.keyCode === 68) {
+        toggleAudioMute();
         return false;
-      default:
-        return;
+      }
+      if (event.ctrlKey && event.keyCode === 69) {
+        toggleVideoMute();
+        return false;
+      }
     }
   }
 
