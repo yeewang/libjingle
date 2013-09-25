@@ -545,8 +545,6 @@ int AcmReceiver::RemoveAllCodecs() {
       }
     }
   }
-  // No codec is registered, invalidate last audio decoder.
-  last_audio_decoder_ = -1;
   return ret_val;
 }
 
@@ -563,8 +561,6 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   }
   CriticalSectionScoped lock(neteq_crit_sect_);
   decoders_[codec_index].registered = false;
-  if (last_audio_decoder_ == codec_index)
-    last_audio_decoder_ = -1;  // Codec is removed, invalidate last decoder.
   return 0;
 }
 

@@ -124,7 +124,7 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
                             int length_bytes,
                             uint32_t receive_timestamp) {
   CriticalSectionScoped lock(crit_sect_.get());
-  LOG(LS_VERBOSE) << "InsertPacket: ts=" << rtp_header.header.timestamp <<
+  NETEQ_LOG_VERBOSE << "InsertPacket: ts=" << rtp_header.header.timestamp <<
       ", sn=" << rtp_header.header.sequenceNumber <<
       ", pt=" << static_cast<int>(rtp_header.header.payloadType) <<
       ", ssrc=" << rtp_header.header.ssrc <<
@@ -143,10 +143,10 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
                         int* samples_per_channel, int* num_channels,
                         NetEqOutputType* type) {
   CriticalSectionScoped lock(crit_sect_.get());
-  LOG(LS_VERBOSE) << "GetAudio";
+  NETEQ_LOG_VERBOSE << "GetAudio";
   int error = GetAudioInternal(max_length, output_audio, samples_per_channel,
                                num_channels);
-  LOG(LS_VERBOSE) << "Produced " << *samples_per_channel <<
+  NETEQ_LOG_VERBOSE << "Produced " << *samples_per_channel <<
       " samples/channel for " << *num_channels << " channel(s)";
   if (error != 0) {
     LOG_FERR1(LS_WARNING, GetAudioInternal, error);
@@ -363,7 +363,7 @@ void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
                              current_memory_size_bytes, max_memory_size_bytes);
 }
 
-int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
+int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
   CriticalSectionScoped lock(crit_sect_.get());
   if (decoded_packet_sequence_number_ < 0)
     return -1;
@@ -377,16 +377,10 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& /* rtp_header */,
   return kNotImplemented;
 }
 
-void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  assert(background_noise_.get());
-  background_noise_->set_mode(mode);
-}
+void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode /* mode */) {}
 
 NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  assert(background_noise_.get());
-  return background_noise_->mode();
+  return kBgnOn;
 }
 
 // Methods below this line are private.
@@ -623,7 +617,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     last_mode_ = kModeError;
     return return_value;
   }
-  LOG(LS_VERBOSE) << "GetDecision returned operation=" << operation <<
+  NETEQ_LOG_VERBOSE << "GetDecision returned operation=" << operation <<
       " and " << packet_list.size() << " packet(s)";
 
   AudioDecoder::SpeechType speech_type;
@@ -735,7 +729,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
       sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
                                             output));
   *num_channels = static_cast<int>(sync_buffer_->Channels());
-  LOG(LS_VERBOSE) << "Sync buffer (" << *num_channels << " channel(s)):" <<
+  NETEQ_LOG_VERBOSE << "Sync buffer (" << *num_channels << " channel(s)):" <<
       " insert " << algorithm_buffer_->Size() << " samples, extract " <<
       samples_from_sync << " samples";
   if (samples_from_sync != output_size_samples_) {
@@ -1162,7 +1156,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     int16_t decode_length;
     if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
-      LOG(LS_VERBOSE) << "Decoding packet (redundant):" <<
+      NETEQ_LOG_VERBOSE << "Decoding packet (redundant):" <<
           " ts=" << packet->header.timestamp <<
           ", sn=" << packet->header.sequenceNumber <<
           ", pt=" << static_cast<int>(packet->header.payloadType) <<
@@ -1172,7 +1166,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
           packet->payload, packet->payload_length,
           &decoded_buffer_[*decoded_length], speech_type);
     } else {
-      LOG(LS_VERBOSE) << "Decoding packet: ts=" << packet->header.timestamp <<
+      NETEQ_LOG_VERBOSE << "Decoding packet: ts=" << packet->header.timestamp <<
           ", sn=" << packet->header.sequenceNumber <<
           ", pt=" << static_cast<int>(packet->header.payloadType) <<
           ", ssrc=" << packet->header.ssrc <<
@@ -1190,7 +1184,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
       // Update |decoder_frame_length_| with number of samples per channel.
       decoder_frame_length_ = decode_length /
           static_cast<int>(decoder->channels());
-      LOG(LS_VERBOSE) << "Decoded " << decode_length << " samples (" <<
+      NETEQ_LOG_VERBOSE << "Decoded " << decode_length << " samples (" <<
           decoder->channels() << " channel(s) -> " << decoder_frame_length_ <<
           " samples per channel)";
     } else if (decode_length < 0) {
@@ -1765,14 +1759,8 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Delete sync buffer and create a new one.
   sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
 
-
-  // Delete BackgroundNoise object and create a new one, while preserving its
-  // mode.
-  NetEqBackgroundNoiseMode current_mode = kBgnOn;
-  if (background_noise_.get())
-    current_mode = background_noise_->mode();
+  // Delete BackgroundNoise object and create a new one.
   background_noise_.reset(new BackgroundNoise(channels));
-  background_noise_->set_mode(current_mode);
 
   // Reset random vector.
   random_vector_.Reset();
