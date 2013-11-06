@@ -39,8 +39,29 @@ namespace cricket {
 
 struct CapturedFrame;
 
+// Class that takes ownership of the frame passed to it.
+class FrameBuffer {
+ public:
+  FrameBuffer();
+  explicit FrameBuffer(size_t length);
+  ~FrameBuffer();
+
+  void SetData(char* data, size_t length);
+  void ReturnData(char** data, size_t* length);
+  char* data();
+  size_t length() const;
+
+  webrtc::VideoFrame* frame();
+  const webrtc::VideoFrame* frame() const;
+
+ private:
+  webrtc::VideoFrame video_frame_;
+};
+
 class WebRtcVideoFrame : public VideoFrame {
  public:
+  typedef talk_base::RefCountedObject<FrameBuffer> RefCountedBuffer;
+
   WebRtcVideoFrame();
   ~WebRtcVideoFrame();
 
@@ -54,22 +75,17 @@ class WebRtcVideoFrame : public VideoFrame {
 
   bool Init(const CapturedFrame* frame, int dw, int dh);
 
-  // Aliases this WebRtcVideoFrame to a CapturedFrame. |frame| must outlive
-  // this WebRtcVideoFrame.
-  bool Alias(const CapturedFrame* frame, int dw, int dh);
-
   bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
                    int64 elapsed_time, int64 time_stamp);
 
-  // Aliases this WebRtcVideoFrame to a memory buffer. |buffer| must outlive
-  // this WebRtcVideoFrame.
-  void Alias(uint8* buffer, size_t buffer_size, int w, int h,
-             size_t pixel_width, size_t pixel_height, int64 elapsed_time,
-             int64 time_stamp, int rotation);
+  void Attach(uint8* buffer, size_t buffer_size, int w, int h,
+              size_t pixel_width, size_t pixel_height, int64 elapsed_time,
+              int64 time_stamp, int rotation);
 
+  void Detach(uint8** data, size_t* length);
   bool AddWatermark();
-  webrtc::VideoFrame* frame();
-  const webrtc::VideoFrame* frame() const;
+  webrtc::VideoFrame* frame() { return video_buffer_->frame(); }
+  webrtc::VideoFrame* frame() const { return video_buffer_->frame(); }
 
   // From base class VideoFrame.
   virtual bool Reset(uint32 format, int w, int h, int dw, int dh, uint8* sample,
@@ -108,9 +124,6 @@ class WebRtcVideoFrame : public VideoFrame {
                                     size_t size, int stride_rgb) const;
 
  private:
-  class FrameBuffer;
-  typedef talk_base::RefCountedObject<FrameBuffer> RefCountedBuffer;
-
   void Attach(RefCountedBuffer* video_buffer, size_t buffer_size, int w, int h,
               size_t pixel_width, size_t pixel_height, int64 elapsed_time,
               int64 time_stamp, int rotation);
