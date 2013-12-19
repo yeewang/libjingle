@@ -23,7 +23,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
@@ -143,16 +142,16 @@ class CallTest : public ::testing::Test {
 };
 
 class NackObserver : public test::RtpRtcpObserver {
-  static const int kNumberOfNacksToObserve = 2;
-  static const int kLossBurstSize = 2;
-  static const int kPacketsBetweenLossBursts = 9;
+  static const int kNumberOfNacksToObserve = 4;
+  static const int kInverseProbabilityToStartLossBurst = 20;
+  static const int kMaxLossBurst = 10;
 
  public:
   NackObserver()
       : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_parser_(RtpHeaderParser::Create()),
+        drop_burst_count_(0),
         sent_rtp_packets_(0),
-        packets_left_to_drop_(0),
         nacks_left_(kNumberOfNacksToObserve) {}
 
  private:
@@ -166,29 +165,31 @@ class NackObserver : public test::RtpRtcpObserver {
     if (dropped_packets_.find(header.sequenceNumber) !=
         dropped_packets_.end()) {
       retransmitted_packets_.insert(header.sequenceNumber);
-      if (nacks_left_ == 0 &&
-          retransmitted_packets_.size() == dropped_packets_.size()) {
-        observation_complete_->Set();
-      }
       return SEND_PACKET;
     }
 
-    ++sent_rtp_packets_;
-
     // Enough NACKs received, stop dropping packets.
-    if (nacks_left_ == 0)
+    if (nacks_left_ == 0) {
+      ++sent_rtp_packets_;
       return SEND_PACKET;
+    }
 
-    // Check if it's time for a new loss burst.
-    if (sent_rtp_packets_ % kPacketsBetweenLossBursts == 0)
-      packets_left_to_drop_ = kLossBurstSize;
-
-    if (packets_left_to_drop_ > 0) {
-      --packets_left_to_drop_;
+    // Still dropping packets.
+    if (drop_burst_count_ > 0) {
+      --drop_burst_count_;
       dropped_packets_.insert(header.sequenceNumber);
       return DROP_PACKET;
     }
 
+    // Should we start dropping packets?
+    if (sent_rtp_packets_ > 0 &&
+        rand() % kInverseProbabilityToStartLossBurst == 0) {
+      drop_burst_count_ = rand() % kMaxLossBurst;
+      dropped_packets_.insert(header.sequenceNumber);
+      return DROP_PACKET;
+    }
+
+    ++sent_rtp_packets_;
     return SEND_PACKET;
   }
 
@@ -196,24 +197,50 @@ class NackObserver : public test::RtpRtcpObserver {
     RTCPUtility::RTCPParserV2 parser(packet, length, true);
     EXPECT_TRUE(parser.IsValid());
 
+    bool received_nack = false;
     RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
     while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-      if (packet_type == RTCPUtility::kRtcpRtpfbNackCode) {
-        --nacks_left_;
-        break;
-      }
+      if (packet_type == RTCPUtility::kRtcpRtpfbNackCode)
+        received_nack = true;
+
       packet_type = parser.Iterate();
+    }
+
+    if (received_nack) {
+      ReceivedNack();
+    } else {
+      RtcpWithoutNack();
     }
     return SEND_PACKET;
   }
 
  private:
+  void ReceivedNack() {
+    if (nacks_left_ > 0)
+      --nacks_left_;
+    rtcp_without_nack_count_ = 0;
+  }
+
+  void RtcpWithoutNack() {
+    if (nacks_left_ > 0)
+      return;
+    ++rtcp_without_nack_count_;
+
+    // All packets retransmitted and no recent NACKs.
+    if (dropped_packets_.size() == retransmitted_packets_.size() &&
+        rtcp_without_nack_count_ >= kRequiredRtcpsWithoutNack) {
+      observation_complete_->Set();
+    }
+  }
+
   scoped_ptr<RtpHeaderParser> rtp_parser_;
   std::set<uint16_t> dropped_packets_;
   std::set<uint16_t> retransmitted_packets_;
+  int drop_burst_count_;
   uint64_t sent_rtp_packets_;
-  int packets_left_to_drop_;
   int nacks_left_;
+  int rtcp_without_nack_count_;
+  static const int kRequiredRtcpsWithoutNack = 2;
 };
 
 TEST_F(CallTest, UsesTraceCallback) {
@@ -269,78 +296,6 @@ TEST_F(CallTest, UsesTraceCallback) {
   // The TraceCallback instance MUST outlive Calls, destroy Calls explicitly.
   sender_call_.reset();
   receiver_call_.reset();
-}
-
-TEST_F(CallTest, RendersSingleDelayedFrame) {
-  static const int kWidth = 320;
-  static const int kHeight = 240;
-  // This constant is chosen to be higher than the timeout in the video_render
-  // module. This makes sure that frames aren't dropped if there are no other
-  // frames in the queue.
-  static const int kDelayRenderCallbackMs = 1000;
-
-  class Renderer : public VideoRenderer {
-   public:
-    Renderer() : event_(EventWrapper::Create()) {}
-
-    virtual void RenderFrame(const I420VideoFrame& video_frame,
-                             int /*time_to_render_ms*/) OVERRIDE {
-      event_->Set();
-    }
-
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
-
-    scoped_ptr<EventWrapper> event_;
-  } renderer;
-
-  class TestFrameCallback : public I420FrameCallback {
-   public:
-    TestFrameCallback() : event_(EventWrapper::Create()) {}
-
-    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
-
-   private:
-    virtual void FrameCallback(I420VideoFrame* frame) {
-      SleepMs(kDelayRenderCallbackMs);
-      event_->Set();
-    }
-
-    scoped_ptr<EventWrapper> event_;
-  };
-
-  test::DirectTransport sender_transport, receiver_transport;
-
-  CreateCalls(Call::Config(&sender_transport),
-              Call::Config(&receiver_transport));
-
-  sender_transport.SetReceiver(receiver_call_->Receiver());
-  receiver_transport.SetReceiver(sender_call_->Receiver());
-
-  CreateTestConfigs();
-
-  TestFrameCallback pre_render_callback;
-  receive_config_.pre_render_callback = &pre_render_callback;
-  receive_config_.renderer = &renderer;
-
-  CreateStreams();
-  StartSending();
-
-  // Create frames that are smaller than the send width/height, this is done to
-  // check that the callbacks are done after processing video.
-  scoped_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::Create(kWidth, kHeight));
-  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
-  EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
-      << "Timed out while waiting for pre-render callback.";
-  EXPECT_EQ(kEventSignaled, renderer.Wait())
-      << "Timed out while waiting for the frame to render.";
-
-  StopSending();
-
-  sender_transport.StopSending();
-  receiver_transport.StopSending();
-
-  DestroyStreams();
 }
 
 TEST_F(CallTest, TransmitsFirstFrame) {
@@ -562,8 +517,9 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
       : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_header_parser_(RtpHeaderParser::Create()),
         nack_enabled_(nack_enabled),
-        highest_dropped_timestamp_(0),
-        frames_to_drop_(0),
+        first_retransmitted_timestamp_(0),
+        last_send_timestamp_(0),
+        rendered_frame_(false),
         received_pli_(false) {}
 
   virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
@@ -571,16 +527,19 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
     EXPECT_TRUE(
         rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
 
-    // Drop all retransmitted packets to force a PLI.
-    if (header.timestamp <= highest_dropped_timestamp_)
+    // Drop all NACK retransmissions. This is to force transmission of a PLI.
+    if (header.timestamp < last_send_timestamp_)
       return DROP_PACKET;
 
-    if (frames_to_drop_ > 0) {
-      highest_dropped_timestamp_ = header.timestamp;
-      --frames_to_drop_;
+    if (received_pli_) {
+      if (first_retransmitted_timestamp_ == 0) {
+        first_retransmitted_timestamp_ = header.timestamp;
+      }
+    } else if (rendered_frame_ && rand() % kInverseDropProbability == 0) {
       return DROP_PACKET;
     }
 
+    last_send_timestamp_ = header.timestamp;
     return SEND_PACKET;
   }
 
@@ -605,20 +564,22 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
   virtual void RenderFrame(const I420VideoFrame& video_frame,
                            int time_to_render_ms) OVERRIDE {
     CriticalSectionScoped crit_(lock_.get());
-    if (received_pli_ && video_frame.timestamp() > highest_dropped_timestamp_) {
+    if (first_retransmitted_timestamp_ != 0 &&
+        video_frame.timestamp() > first_retransmitted_timestamp_) {
+      EXPECT_TRUE(received_pli_);
       observation_complete_->Set();
     }
-    if (!received_pli_)
-      frames_to_drop_ = kPacketsToDrop;
+    rendered_frame_ = true;
   }
 
  private:
-  static const int kPacketsToDrop = 1;
-
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   bool nack_enabled_;
-  uint32_t highest_dropped_timestamp_;
-  int frames_to_drop_;
+
+  uint32_t first_retransmitted_timestamp_;
+  uint32_t last_send_timestamp_;
+
+  bool rendered_frame_;
   bool received_pli_;
 };
 

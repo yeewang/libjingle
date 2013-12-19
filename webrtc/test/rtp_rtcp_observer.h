@@ -49,8 +49,7 @@ class RtpRtcpObserver {
   }
 
  protected:
-  RtpRtcpObserver(unsigned int event_timeout_ms,
-      const FakeNetworkPipe::Config& configuration)
+  RtpRtcpObserver(unsigned int event_timeout_ms, int delay_ms)
       : lock_(CriticalSectionWrapper::CreateCriticalSection()),
         observation_complete_(EventWrapper::Create()),
         parser_(RtpHeaderParser::Create()),
@@ -58,12 +57,12 @@ class RtpRtcpObserver {
                         this,
                         &RtpRtcpObserver::OnSendRtp,
                         &RtpRtcpObserver::OnSendRtcp,
-                        configuration),
+                        delay_ms),
         receive_transport_(lock_.get(),
                            this,
                            &RtpRtcpObserver::OnReceiveRtp,
                            &RtpRtcpObserver::OnReceiveRtcp,
-                           configuration),
+                           delay_ms),
         timeout_ms_(event_timeout_ms) {}
 
   explicit RtpRtcpObserver(unsigned int event_timeout_ms)
@@ -74,12 +73,12 @@ class RtpRtcpObserver {
                         this,
                         &RtpRtcpObserver::OnSendRtp,
                         &RtpRtcpObserver::OnSendRtcp,
-                        FakeNetworkPipe::Config()),
+                        0),
         receive_transport_(lock_.get(),
                            this,
                            &RtpRtcpObserver::OnReceiveRtp,
                            &RtpRtcpObserver::OnReceiveRtcp,
-                           FakeNetworkPipe::Config()),
+                           0),
         timeout_ms_(event_timeout_ms) {}
 
   enum Action {
@@ -114,8 +113,8 @@ class RtpRtcpObserver {
                     RtpRtcpObserver* observer,
                     PacketTransportAction on_rtp,
                     PacketTransportAction on_rtcp,
-                    const FakeNetworkPipe::Config& configuration)
-        : test::DirectTransport(configuration),
+                    int delay_ms)
+        : test::DirectTransport(delay_ms),
           lock_(lock),
           observer_(observer),
           on_rtp_(on_rtp),

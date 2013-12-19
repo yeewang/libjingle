@@ -18,7 +18,6 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-#include "webrtc/test/fake_network_pipe.h"
 #include "webrtc/transport.h"
 
 namespace webrtc {
@@ -31,7 +30,7 @@ namespace test {
 class DirectTransport : public newapi::Transport {
  public:
   DirectTransport();
-  explicit DirectTransport(const FakeNetworkPipe::Config& config);
+  explicit DirectTransport(int delay_ms);
   ~DirectTransport();
 
   virtual void StopSending();
@@ -41,6 +40,19 @@ class DirectTransport : public newapi::Transport {
   virtual bool SendRtcp(const uint8_t* data, size_t length) OVERRIDE;
 
  private:
+  struct Packet {
+    Packet();
+    Packet(const uint8_t* data, size_t length, int64_t delivery_time_ms);
+
+    uint8_t data[1500];
+    size_t length;
+    int64_t delivery_time_ms;
+  };
+
+  void QueuePacket(const uint8_t* data,
+                   size_t length,
+                   int64_t delivery_time_ms);
+
   static bool NetworkProcess(void* transport);
   bool SendPackets();
 
@@ -51,7 +63,10 @@ class DirectTransport : public newapi::Transport {
 
   bool shutting_down_;
 
-  FakeNetworkPipe fake_network_;
+  std::deque<Packet> packet_queue_;
+  PacketReceiver* receiver_;
+  // TODO(stefan): Replace this with FakeNetworkPipe.
+  const int delay_ms_;
 };
 }  // namespace test
 }  // namespace webrtc

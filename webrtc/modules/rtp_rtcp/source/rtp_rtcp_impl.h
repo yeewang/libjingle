@@ -418,8 +418,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void set_rtt_ms(uint32_t rtt_ms);
   uint32_t rtt_ms() const;
 
-  bool IsDefaultModule() const;
-
   int32_t             id_;
   const bool                audio_;
   bool                      collision_detected_;

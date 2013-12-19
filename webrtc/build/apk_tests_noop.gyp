@@ -22,6 +22,10 @@
       'type': 'none',
     },
     {
+      'target_name': 'metrics_unittests',
+      'type': 'none',
+    },
+    {
       'target_name': 'modules_tests_apk',
       'type': 'none',
     },

@@ -2065,7 +2065,7 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
                                RTCPReportBlock* report_block,
                                uint32_t* ntp_secs, uint32_t* ntp_frac) {
   // Do we have receive statistics to send?
-  RtcpStatistics stats;
+  StreamStatistician::Statistics stats;
   if (!statistician->GetStatistics(&stats, true))
     return false;
   report_block->fractionLost = stats.fraction_lost;

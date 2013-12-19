@@ -348,8 +348,7 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
       stats_.cumulative_lost = cumulative_lost;
       stats_.extended_max_sequence_number = extended_max_sequence_number;
     }
-    virtual bool GetStatistics(RtcpStatistics* statistics,
-                               bool reset) OVERRIDE {
+    virtual bool GetStatistics(Statistics* statistics, bool reset) OVERRIDE {
       *statistics = stats_;
       return true;
     }
@@ -368,8 +367,7 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
     virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE {
       return true;
     }
-
-    RtcpStatistics stats_;
+    Statistics stats_;
   };
 
   scoped_ptr<LossyStatistician> lossy_stats_;
@@ -804,7 +802,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     void set_high_remb_bps(int value) { high_remb_bps_ = value; }
 
-    void Stop() { transport_.StopSending(); }
+    virtual void Stop() { transport_.StopSending(); }
 
    private:
     enum TestState {
@@ -859,7 +857,6 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   observer.set_high_remb_bps(min_bitrate_bps + threshold_window + 5000);
 
   RunSendTest(call.get(), send_config, &observer);
-  observer.Stop();
 }
 
 TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
