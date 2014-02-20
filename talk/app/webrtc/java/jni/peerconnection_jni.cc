@@ -152,10 +152,7 @@ namespace {
 static JavaVM* g_jvm = NULL;  // Set in JNI_OnLoad().
 
 static pthread_once_t g_jni_ptr_once = PTHREAD_ONCE_INIT;
-// Key for per-thread JNIEnv* data.  Non-NULL in threads attached to |g_jvm| by
-// AttachCurrentThreadIfNeeded(), NULL in unattached threads and threads that
-// were attached by the JVM because of a Java->native call.
-static pthread_key_t g_jni_ptr;
+static pthread_key_t g_jni_ptr;  // Key for per-thread JNIEnv* data.
 
 // Return thread ID as a string.
 static std::string GetThreadId() {
@@ -173,32 +170,9 @@ static std::string GetThreadName() {
   return std::string(name);
 }
 
-// Return a |JNIEnv*| usable on this thread or NULL if this thread is detached.
-static JNIEnv* GetEnv() {
-  void* env = NULL;
-  jint status = g_jvm->GetEnv(&env, JNI_VERSION_1_6);
-  CHECK(((env != NULL) && (status == JNI_OK)) ||
-            ((env == NULL) && (status == JNI_EDETACHED)),
-        "Unexpected GetEnv return: " << status << ":" << env);
-  return reinterpret_cast<JNIEnv*>(env);
-}
-
-static void ThreadDestructor(void* prev_jni_ptr) {
-  // This function only runs on threads where |g_jni_ptr| is non-NULL, meaning
-  // we were responsible for originally attaching the thread, so are responsible
-  // for detaching it now.  However, because some JVM implementations (notably
-  // Oracle's http://goo.gl/eHApYT) also use the pthread_key_create mechanism,
-  // the JVMs accounting info for this thread may already be wiped out by the
-  // time this is called. Thus it may appear we are already detached even though
-  // it was our responsibility to detach!  Oh well.
-  if (!GetEnv())
-    return;
-
-  CHECK(GetEnv() == prev_jni_ptr,
-        "Detaching from another thread: " << prev_jni_ptr << ":" << GetEnv());
+static void ThreadDestructor(void* unused) {
   jint status = g_jvm->DetachCurrentThread();
   CHECK(status == JNI_OK, "Failed to detach thread: " << status);
-  CHECK(!GetEnv(), "Detaching was a successful no-op???");
 }
 
 static void CreateJNIPtrKey() {
@@ -206,29 +180,28 @@ static void CreateJNIPtrKey() {
         "pthread_key_create");
 }
 
-// Return a |JNIEnv*| usable on this thread.  Attaches to |g_jvm| if necessary.
+// Deal with difference in signatures between Oracle's jni.h and Android's.
 static JNIEnv* AttachCurrentThreadIfNeeded() {
-  JNIEnv* jni = GetEnv();
-  if (jni)
-    return jni;
-  CHECK(!pthread_getspecific(g_jni_ptr), "TLS has a JNIEnv* but not attached?");
-
-  char* name = strdup((GetThreadName() + " - " + GetThreadId()).c_str());
-  JavaVMAttachArgs args;
-  args.version = JNI_VERSION_1_6;
-  args.name = name;
-  args.group = NULL;
-  // Deal with difference in signatures between Oracle's jni.h and Android's.
+  CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey),
+        "pthread_once");
+  JNIEnv* jni = reinterpret_cast<JNIEnv*>(pthread_getspecific(g_jni_ptr));
+  if (jni == NULL) {
 #ifdef _JAVASOFT_JNI_H_  // Oracle's jni.h violates the JNI spec!
-  void* env = NULL;
+    void* env;
 #else
-  JNIEnv* env = NULL;
+    JNIEnv* env;
 #endif
-  CHECK(!g_jvm->AttachCurrentThread(&env, &args), "Failed to attach thread");
-  free(name);
-  CHECK(env, "AttachCurrentThread handed back NULL!");
-  jni = reinterpret_cast<JNIEnv*>(env);
-  CHECK(!pthread_setspecific(g_jni_ptr, jni), "pthread_setspecific");
+    char* name = strdup((GetThreadName() + " - " + GetThreadId()).c_str());
+    JavaVMAttachArgs args;
+    args.version = JNI_VERSION_1_6;
+    args.name = name;
+    args.group = NULL;
+    CHECK(!g_jvm->AttachCurrentThread(&env, &args), "Failed to attach thread");
+    free(name);
+    CHECK(env, "AttachCurrentThread handed back NULL!");
+    jni = reinterpret_cast<JNIEnv*>(env);
+    CHECK(!pthread_setspecific(g_jni_ptr, jni), "pthread_setspecific");
+  }
   return jni;
 }
 
@@ -1685,6 +1658,13 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
   if (!is_platform_supported)
     return;
 
+  if (true) {
+    // TODO(fischman): re-enable once
+    // https://code.google.com/p/webrtc/issues/detail?id=2899 is fixed.  Until
+    // then the Android MediaCodec experience is too abysmal to turn on.
+    return;
+  }
+
   // Wouldn't it be nice if MediaCodec exposed the maximum capabilities of the
   // encoder?  Sure would be.  Too bad it doesn't.  So we hard-code some
   // reasonable defaults.
@@ -1730,8 +1710,6 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
   g_jvm = jvm;
   CHECK(g_jvm, "JNI_OnLoad handed NULL?");
 
-  CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey), "pthread_once");
-
   CHECK(talk_base::InitializeSSL(), "Failed to InitializeSSL()");
 
   JNIEnv* jni;
@@ -1747,7 +1725,6 @@ extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
   delete g_class_reference_holder;
   g_class_reference_holder = NULL;
   CHECK(talk_base::CleanupSSL(), "Failed to CleanupSSL()");
-  g_jvm = NULL;
 }
 
 static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {

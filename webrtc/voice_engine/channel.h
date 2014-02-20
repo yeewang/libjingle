@@ -218,6 +218,10 @@ public:
     // VoEVideoSyncExtended
     int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
+    // VoEEncryption
+    int RegisterExternalEncryption(Encryption& encryption);
+    int DeRegisterExternalEncryption();
+
     // VoEDtmf
     int SendTelephoneEventOutband(unsigned char eventCode, int lengthMs,
                                   int attenuationDb, bool playDtmfEvent);
@@ -279,6 +283,9 @@ public:
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);
+    int InsertExtraRTPPacket(unsigned char payloadType, bool markerBit,
+                             const char* payloadData,
+                             unsigned short payloadSize);
     uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
 
     // From AudioPacketizationCallback in the ACM
@@ -477,6 +484,10 @@ private:
     bool _outputExternalMedia;
     VoEMediaProcess* _inputExternalMediaCallbackPtr;
     VoEMediaProcess* _outputExternalMediaCallbackPtr;
+    uint8_t* _encryptionRTPBufferPtr;
+    uint8_t* _decryptionRTPBufferPtr;
+    uint8_t* _encryptionRTCPBufferPtr;
+    uint8_t* _decryptionRTCPBufferPtr;
     uint32_t _timeStamp;
     uint8_t _sendTelephoneEventPayloadType;
 
@@ -498,6 +509,7 @@ private:
     VoiceEngineObserver* _voiceEngineObserverPtr; // owned by base
     CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
+    Encryption* _encryptionPtr; // WebRtc SRTP or external encryption
     scoped_ptr<AudioProcessing> rtp_audioproc_;
     scoped_ptr<AudioProcessing> rx_audioproc_; // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
@@ -521,10 +533,16 @@ private:
     float _panLeft;
     float _panRight;
     float _outputGain;
+    // VoEEncryption
+    bool _encrypting;
+    bool _decrypting;
     // VoEDtmf
     bool _playOutbandDtmfEvent;
     bool _playInbandDtmfEvent;
     // VoeRTP_RTCP
+    uint8_t _extraPayloadType;
+    bool _insertExtraRTPPacket;
+    bool _extraMarkerBit;
     uint32_t _lastLocalTimeStamp;
     uint32_t _lastRemoteTimeStamp;
     int8_t _lastPayloadType;

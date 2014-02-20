@@ -23,17 +23,10 @@ static inline float ClampInt16(float value) {
       (value > kMaxInt16 ? kMaxInt16 : value);
 }
 
-// Round |value| to the closest int16.
+// Return a rounded int16_t of the floating |value|. Doesn't handle overflow;
+// use ClampInt16 if necessary.
 static inline int16_t RoundToInt16(float value) {
-  return static_cast<int16_t>(
-      value > 0 ? (value >= 32766.5 ? 32767 : value + 0.5f)
-          : (value <= -32767.5 ? -32768 : value - 0.5f));
-}
-
-// Round |size| elements of |src| to the closest int16 and writes to |dest|.
-static inline void RoundToInt16(const float* src, int size, int16_t* dest) {
-  for (int i = 0; i < size; ++i)
-    dest[i] = RoundToInt16(src[i]);
+  return static_cast<int16_t>(value < 0.f ? value - 0.5f : value + 0.5f);
 }
 
 // Deinterleave audio from |interleaved| to the channel buffers pointed to

@@ -180,8 +180,6 @@ public:
 
     void SetTargetBitrate(unsigned int target_bitrate);
 
-    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
-
 private:
     int32_t SendToNetwork(const uint8_t* dataBuffer, const uint16_t length);
 
@@ -344,7 +342,10 @@ private:
     bool                _xrSendVoIPMetric;
     RTCPVoIPMetric      _xrVoIPMetric;
 
-    RtcpPacketTypeCounter packet_type_counter_;
+    // Counters
+    uint32_t      _nackCount;
+    uint32_t      _pliCount;
+    uint32_t      _fullIntraRequestCount;
 };
 }  // namespace webrtc
 

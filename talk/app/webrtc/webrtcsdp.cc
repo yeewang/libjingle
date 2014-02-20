@@ -2121,7 +2121,7 @@ bool ParseMediaDescription(const std::string& message,
                     codec_preference, pos, &content_name,
                     &transport, candidates, error);
 
-      if (desc && protocol == cricket::kMediaProtocolDtlsSctp) {
+      if (protocol == cricket::kMediaProtocolDtlsSctp) {
         // Add the SCTP Port number as a pseudo-codec "port" parameter
         cricket::DataCodec codec_port(
             cricket::kGoogleSctpDataCodecId, cricket::kGoogleSctpDataCodecName,

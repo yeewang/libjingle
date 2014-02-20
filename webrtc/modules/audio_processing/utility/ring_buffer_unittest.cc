@@ -22,12 +22,7 @@ extern "C" {
 
 namespace webrtc {
 
-struct FreeBufferDeleter {
-  inline void operator()(void* ptr) const {
-    WebRtc_FreeBuffer(ptr);
-  }
-};
-typedef scoped_ptr<RingBuffer, FreeBufferDeleter> scoped_ring_buffer;
+typedef scoped_ptr_malloc<RingBuffer, WebRtc_FreeBuffer> scoped_ring_buffer;
 
 static void AssertElementEq(int expected, int actual) {
   ASSERT_EQ(expected, actual);

@@ -302,12 +302,6 @@ LinuxDeviceWatcher::LinuxDeviceWatcher(DeviceManagerInterface* dm)
 LinuxDeviceWatcher::~LinuxDeviceWatcher() {
 }
 
-static talk_base::PhysicalSocketServer* CurrentSocketServer() {
-  talk_base::SocketServer* ss =
-      talk_base::ThreadManager::Instance()->WrapCurrentThread()->socketserver();
-  return reinterpret_cast<talk_base::PhysicalSocketServer*>(ss);
-}
-
 bool LinuxDeviceWatcher::Start() {
   // We deliberately return true in the failure paths here because libudev is
   // not a critical component of a Linux system so it may not be present/usable,
@@ -347,14 +341,16 @@ bool LinuxDeviceWatcher::Start() {
     LOG_ERR(LS_ERROR) << "udev_monitor_enable_receiving()";
     return true;
   }
-  CurrentSocketServer()->Add(this);
+  static_cast<talk_base::PhysicalSocketServer*>(
+      talk_base::Thread::Current()->socketserver())->Add(this);
   registered_ = true;
   return true;
 }
 
 void LinuxDeviceWatcher::Stop() {
   if (registered_) {
-    CurrentSocketServer()->Remove(this);
+    static_cast<talk_base::PhysicalSocketServer*>(
+        talk_base::Thread::Current()->socketserver())->Remove(this);
     registered_ = false;
   }
   if (udev_monitor_) {
@@ -384,7 +380,8 @@ void LinuxDeviceWatcher::OnEvent(uint32 ff, int err) {
     LOG_ERR(LS_WARNING) << "udev_monitor_receive_device()";
     // Stop listening to avoid potential livelock (an fd with EOF in it is
     // always considered readable).
-    CurrentSocketServer()->Remove(this);
+    static_cast<talk_base::PhysicalSocketServer*>(
+        talk_base::Thread::Current()->socketserver())->Remove(this);
     registered_ = false;
     return;
   }

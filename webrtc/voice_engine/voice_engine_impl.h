@@ -27,6 +27,9 @@
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
 #include "webrtc/voice_engine/voe_dtmf_impl.h"
 #endif
+#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
+#include "webrtc/voice_engine/voe_encryption_impl.h"
+#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 #include "webrtc/voice_engine/voe_external_media_impl.h"
 #endif
@@ -67,6 +70,9 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
                         public VoEDtmfImpl,
 #endif
+#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
+                        public VoEEncryptionImpl,
+#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
                         public VoEExternalMediaImpl,
 #endif
@@ -105,6 +111,9 @@ public:
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
         VoEDtmfImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
+        VoEEncryptionImpl(this),
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
         VoEExternalMediaImpl(this),
