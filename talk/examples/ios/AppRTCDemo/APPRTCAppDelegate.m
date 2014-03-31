@@ -64,23 +64,19 @@
 }
 
 - (void)peerConnectionOnError:(RTCPeerConnection*)peerConnection {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onError.");
-      NSAssert(NO, @"PeerConnection failed.");
-  });
+  NSLog(@"PCO onError.");
+  NSAssert(NO, @"PeerConnection failed.");
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onSignalingStateChange: %d", stateChanged);
-  });
+  NSLog(@"PCO onSignalingStateChange: %d", stateChanged);
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
            addedStream:(RTCMediaStream*)stream {
+  NSLog(@"PCO onAddStream.");
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onAddStream.");
       NSAssert([stream.audioTracks count] <= 1,
                @"Expected at most 1 audio stream");
       NSAssert([stream.videoTracks count] <= 1,
@@ -94,57 +90,49 @@
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
          removedStream:(RTCMediaStream*)stream {
-  dispatch_async(dispatch_get_main_queue(),
-                 ^(void) { NSLog(@"PCO onRemoveStream."); });
+  NSLog(@"PCO onRemoveStream.");
 }
 
 - (void)peerConnectionOnRenegotiationNeeded:(RTCPeerConnection*)peerConnection {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onRenegotiationNeeded - ignoring because AppRTC has a "
-             "predefined negotiation strategy");
-  });
+  NSLog(@"PCO onRenegotiationNeeded.");
+  // TODO(hughv): Handle this.
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
        gotICECandidate:(RTCICECandidate*)candidate {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onICECandidate.\n  Mid[%@] Index[%d] Sdp[%@]",
-            candidate.sdpMid,
-            candidate.sdpMLineIndex,
-            candidate.sdp);
-      NSDictionary* json = @{
-        @"type" : @"candidate",
-        @"label" : [NSNumber numberWithInt:candidate.sdpMLineIndex],
-        @"id" : candidate.sdpMid,
-        @"candidate" : candidate.sdp
-      };
-      NSError* error;
-      NSData* data =
-          [NSJSONSerialization dataWithJSONObject:json options:0 error:&error];
-      if (!error) {
-        [_delegate sendData:data];
-      } else {
-        NSAssert(NO,
-                 @"Unable to serialize JSON object with error: %@",
-                 error.localizedDescription);
-      }
-  });
+  NSLog(@"PCO onICECandidate.\n  Mid[%@] Index[%d] Sdp[%@]",
+        candidate.sdpMid,
+        candidate.sdpMLineIndex,
+        candidate.sdp);
+  NSDictionary* json = @{
+    @"type" : @"candidate",
+    @"label" : [NSNumber numberWithInt:candidate.sdpMLineIndex],
+    @"id" : candidate.sdpMid,
+    @"candidate" : candidate.sdp
+  };
+  NSError* error;
+  NSData* data =
+      [NSJSONSerialization dataWithJSONObject:json options:0 error:&error];
+  if (!error) {
+    [_delegate sendData:data];
+  } else {
+    NSAssert(NO,
+             @"Unable to serialize JSON object with error: %@",
+             error.localizedDescription);
+  }
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     iceGatheringChanged:(RTCICEGatheringState)newState {
-  dispatch_async(dispatch_get_main_queue(),
-                 ^(void) { NSLog(@"PCO onIceGatheringChange. %d", newState); });
+  NSLog(@"PCO onIceGatheringChange. %d", newState);
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     iceConnectionChanged:(RTCICEConnectionState)newState {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSLog(@"PCO onIceConnectionChange. %d", newState);
-      if (newState == RTCICEConnectionConnected)
-        [self displayLogMessage:@"ICE Connection Connected."];
-      NSAssert(newState != RTCICEConnectionFailed, @"ICE Connection failed!");
-  });
+  NSLog(@"PCO onIceConnectionChange. %d", newState);
+  if (newState == RTCICEConnectionConnected)
+    [self displayLogMessage:@"ICE Connection Connected."];
+  NSAssert(newState != RTCICEConnectionFailed, @"ICE Connection failed!");
 }
 
 - (void)displayLogMessage:(NSString*)message {
@@ -210,7 +198,6 @@
 }
 
 - (void)displayLogMessage:(NSString*)message {
-  NSAssert([NSThread isMainThread], @"Called off main thread!");
   NSLog(@"%@", message);
   [self.viewController displayText:message];
 }
@@ -247,11 +234,6 @@
   RTCMediaStream* lms =
       [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
 
-  // The iOS simulator doesn't provide any sort of camera capture
-  // support or emulation (http://goo.gl/rHAnC1) so don't bother
-  // trying to open a local stream.
-  RTCVideoTrack* localVideoTrack;
-#if !TARGET_IPHONE_SIMULATOR
   NSString* cameraID = nil;
   for (AVCaptureDevice* captureDevice in
        [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
@@ -267,13 +249,12 @@
   self.videoSource = [self.peerConnectionFactory
       videoSourceWithCapturer:capturer
                   constraints:self.client.videoConstraints];
-  localVideoTrack =
+  RTCVideoTrack* localVideoTrack =
       [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0"
                                             source:self.videoSource];
   if (localVideoTrack) {
     [lms addVideoTrack:localVideoTrack];
   }
-#endif
 
   [self.viewController.localVideoView
       renderVideoTrackInterface:localVideoTrack];
@@ -282,7 +263,7 @@
 
   [lms addAudioTrack:[self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"]];
   [self.peerConnection addStream:lms constraints:constraints];
-  [self displayLogMessage:@"onICEServers - added local stream."];
+  [self displayLogMessage:@"onICEServers - add local stream."];
 }
 
 #pragma mark - GAEMessageHandler methods
@@ -305,15 +286,24 @@
   [self displayLogMessage:@"PC - createOffer."];
 }
 
-- (void)onMessage:(NSDictionary*)messageData {
-  NSString* type = messageData[@"type"];
-  NSAssert(type, @"Missing type: %@", messageData);
+- (void)onMessage:(NSString*)data {
+  NSString* message = [self unHTMLifyString:data];
+  NSError* error;
+  NSDictionary* objects = [NSJSONSerialization
+      JSONObjectWithData:[message dataUsingEncoding:NSUTF8StringEncoding]
+                 options:0
+                   error:&error];
+  NSAssert(!error,
+           @"%@",
+           [NSString stringWithFormat:@"Error: %@", error.description]);
+  NSAssert([objects count] > 0, @"Invalid JSON object");
+  NSString* value = [objects objectForKey:@"type"];
   [self displayLogMessage:[NSString stringWithFormat:@"GAE onMessage type - %@",
-                                                     type]];
-  if ([type isEqualToString:@"candidate"]) {
-    NSString* mid = messageData[@"id"];
-    NSNumber* sdpLineIndex = messageData[@"label"];
-    NSString* sdp = messageData[@"candidate"];
+                                                     value]];
+  if ([value compare:@"candidate"] == NSOrderedSame) {
+    NSString* mid = [objects objectForKey:@"id"];
+    NSNumber* sdpLineIndex = [objects objectForKey:@"label"];
+    NSString* sdp = [objects objectForKey:@"candidate"];
     RTCICECandidate* candidate =
         [[RTCICECandidate alloc] initWithMid:mid
                                        index:sdpLineIndex.intValue
@@ -323,16 +313,16 @@
     } else {
       [self.peerConnection addICECandidate:candidate];
     }
-  } else if ([type isEqualToString:@"offer"] ||
-             [type isEqualToString:@"answer"]) {
-    NSString* sdpString = messageData[@"sdp"];
+  } else if (([value compare:@"offer"] == NSOrderedSame) ||
+             ([value compare:@"answer"] == NSOrderedSame)) {
+    NSString* sdpString = [objects objectForKey:@"sdp"];
     RTCSessionDescription* sdp = [[RTCSessionDescription alloc]
-        initWithType:type
+        initWithType:value
                  sdp:[APPRTCAppDelegate preferISAC:sdpString]];
     [self.peerConnection setRemoteDescriptionWithDelegate:self
                                        sessionDescription:sdp];
     [self displayLogMessage:@"PC - setRemoteDescription."];
-  } else if ([type isEqualToString:@"bye"]) {
+  } else if ([value compare:@"bye"] == NSOrderedSame) {
     [self closeVideoUI];
     UIAlertView* alertView =
         [[UIAlertView alloc] initWithTitle:@"Remote end hung up"
@@ -342,7 +332,7 @@
                          otherButtonTitles:nil];
     [alertView show];
   } else {
-    NSAssert(NO, @"Invalid message: %@", messageData);
+    NSAssert(NO, @"Invalid message: %@", data);
   }
 }
 
@@ -352,8 +342,8 @@
 }
 
 - (void)onError:(int)code withDescription:(NSString*)description {
-  [self displayLogMessage:[NSString stringWithFormat:@"GAE onError: %d, %@",
-                                    code, description]];
+  [self displayLogMessage:[NSString stringWithFormat:@"GAE onError:  %@",
+                                                     description]];
   [self closeVideoUI];
 }
 
@@ -410,8 +400,8 @@
   [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex++]];
   [newMLine addObject:isac16kRtpMap];
   for (; origPartIndex < [origMLineParts count]; ++origPartIndex) {
-    if (![isac16kRtpMap
-            isEqualToString:[origMLineParts objectAtIndex:origPartIndex]]) {
+    if ([isac16kRtpMap compare:[origMLineParts objectAtIndex:origPartIndex]] !=
+        NSOrderedSame) {
       [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex]];
     }
   }
@@ -425,20 +415,20 @@
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     didCreateSessionDescription:(RTCSessionDescription*)origSdp
                           error:(NSError*)error {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      if (error) {
-        [self displayLogMessage:@"SDP onFailure."];
-        NSAssert(NO, error.description);
-        return;
-      }
-      [self displayLogMessage:@"SDP onSuccess(SDP) - set local description."];
-      RTCSessionDescription* sdp = [[RTCSessionDescription alloc]
-          initWithType:origSdp.type
-                   sdp:[APPRTCAppDelegate preferISAC:origSdp.description]];
-      [self.peerConnection setLocalDescriptionWithDelegate:self
-                                        sessionDescription:sdp];
+  if (error) {
+    [self displayLogMessage:@"SDP onFailure."];
+    NSAssert(NO, error.description);
+    return;
+  }
 
-      [self displayLogMessage:@"PC setLocalDescription."];
+  [self displayLogMessage:@"SDP onSuccess(SDP) - set local description."];
+  RTCSessionDescription* sdp = [[RTCSessionDescription alloc]
+      initWithType:origSdp.type
+               sdp:[APPRTCAppDelegate preferISAC:origSdp.description]];
+  [self.peerConnection setLocalDescriptionWithDelegate:self
+                                    sessionDescription:sdp];
+  [self displayLogMessage:@"PC setLocalDescription."];
+  dispatch_async(dispatch_get_main_queue(), ^(void) {
       NSDictionary* json = @{@"type" : sdp.type, @"sdp" : sdp.description};
       NSError* error;
       NSData* data =
@@ -452,14 +442,14 @@
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     didSetSessionDescriptionWithError:(NSError*)error {
-  dispatch_async(dispatch_get_main_queue(), ^(void) {
-      if (error) {
-        [self displayLogMessage:@"SDP onFailure."];
-        NSAssert(NO, error.description);
-        return;
-      }
+  if (error) {
+    [self displayLogMessage:@"SDP onFailure."];
+    NSAssert(NO, error.description);
+    return;
+  }
 
-      [self displayLogMessage:@"SDP onSuccess() - possibly drain candidates"];
+  [self displayLogMessage:@"SDP onSuccess() - possibly drain candidates"];
+  dispatch_async(dispatch_get_main_queue(), ^(void) {
       if (!self.client.initiator) {
         if (self.peerConnection.remoteDescription &&
             !self.peerConnection.localDescription) {

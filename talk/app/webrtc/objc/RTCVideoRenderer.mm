@@ -142,8 +142,6 @@ class CallbackConverter : public webrtc::VideoRendererInterface {
 }
 
 - (void)stop {
-  [_activityIndicator stopAnimating];
-  [_activityIndicator removeFromSuperview];
   _iosRenderer->StopRender();
 }
 

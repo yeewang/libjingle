@@ -41,8 +41,8 @@
   [super viewDidLoad];
   self.statusBarOrientation =
       [UIApplication sharedApplication].statusBarOrientation;
-  self.roomInput.delegate = self;
-  [self.roomInput becomeFirstResponder];
+  self.textField.delegate = self;
+  [self.textField becomeFirstResponder];
 }
 
 - (void)viewDidLayoutSubviews {
@@ -59,20 +59,18 @@
 - (void)displayText:(NSString*)text {
   dispatch_async(dispatch_get_main_queue(), ^(void) {
       NSString* output =
-          [NSString stringWithFormat:@"%@\n%@", self.logView.text, text];
-      self.logView.text = output;
-      [self.logView
-          scrollRangeToVisible:NSMakeRange([self.logView.text length], 0)];
+          [NSString stringWithFormat:@"%@\n%@", self.textOutput.text, text];
+      self.textOutput.text = output;
   });
 }
 
 - (void)resetUI {
-  [self.roomInput resignFirstResponder];
-  self.roomInput.text = nil;
-  self.roomInput.hidden = NO;
-  self.instructionsView.hidden = NO;
-  self.logView.hidden = YES;
-  self.logView.text = nil;
+  [self.textField resignFirstResponder];
+  self.textField.text = nil;
+  self.textField.hidden = NO;
+  self.textInstructions.hidden = NO;
+  self.textOutput.hidden = YES;
+  self.textOutput.text = nil;
   self.blackView.hidden = YES;
 
   [_remoteVideoView renderVideoTrackInterface:nil];
@@ -147,8 +145,8 @@ enum {
     return;
   }
   textField.hidden = YES;
-  self.instructionsView.hidden = YES;
-  self.logView.hidden = NO;
+  self.textInstructions.hidden = YES;
+  self.textOutput.hidden = NO;
   // TODO(hughv): Instead of launching a URL with apprtc scheme, change to
   // prepopulating the textField with a valid URL missing the room.  This allows
   // the user to have the simplicity of just entering the room or the ability to

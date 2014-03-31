@@ -1366,6 +1366,9 @@ Channel::StopReceiving()
         return 0;
     }
 
+    // Recover DTMF detection status.
+    telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
+    RegisterReceiveCodecsToRTPModule();
     channel_state_.SetReceiving(false);
     return 0;
 }
