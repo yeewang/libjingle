@@ -416,7 +416,10 @@ bool ViEChannelManager::GetEstimatedReceiveBandwidth(
   }
   std::vector<unsigned int> ssrcs;
   if (!group->GetRemoteBitrateEstimator()->LatestEstimate(
-      &ssrcs, estimated_bandwidth) || ssrcs.empty()) {
+      &ssrcs, estimated_bandwidth)) {
+    return false;
+  }
+  if (ssrcs.empty()) {
     *estimated_bandwidth = 0;
   }
   return true;

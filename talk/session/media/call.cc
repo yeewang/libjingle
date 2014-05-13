@@ -34,7 +34,6 @@
 #include "talk/media/base/screencastid.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/session/media/call.h"
-#include "talk/session/media/currentspeakermonitor.h"
 #include "talk/session/media/mediasessionclient.h"
 
 namespace cricket {
@@ -75,22 +74,6 @@ bool ContentContainsCrypto(const cricket::ContentInfo* content) {
 
 }
 
-AudioSourceProxy::AudioSourceProxy(Call* call)
-    : call_(call) {
-  call_->SignalAudioMonitor.connect(this, &AudioSourceProxy::OnAudioMonitor);
-  call_->SignalMediaStreamsUpdate.connect(
-      this, &AudioSourceProxy::OnMediaStreamsUpdate);
-}
-
-void AudioSourceProxy::OnAudioMonitor(Call* call, const AudioInfo& info) {
-  SignalAudioMonitor(this, info);
-}
-
-void AudioSourceProxy::OnMediaStreamsUpdate(Call* call, Session* session,
-    const MediaStreams& added, const MediaStreams& removed) {
-  SignalMediaStreamsUpdate(this, session, added, removed);
-}
-
 Call::Call(MediaSessionClient* session_client)
     : id_(talk_base::CreateRandomId()),
       session_client_(session_client),
@@ -101,7 +84,6 @@ Call::Call(MediaSessionClient* session_client)
       video_muted_(false),
       send_to_voicemail_(true),
       playing_dtmf_(false) {
-  audio_source_proxy_.reset(new AudioSourceProxy(this));
 }
 
 Call::~Call() {
@@ -736,8 +718,7 @@ void Call::StartSpeakerMonitor(Session* session) {
       StartAudioMonitor(session, kAudioMonitorPollPeriodMillis);
     }
     CurrentSpeakerMonitor* speaker_monitor =
-        new cricket::CurrentSpeakerMonitor(
-            audio_source_proxy_.get(), session);
+        new cricket::CurrentSpeakerMonitor(this, session);
     speaker_monitor->SignalUpdate.connect(this, &Call::OnSpeakerMonitor);
     speaker_monitor->Start();
     speaker_monitor_map_[session->id()] = speaker_monitor;
@@ -1121,10 +1102,6 @@ Session* Call::InternalInitiateSession(const std::string& id,
     send_to_voicemail_ ? kSendToVoicemailTimeout : kNoVoicemailTimeout,
     this, MSG_TERMINATECALL);
   return session;
-}
-
-AudioSourceProxy* Call::GetAudioSourceProxy() {
-  return audio_source_proxy_.get();
 }
 
 }  // namespace cricket

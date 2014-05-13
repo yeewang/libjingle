@@ -48,7 +48,6 @@
 #if defined(IOS) || defined(OSX)
 #include <mach/mach_host.h>
 #include <mach/mach_init.h>
-#include <mach/mach_port.h>
 #include <mach/host_info.h>
 #include <mach/task.h>
 #endif  // defined(IOS) || defined(OSX)
@@ -242,14 +241,11 @@ float CpuSampler::GetSystemLoad() {
 #endif  // WIN32
 
 #if defined(IOS) || defined(OSX)
-  mach_port_t mach_host = mach_host_self();
   host_cpu_load_info_data_t cpu_info;
   mach_msg_type_number_t info_count = HOST_CPU_LOAD_INFO_COUNT;
-  kern_return_t kr = host_statistics(mach_host, HOST_CPU_LOAD_INFO,
-                                     reinterpret_cast<host_info_t>(&cpu_info),
-                                     &info_count);
-  mach_port_deallocate(mach_task_self(), mach_host);
-  if (KERN_SUCCESS != kr) {
+  if (KERN_SUCCESS != host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO,
+                                      reinterpret_cast<host_info_t>(&cpu_info),
+                                      &info_count)) {
     LOG(LS_ERROR) << "::host_statistics() failed";
     return 0.f;
   }

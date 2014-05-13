@@ -282,8 +282,22 @@ Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
                  "Channel::OnIncomingSSRCChanged(id=%d, SSRC=%d)",
                  id, ssrc);
 
+    int32_t channel = VoEChannelId(id);
+    assert(channel == _channelId);
+
     // Update ssrc so that NTP for AV sync can be updated.
     _rtpRtcpModule->SetRemoteSSRC(ssrc);
+
+    if (_rtpObserver)
+    {
+        CriticalSectionScoped cs(&_callbackCritSect);
+
+        if (_rtpObserverPtr)
+        {
+            // Send new SSRC to registered observer using callback
+            _rtpObserverPtr->OnIncomingSSRCChanged(channel, ssrc);
+        }
+    }
 }
 
 void Channel::OnIncomingCSRCChanged(int32_t id,
@@ -293,6 +307,19 @@ void Channel::OnIncomingCSRCChanged(int32_t id,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingCSRCChanged(id=%d, CSRC=%d, added=%d)",
                  id, CSRC, added);
+
+    int32_t channel = VoEChannelId(id);
+    assert(channel == _channelId);
+
+    if (_rtpObserver)
+    {
+        CriticalSectionScoped cs(&_callbackCritSect);
+
+        if (_rtpObserverPtr)
+        {
+            _rtpObserverPtr->OnIncomingCSRCChanged(channel, CSRC, added);
+        }
+    }
 }
 
 void Channel::ResetStatistics(uint32_t ssrc) {
@@ -497,6 +524,8 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
                  payloadSize,
                  rtpHeader->header.payloadType,
                  rtpHeader->type.Audio.channel);
+
+    _lastRemoteTimeStamp = rtpHeader->header.timestamp;
 
     if (!channel_state_.Get().playing)
     {
@@ -847,10 +876,12 @@ Channel::Channel(int32_t channelId,
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
     _sendFrameType(0),
+    _rtpObserverPtr(NULL),
     _rtcpObserverPtr(NULL),
     _externalPlayout(false),
     _externalMixing(false),
     _mixFileWithMicrophone(false),
+    _rtpObserver(false),
     _rtcpObserver(false),
     _mute(false),
     _panLeft(1.0f),
@@ -859,6 +890,7 @@ Channel::Channel(int32_t channelId,
     _playOutbandDtmfEvent(false),
     _playInbandDtmfEvent(false),
     _lastLocalTimeStamp(0),
+    _lastRemoteTimeStamp(0),
     _lastPayloadType(0),
     _includeAudioLevelIndication(false),
     _rtpPacketTimedOut(false),
@@ -2087,6 +2119,61 @@ int Channel::RegisterFilePlayingToMixer()
     return 0;
 }
 
+int Channel::ScaleLocalFilePlayout(float scale)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::ScaleLocalFilePlayout(scale=%5.3f)", scale);
+
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (!channel_state_.Get().output_file_playing)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceError,
+            "ScaleLocalFilePlayout() isnot playing");
+        return -1;
+    }
+    if ((_outputFilePlayerPtr == NULL) ||
+        (_outputFilePlayerPtr->SetAudioScaling(scale) != 0))
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_BAD_ARGUMENT, kTraceError,
+            "SetAudioScaling() failed to scale the playout");
+        return -1;
+    }
+
+    return 0;
+}
+
+int Channel::GetLocalPlayoutPosition(int& positionMs)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::GetLocalPlayoutPosition(position=?)");
+
+    uint32_t position;
+
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (_outputFilePlayerPtr == NULL)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceError,
+            "GetLocalPlayoutPosition() filePlayer instance doesnot exist");
+        return -1;
+    }
+
+    if (_outputFilePlayerPtr->GetPlayoutPosition(position) != 0)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_BAD_FILE, kTraceError,
+            "GetLocalPlayoutPosition() failed");
+        return -1;
+    }
+    positionMs = position;
+
+    return 0;
+}
+
 int Channel::StartPlayingFileAsMicrophone(const char* fileName,
                                           bool loop,
                                           FileFormats format,
@@ -2262,6 +2349,33 @@ int Channel::IsPlayingFileAsMicrophone() const
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::IsPlayingFileAsMicrophone()");
     return channel_state_.Get().input_file_playing;
+}
+
+int Channel::ScaleFileAsMicrophonePlayout(float scale)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::ScaleFileAsMicrophonePlayout(scale=%5.3f)", scale);
+
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (!channel_state_.Get().input_file_playing)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceError,
+            "ScaleFileAsMicrophonePlayout() isnot playing");
+        return -1;
+    }
+
+    if ((_inputFilePlayerPtr == NULL) ||
+        (_inputFilePlayerPtr->SetAudioScaling(scale) != 0))
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_BAD_ARGUMENT, kTraceError,
+            "SetAudioScaling() failed to scale playout");
+        return -1;
+    }
+
+    return 0;
 }
 
 int Channel::StartRecordingPlayout(const char* fileName,
@@ -2949,6 +3063,48 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
 #endif // #ifdef WEBRTC_VOICE_ENGINE_NR
 
 int
+Channel::RegisterRTPObserver(VoERTPObserver& observer)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+                 "Channel::RegisterRTPObserver()");
+    CriticalSectionScoped cs(&_callbackCritSect);
+
+    if (_rtpObserverPtr)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceError,
+            "RegisterRTPObserver() observer already enabled");
+        return -1;
+    }
+
+    _rtpObserverPtr = &observer;
+    _rtpObserver = true;
+
+    return 0;
+}
+
+int
+Channel::DeRegisterRTPObserver()
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::DeRegisterRTPObserver()");
+    CriticalSectionScoped cs(&_callbackCritSect);
+
+    if (!_rtpObserverPtr)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceWarning,
+            "DeRegisterRTPObserver() observer already disabled");
+        return 0;
+    }
+
+    _rtpObserver = false;
+    _rtpObserverPtr = NULL;
+
+    return 0;
+}
+
+int
 Channel::RegisterRTCPObserver(VoERTCPObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -3030,6 +3186,37 @@ Channel::GetRemoteSSRC(unsigned int& ssrc)
                  VoEId(_instanceId,_channelId),
                  "GetRemoteSSRC() => ssrc=%lu", ssrc);
     return 0;
+}
+
+int
+Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
+{
+    if (arrCSRC == NULL)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_ARGUMENT, kTraceError,
+            "GetRemoteCSRCs() invalid array argument");
+        return -1;
+    }
+    uint32_t arrOfCSRC[kRtpCsrcSize];
+    int32_t CSRCs(0);
+    CSRCs = rtp_receiver_->CSRCs(arrOfCSRC);
+    if (CSRCs > 0)
+    {
+        memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
+        for (int i = 0; i < (int) CSRCs; i++)
+        {
+            WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+                       VoEId(_instanceId, _channelId),
+                       "GetRemoteCSRCs() => arrCSRC[%d]=%lu", i, arrCSRC[i]);
+        }
+    } else
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+                   VoEId(_instanceId, _channelId),
+                   "GetRemoteCSRCs() => list is empty!");
+    }
+    return CSRCs;
 }
 
 int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
@@ -3329,6 +3516,29 @@ Channel::GetRTPStatistics(
                " discardedPackets = %lu)",
                averageJitterMs, maxJitterMs, discardedPackets);
     return 0;
+}
+
+int Channel::GetRemoteRTCPSenderInfo(SenderInfo* sender_info) {
+  if (sender_info == NULL) {
+    _engineStatisticsPtr->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+        "GetRemoteRTCPSenderInfo() invalid sender_info.");
+    return -1;
+  }
+
+  // Get the sender info from the latest received RTCP Sender Report.
+  RTCPSenderInfo rtcp_sender_info;
+  if (_rtpRtcpModule->RemoteRTCPStat(&rtcp_sender_info) != 0) {
+    _engineStatisticsPtr->SetLastError(VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+        "GetRemoteRTCPSenderInfo() failed to read RTCP SR sender info.");
+    return -1;
+  }
+
+  sender_info->NTP_timestamp_high = rtcp_sender_info.NTPseconds;
+  sender_info->NTP_timestamp_low = rtcp_sender_info.NTPfraction;
+  sender_info->RTP_timestamp = rtcp_sender_info.RTPtimeStamp;
+  sender_info->sender_packet_count = rtcp_sender_info.sendPacketCount;
+  sender_info->sender_octet_count = rtcp_sender_info.sendOctetCount;
+  return 0;
 }
 
 int Channel::GetRemoteRTCPReportBlocks(

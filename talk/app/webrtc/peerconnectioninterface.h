@@ -121,9 +121,8 @@ class StatsObserver : public talk_base::RefCountInterface {
 
 class UMAObserver : public talk_base::RefCountInterface {
  public:
-  virtual void IncrementCounter(PeerConnectionUMAMetricsCounter type) = 0;
-  virtual void AddHistogramSample(PeerConnectionUMAMetricsName type,
-                                  int value) = 0;
+  virtual void IncrementCounter(UMAMetricsCounter type) = 0;
+  virtual void AddHistogramSample(UMAMetricsName type, int value) = 0;
 
  protected:
   virtual ~UMAObserver() {}

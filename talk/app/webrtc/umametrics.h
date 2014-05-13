@@ -39,7 +39,7 @@ namespace webrtc {
 // chromium/src/tools/metrics/histograms/histograms.xml
 // Existing values cannot be re-ordered and new enums must be added
 // before kBoundary.
-enum PeerConnectionUMAMetricsCounter {
+enum UMAMetricsCounter {
   kPeerConnection_IPv4,
   kPeerConnection_IPv6,
   kBestConnections_IPv4,
@@ -48,9 +48,9 @@ enum PeerConnectionUMAMetricsCounter {
 };
 
 // This enum defines types for UMA samples, which will have a range.
-enum PeerConnectionUMAMetricsName {
-  kNetworkInterfaces_IPv4,   // Number of IPv4 interfaces.
-  kNetworkInterfaces_IPv6,   // Number of IPv6 interfaces.
+enum UMAMetricsName {
+  kNetworkInterfaces_IPv4,
+  kNetworkInterfaces_IPv6,
   kTimeToConnect,  // In milliseconds.
 };
 

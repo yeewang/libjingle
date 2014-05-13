@@ -2593,7 +2593,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
        it != recv_channels_.end(); ++it) {
     WebRtcVideoChannelRecvInfo* channel = it->second;
 
-    unsigned int ssrc = 0;
+    unsigned int ssrc;
     // Get receiver statistics and build VideoReceiverInfo, if we have data.
     // Skip the default channel (ssrc == 0).
     if (engine_->vie()->rtp()->GetRemoteSSRC(

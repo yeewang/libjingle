@@ -117,6 +117,8 @@ public:
 
     int IsPlayingFileAsMicrophone() const;
 
+    int ScaleFileAsMicrophonePlayout(float scale);
+
     int StartRecordingMicrophone(const char* fileName,
                                  const CodecInst* codecInst);
 
