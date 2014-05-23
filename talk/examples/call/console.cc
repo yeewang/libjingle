@@ -48,29 +48,28 @@ static void DoNothing(int unused) {}
 Console::Console(talk_base::Thread *thread, CallClient *client) :
   client_(client),
   client_thread_(thread),
-  stopped_(false) {}
+  console_thread_(new talk_base::Thread()) {}
 
 Console::~Console() {
   Stop();
 }
 
 void Console::Start() {
-  if (stopped_) {
+  if (!console_thread_) {
     // stdin was closed in Stop(), so we can't restart.
     LOG(LS_ERROR) << "Cannot re-start";
     return;
   }
-  if (console_thread_) {
+  if (console_thread_->started()) {
     LOG(LS_WARNING) << "Already started";
     return;
   }
-  console_thread_.reset(new talk_base::Thread());
   console_thread_->Start();
   console_thread_->Post(this, MSG_START);
 }
 
 void Console::Stop() {
-  if (console_thread_) {
+  if (console_thread_ && console_thread_->started()) {
 #ifdef WIN32
     CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
 #else
@@ -81,7 +80,6 @@ void Console::Stop() {
 #endif
     console_thread_->Stop();
     console_thread_.reset();
-    stopped_ = true;
   }
 }
 
