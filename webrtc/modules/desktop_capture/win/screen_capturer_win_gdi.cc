@@ -133,8 +133,7 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
   callback_->OnCaptureCompleted(frame);
 
   // Check for cursor shape update.
-  if (mouse_shape_observer_)
-    CaptureCursor();
+  CaptureCursor();
 }
 
 void ScreenCapturerWinGdi::SetMouseShapeObserver(
@@ -280,8 +279,6 @@ bool ScreenCapturerWinGdi::CaptureImage() {
 }
 
 void ScreenCapturerWinGdi::CaptureCursor() {
-  assert(mouse_shape_observer_);
-
   CURSORINFO cursor_info;
   cursor_info.cbSize = sizeof(CURSORINFO);
   if (!GetCursorInfo(&cursor_info)) {
@@ -320,7 +317,8 @@ void ScreenCapturerWinGdi::CaptureCursor() {
   // Record the last cursor image that we sent to the client.
   last_cursor_ = *cursor;
 
-  mouse_shape_observer_->OnCursorShapeChanged(cursor.release());
+  if (mouse_shape_observer_)
+    mouse_shape_observer_->OnCursorShapeChanged(cursor.release());
 }
 
 }  // namespace webrtc

@@ -55,22 +55,18 @@ void ViEFrameProviderBase::DeliverFrame(
 
   // Deliver the frame to all registered callbacks.
   if (frame_callbacks_.size() > 0) {
-    if (frame_callbacks_.size() == 1) {
+    if (frame_callbacks_.size() == 1 || video_frame->native_handle() != NULL) {
       // We don't have to copy the frame.
       frame_callbacks_.front()->DeliverFrame(id_, video_frame, num_csrcs, CSRC);
     } else {
+      // Make a copy of the frame for all callbacks.callback
       for (FrameCallbacks::iterator it = frame_callbacks_.begin();
            it != frame_callbacks_.end(); ++it) {
-        if (video_frame->native_handle() != NULL) {
-          (*it)->DeliverFrame(id_, video_frame, num_csrcs, CSRC);
-        } else {
-          // Make a copy of the frame for all callbacks.
-          if (!extra_frame_.get()) {
-            extra_frame_.reset(new I420VideoFrame());
-          }
-          extra_frame_->CopyFrame(*video_frame);
-          (*it)->DeliverFrame(id_, extra_frame_.get(), num_csrcs, CSRC);
+        if (!extra_frame_.get()) {
+          extra_frame_.reset(new I420VideoFrame());
         }
+        extra_frame_->CopyFrame(*video_frame);
+        (*it)->DeliverFrame(id_, extra_frame_.get(), num_csrcs, CSRC);
       }
     }
   }

@@ -26,6 +26,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -125,6 +126,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       nack_(),
       nack_enabled_(false),
       neteq_(NetEq::Create(config.neteq_config)),
+      decode_lock_(RWLockWrapper::CreateRWLock()),
       vad_enabled_(true),
       clock_(config.clock),
       av_sync_(false),
@@ -147,6 +149,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
 
 AcmReceiver::~AcmReceiver() {
   delete neteq_;
+  delete decode_lock_;
 }
 
 int AcmReceiver::SetMinimumDelay(int delay_ms) {
@@ -328,18 +331,22 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
     }
   }  // |crit_sect_| is released.
 
-  // If |missing_packets_sync_stream_| is allocated then we are in AV-sync and
-  // we may need to insert sync-packets. We don't check |av_sync_| as we are
-  // outside AcmReceiver's critical section.
-  if (missing_packets_sync_stream_.get()) {
-    InsertStreamOfSyncPackets(missing_packets_sync_stream_.get());
-  }
+  {
+    WriteLockScoped lock_codecs(*decode_lock_);  // Lock to prevent an encoding.
 
-  if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
-                           receive_timestamp) < 0) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket", header->payloadType) <<
-        " Failed to insert packet";
-    return -1;
+    // If |missing_packets_sync_stream_| is allocated then we are in AV-sync and
+    // we may need to insert sync-packets. We don't check |av_sync_| as we are
+    // outside AcmReceiver's critical section.
+    if (missing_packets_sync_stream_.get()) {
+      InsertStreamOfSyncPackets(missing_packets_sync_stream_.get());
+    }
+
+    if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
+                             receive_timestamp) < 0) {
+      LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket", header->payloadType) <<
+          " Failed to insert packet";
+      return -1;
+    }
   }
   return 0;
 }
@@ -377,20 +384,24 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
     }
   }
 
-  // If |late_packets_sync_stream_| is allocated then we have been in AV-sync
-  // mode and we might have to insert sync-packets.
-  if (late_packets_sync_stream_.get()) {
-    InsertStreamOfSyncPackets(late_packets_sync_stream_.get());
-    if (return_silence)  // Silence generated, don't pull from NetEq.
-      return 0;
-  }
+  {
+    WriteLockScoped lock_codecs(*decode_lock_);  // Lock to prevent an encoding.
 
-  if (neteq_->GetAudio(AudioFrame::kMaxDataSizeSamples,
-                       ptr_audio_buffer,
-                       &samples_per_channel,
-                       &num_channels, &type) != NetEq::kOK) {
-    LOG_FERR0(LS_ERROR, "AcmReceiver::GetAudio") << "NetEq Failed.";
-    return -1;
+    // If |late_packets_sync_stream_| is allocated then we have been in AV-sync
+    // mode and we might have to insert sync-packets.
+    if (late_packets_sync_stream_.get()) {
+      InsertStreamOfSyncPackets(late_packets_sync_stream_.get());
+      if (return_silence)  // Silence generated, don't pull from NetEq.
+        return 0;
+    }
+
+    if (neteq_->GetAudio(AudioFrame::kMaxDataSizeSamples,
+                         ptr_audio_buffer,
+                         &samples_per_channel,
+                         &num_channels, &type) != NetEq::kOK) {
+      LOG_FERR0(LS_ERROR, "AcmReceiver::GetAudio") << "NetEq Failed.";
+      return -1;
+    }
   }
 
   // Accessing members, take the lock.

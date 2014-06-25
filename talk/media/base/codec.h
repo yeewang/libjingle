@@ -39,8 +39,6 @@ namespace cricket {
 
 typedef std::map<std::string, std::string> CodecParameterMap;
 
-extern const int kMaxPayloadId;
-
 class FeedbackParam {
  public:
   FeedbackParam(const std::string& id, const std::string& param)
@@ -105,10 +103,6 @@ struct Codec {
 
   void SetParam(const std::string& name, const std::string& value);
   void SetParam(const std::string& name, int value);
-
-  // It is safe to input a non-existent parameter.
-  // Returns true if the parameter existed, false if it did not exist.
-  bool RemoveParam(const std::string& name);
 
   bool HasFeedbackParam(const FeedbackParam& param) const;
   void AddFeedbackParam(const FeedbackParam& param);

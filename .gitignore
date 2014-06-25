@@ -55,7 +55,6 @@
 /third_party/asan
 /third_party/binutils
 /third_party/clang_format
-/third_party/colorama
 /third_party/cygwin
 /third_party/directxsdk
 /third_party/expat
@@ -98,9 +97,7 @@
 /tools/gyp
 /tools/protoc_wrapper
 /tools/python
-/tools/sanitizer_options
 /tools/swarming_client
-/tools/tsan_suppressions
 /tools/valgrind
 /tools/win
 /webrtc/examples/android/media_demo/bin

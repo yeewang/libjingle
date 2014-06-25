@@ -55,6 +55,8 @@ const uint32 MSG_SHAKE = 5;
 const uint32 MSG_SEQUENCEOBJECTS_CREATED = 6;
 const uint32 MSG_CONFIG_STOP = 7;
 
+const uint32 ALLOCATE_DELAY = 250;
+
 const int PHASE_UDP = 0;
 const int PHASE_RELAY = 1;
 const int PHASE_TCP = 2;
@@ -396,6 +398,8 @@ void BasicPortAllocatorSession::OnAllocate() {
     DoAllocate();
 
   allocation_started_ = true;
+  if (running_)
+    network_thread_->PostDelayed(ALLOCATE_DELAY, this, MSG_ALLOCATE);
 }
 
 // For each network, see if we have a sequence that covers it already.  If not,

@@ -294,6 +294,17 @@ class ACMGenericCodec {
   int32_t IsInternalDTXReplaced(bool* internal_dtx_replaced);
 
   ///////////////////////////////////////////////////////////////////////////
+  // void SetNetEqDecodeLock()
+  // Passes the NetEq lock to the codec.
+  //
+  // Input:
+  //   -neteq_decode_lock  : pointer to the lock associated with NetEQ of ACM.
+  //
+  void SetNetEqDecodeLock(RWLockWrapper* neteq_decode_lock) {
+    neteq_decode_lock_ = neteq_decode_lock;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
   // bool HasInternalDTX()
   // Used to check if the codec has internal DTX.
   //
@@ -301,10 +312,7 @@ class ACMGenericCodec {
   //   true if the codec has an internal DTX, e.g. G729,
   //   false otherwise.
   //
-  bool HasInternalDTX() const {
-    ReadLockScoped rl(codec_wrapper_lock_);
-    return has_internal_dtx_;
-  }
+  bool HasInternalDTX() const { return has_internal_dtx_; }
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t GetEstimatedBandwidth()
@@ -428,8 +436,7 @@ class ACMGenericCodec {
   //   -1 if failed, or if this is meaningless for the given codec.
   //    0 if succeeded.
   //
-  virtual int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  virtual int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // EncoderSampFreq()
@@ -443,8 +450,7 @@ class ACMGenericCodec {
   //   -1 if failed to output sampling rate.
   //    0 if the sample rate is returned successfully.
   //
-  virtual int16_t EncoderSampFreq(uint16_t* samp_freq_hz)
-      SHARED_LOCKS_REQUIRED(codec_wrapper_lock_);
+  virtual int16_t EncoderSampFreq(uint16_t* samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ConfigISACBandwidthEstimator()
@@ -509,6 +515,8 @@ class ACMGenericCodec {
   //
   virtual int32_t SetISACMaxRate(const uint32_t max_rate_bps);
 
+  int32_t FrameSize() { return frame_len_smpl_; }
+
   ///////////////////////////////////////////////////////////////////////////
   // REDPayloadISAC()
   // This is an iSAC-specific function. The function is called to get RED
@@ -561,10 +569,7 @@ class ACMGenericCodec {
   //   true if the codec has an internal FEC, e.g. Opus.
   //   false otherwise.
   //
-  bool HasInternalFEC() const {
-    ReadLockScoped rl(codec_wrapper_lock_);
-    return has_internal_fec_;
-  }
+  bool HasInternalFEC() const { return has_internal_fec_; }
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetFEC();
@@ -619,8 +624,7 @@ class ACMGenericCodec {
   // See EncoderParam() for the description of function, input(s)/output(s)
   // and return value.
   //
-  int16_t EncoderParamsSafe(WebRtcACMCodecParams* enc_params)
-      SHARED_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t EncoderParamsSafe(WebRtcACMCodecParams* enc_params);
 
   ///////////////////////////////////////////////////////////////////////////
   // See ResetEncoder() for the description of function, input(s)/output(s)
@@ -647,8 +651,7 @@ class ACMGenericCodec {
   // See DestructEncoder() for the description of function,
   // input(s)/output(s) and return value.
   //
-  virtual void DestructEncoderSafe()
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_) = 0;
+  virtual void DestructEncoderSafe() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // See SetBitRate() for the description of function, input(s)/output(s)
@@ -656,8 +659,7 @@ class ACMGenericCodec {
   //
   // Any codec that can change the bit-rate has to implement this.
   //
-  virtual int16_t SetBitRateSafe(const int32_t bitrate_bps)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  virtual int16_t SetBitRateSafe(const int32_t bitrate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
   // See GetEstimatedBandwidth() for the description of function,
@@ -705,7 +707,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  int16_t CreateEncoder() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t CreateEncoder();
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t EnableVAD();
@@ -771,8 +773,7 @@ class ACMGenericCodec {
   //   otherwise the length of the bit-stream is returned.
   //
   virtual int16_t InternalEncode(uint8_t* bitstream,
-                                 int16_t* bitstream_len_byte)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_) = 0;
+                                 int16_t* bitstream_len_byte) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InternalInitEncoder()
@@ -793,8 +794,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  virtual int16_t InternalInitEncoder(WebRtcACMCodecParams* codec_params)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_) = 0;
+  virtual int16_t InternalInitEncoder(WebRtcACMCodecParams* codec_params) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // void IncreaseNoMissedSamples()
@@ -805,8 +805,7 @@ class ACMGenericCodec {
   //   -num_samples        : the number of overwritten samples is incremented
   //                         by this value.
   //
-  void IncreaseNoMissedSamples(const int16_t num_samples)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  void IncreaseNoMissedSamples(const int16_t num_samples);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InternalCreateEncoder()
@@ -850,8 +849,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  virtual int16_t InternalResetEncoder()
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  virtual int16_t InternalResetEncoder();
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t ProcessFrameVADDTX()
@@ -902,42 +900,41 @@ class ACMGenericCodec {
 
   // &in_audio_[in_audio_ix_write_] always point to where new audio can be
   // written to
-  int16_t in_audio_ix_write_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t in_audio_ix_write_;
 
   // &in_audio_[in_audio_ix_read_] points to where audio has to be read from
-  int16_t in_audio_ix_read_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t in_audio_ix_read_;
 
-  int16_t in_timestamp_ix_write_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t in_timestamp_ix_write_;
 
   // Where the audio is stored before encoding,
   // To save memory the following buffer can be allocated
   // dynamically for 80 ms depending on the sampling frequency
   // of the codec.
-  int16_t* in_audio_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t* in_timestamp_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t* in_audio_;
+  uint32_t* in_timestamp_;
 
-  int16_t frame_len_smpl_ GUARDED_BY(codec_wrapper_lock_);
-  uint16_t num_channels_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t frame_len_smpl_;
+  uint16_t num_channels_;
 
   // This will point to a static database of the supported codecs
-  int16_t codec_id_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t codec_id_;
 
   // This will account for the number of samples  were not encoded
   // the case is rare, either samples are missed due to overwrite
   // at input buffer or due to encoding error
-  uint32_t num_missed_samples_ GUARDED_BY(codec_wrapper_lock_);
+  uint32_t num_missed_samples_;
 
   // True if the encoder instance created
-  bool encoder_exist_ GUARDED_BY(codec_wrapper_lock_);
+  bool encoder_exist_;
 
   // True if the encoder instance initialized
-  bool encoder_initialized_ GUARDED_BY(codec_wrapper_lock_);
+  bool encoder_initialized_;
 
-  const bool registered_in_neteq_
-      GUARDED_BY(codec_wrapper_lock_);  // TODO(henrik.lundin) Remove?
+  const bool registered_in_neteq_;  // TODO(henrik.lundin) Remove?
 
   // VAD/DTX
-  bool has_internal_dtx_ GUARDED_BY(codec_wrapper_lock_);
+  bool has_internal_dtx_;
   WebRtcVadInst* ptr_vad_inst_ GUARDED_BY(codec_wrapper_lock_);
   bool vad_enabled_ GUARDED_BY(codec_wrapper_lock_);
   ACMVADMode vad_mode_ GUARDED_BY(codec_wrapper_lock_);
@@ -950,9 +947,13 @@ class ACMGenericCodec {
   int16_t prev_frame_cng_ GUARDED_BY(codec_wrapper_lock_);
 
   // FEC.
-  bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
+  bool has_internal_fec_;
 
-  WebRtcACMCodecParams encoder_params_ GUARDED_BY(codec_wrapper_lock_);
+  WebRtcACMCodecParams encoder_params_;
+
+  // Used as a global lock for all available decoders
+  // so that no decoder is used when NetEQ decodes.
+  RWLockWrapper* neteq_decode_lock_;
 
   // Used to lock wrapper internal data
   // such as buffers and state variables.

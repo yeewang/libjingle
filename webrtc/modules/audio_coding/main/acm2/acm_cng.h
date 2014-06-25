@@ -35,8 +35,7 @@ class ACMCNG: public ACMGenericCodec {
   int16_t InternalInitEncoder(WebRtcACMCodecParams *codec_params);
 
  protected:
-  void DestructEncoderSafe() OVERRIDE
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  void DestructEncoderSafe();
 
   int16_t InternalCreateEncoder();
 

@@ -775,11 +775,6 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
           negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_value);
         }
         negotiated.id = theirs->id;
-        // RFC3264: Although the answerer MAY list the formats in their desired
-        // order of preference, it is RECOMMENDED that unless there is a
-        // specific reason, the answerer list formats in the same relative order
-        // they were present in the offer.
-        negotiated.preference = theirs->preference;
         negotiated_codecs->push_back(negotiated);
       }
     }

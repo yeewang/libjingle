@@ -577,22 +577,14 @@
               '-lX11',
               '-lXcomposite',
               '-lXrender',
+              '<!@(<(pkg-config) --libs-only-l nss | sed -e "s/-lssl3//")',
             ],
           },
-          'conditions': [
-            ['build_ssl==1', {
-              'link_settings': {
-                'libraries': [
-                  '<!@(<(pkg-config) --libs-only-l nss | sed -e "s/-lssl3//")',
-                ],
-              },
-              'cflags': [
-                '<!@(<(pkg-config) --cflags nss)',
-              ],
-              'ldflags': [
-                '<!@(<(pkg-config) --libs-only-L --libs-only-other nss)',
-              ],
-            }],
+          'cflags': [
+            '<!@(<(pkg-config) --cflags nss)',
+          ],
+          'ldflags': [
+            '<!@(<(pkg-config) --libs-only-L --libs-only-other nss)',
           ],
         }, {
           'sources!': [
