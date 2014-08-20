@@ -12,6 +12,8 @@
 #include "webrtc/modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
 
 using ::std::string;
+using ::std::tr1::make_tuple;
+using ::testing::ValuesIn;
 
 namespace webrtc {
 
@@ -103,17 +105,14 @@ ADD_TEST(0);
 
 // List all test cases: (channel, bit rat, filename, extension).
 const coding_param param_set[] =
-    {::std::tr1::make_tuple(1, 64000,
-                            string("audio_coding/speech_mono_32_48kHz"),
-                            string("pcm"), true),
-     ::std::tr1::make_tuple(1, 32000,
-                            string("audio_coding/speech_mono_32_48kHz"),
-                            string("pcm"), true),
-     ::std::tr1::make_tuple(2, 64000,
-                            string("audio_coding/music_stereo_48kHz"),
-                            string("pcm"), true)};
+    {make_tuple(1, 64000, string("audio_coding/speech_mono_32_48kHz"),
+                string("pcm"), true),
+     make_tuple(1, 32000, string("audio_coding/speech_mono_32_48kHz"),
+                string("pcm"), true),
+     make_tuple(2, 64000, string("audio_coding/music_stereo_48kHz"),
+                string("pcm"), true)};
 
 INSTANTIATE_TEST_CASE_P(AllTest, OpusSpeedTest,
-                        ::testing::ValuesIn(param_set));
+                        ValuesIn(param_set));
 
 }  // namespace webrtc

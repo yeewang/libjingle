@@ -622,6 +622,10 @@ bool WebRtcSession::Initialize(
         cricket::VideoOptions::HIGH);
   }
 
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kOpusFec,
+      &audio_options_.opus_fec);
+
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
       JsepSessionDescription::kDefaultVideoCodecName,

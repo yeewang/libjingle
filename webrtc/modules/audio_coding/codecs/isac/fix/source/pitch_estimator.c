@@ -27,7 +27,10 @@ static const int16_t kACoefQ12[3] = {
   4096, -3072, 1024
 };
 
-int32_t WebRtcIsacfix_Log2Q8(uint32_t x) {
+
+
+__inline int32_t WebRtcIsacfix_Log2Q8( uint32_t x ) {
+
   int32_t zeros, lg2;
   int16_t frac;
 

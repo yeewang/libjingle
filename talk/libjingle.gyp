@@ -531,7 +531,6 @@
         'media/webrtc/webrtcexport.h',
         'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcmediaengine.h',
-        'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcpassthroughrender.cc',
         'media/webrtc/webrtcpassthroughrender.h',
         'media/webrtc/webrtctexturevideoframe.cc',

@@ -302,9 +302,6 @@ void WindowCapturerLinux::Capture(const DesktopRegion& region) {
   x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
                                      frame);
 
-  frame->mutable_updated_region()->SetRect(
-      DesktopRect::MakeSize(frame->size()));
-
   callback_->OnCaptureCompleted(frame);
 }
 

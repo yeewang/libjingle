@@ -23,10 +23,10 @@ namespace rtc {
 
 class XWindowEnumerator;
 
-class X11WindowPicker : public WindowPicker {
+class LinuxWindowPicker : public WindowPicker {
  public:
-  X11WindowPicker();
-  ~X11WindowPicker();
+  LinuxWindowPicker();
+  ~LinuxWindowPicker();
 
   static bool IsDesktopElement(_XDisplay* display, Window window);
 
