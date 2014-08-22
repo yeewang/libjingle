@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/x11windowpicker.h"
+#include "webrtc/base/linuxwindowpicker.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/testutils.h"
 #include "webrtc/base/windowpicker.h"
@@ -20,17 +20,17 @@
 
 namespace rtc {
 
-TEST(X11WindowPickerTest, TestGetWindowList) {
+TEST(LinuxWindowPickerTest, TestGetWindowList) {
   MAYBE_SKIP_SCREENCAST_TEST();
-  X11WindowPicker window_picker;
+  LinuxWindowPicker window_picker;
   WindowDescriptionList descriptions;
   window_picker.Init();
   window_picker.GetWindowList(&descriptions);
 }
 
-TEST(X11WindowPickerTest, TestGetDesktopList) {
+TEST(LinuxWindowPickerTest, TestGetDesktopList) {
   MAYBE_SKIP_SCREENCAST_TEST();
-  X11WindowPicker window_picker;
+  LinuxWindowPicker window_picker;
   DesktopDescriptionList descriptions;
   EXPECT_TRUE(window_picker.Init());
   EXPECT_TRUE(window_picker.GetDesktopList(&descriptions));

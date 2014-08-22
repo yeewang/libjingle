@@ -579,6 +579,18 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kPayloadPadding,
       &video_options_.use_payload_padding);
 
+  // Find improved wifi bwe constraint.
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kImprovedWifiBwe,
+        &value,
+        NULL)) {
+    video_options_.use_improved_wifi_bandwidth_estimator.Set(value);
+  } else {
+    // Enable by default if the constraint is not set.
+    video_options_.use_improved_wifi_bandwidth_estimator.Set(true);
+  }
+
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kNumUnsignalledRecvStreams,
       &video_options_.unsignalled_recv_stream_limit);
@@ -609,6 +621,10 @@ bool WebRtcSession::Initialize(
     video_options_.video_highest_bitrate.Set(
         cricket::VideoOptions::HIGH);
   }
+
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kOpusFec,
+      &audio_options_.opus_fec);
 
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,

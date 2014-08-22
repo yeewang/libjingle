@@ -89,7 +89,6 @@
         }],
         ['target_arch=="mipsel"', {
           'sources': [
-            'entropy_coding_mips.c',
             'filters_mips.c',
             'lattice_mips.c',
             'pitch_estimator_mips.c',

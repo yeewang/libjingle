@@ -1285,9 +1285,8 @@ void CallClient::OnMucStatusUpdate(const buzz::Jid& jid,
     return;
   }
 
-  if (status.available()) {
-    muc->members()[status.jid().resource()] = status;
-  } else {
+  if (!status.available()) {
+    // Remove them from the room.
     muc->members().erase(status.jid().resource());
   }
 }

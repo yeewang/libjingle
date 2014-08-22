@@ -182,6 +182,7 @@ struct AudioOptions {
     recording_sample_rate.SetFrom(change.recording_sample_rate);
     playout_sample_rate.SetFrom(change.playout_sample_rate);
     dscp.SetFrom(change.dscp);
+    opus_fec.SetFrom(change.opus_fec);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -207,7 +208,8 @@ struct AudioOptions {
         rx_agc_limiter == o.rx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
         playout_sample_rate == o.playout_sample_rate &&
-        dscp == o.dscp;
+        dscp == o.dscp &&
+        opus_fec == o.opus_fec;
   }
 
   std::string ToString() const {
@@ -238,6 +240,7 @@ struct AudioOptions {
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("dscp", dscp);
+    ost << ToStringIfSet("opus_fec", opus_fec);
     ost << "}";
     return ost.str();
   }
@@ -275,6 +278,8 @@ struct AudioOptions {
   Settable<uint32> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
   Settable<bool> dscp;
+  // Set Opus FEC
+  Settable<bool> opus_fec;
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.
@@ -329,6 +334,8 @@ struct VideoOptions {
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
     use_simulcast_adapter.SetFrom(change.use_simulcast_adapter);
     screencast_min_bitrate.SetFrom(change.screencast_min_bitrate);
+    use_improved_wifi_bandwidth_estimator.SetFrom(
+        change.use_improved_wifi_bandwidth_estimator);
     use_payload_padding.SetFrom(change.use_payload_padding);
   }
 
@@ -365,6 +372,8 @@ struct VideoOptions {
         unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
         use_simulcast_adapter == o.use_simulcast_adapter &&
         screencast_min_bitrate == o.screencast_min_bitrate &&
+        use_improved_wifi_bandwidth_estimator ==
+            o.use_improved_wifi_bandwidth_estimator &&
         use_payload_padding == o.use_payload_padding;
   }
 
@@ -405,6 +414,8 @@ struct VideoOptions {
                          unsignalled_recv_stream_limit);
     ost << ToStringIfSet("use simulcast adapter", use_simulcast_adapter);
     ost << ToStringIfSet("screencast min bitrate", screencast_min_bitrate);
+    ost << ToStringIfSet("improved wifi bwe",
+                         use_improved_wifi_bandwidth_estimator);
     ost << ToStringIfSet("payload padding", use_payload_padding);
     ost << "}";
     return ost.str();
@@ -477,6 +488,8 @@ struct VideoOptions {
   Settable<bool> use_simulcast_adapter;
   // Force screencast to use a minimum bitrate
   Settable<int> screencast_min_bitrate;
+  // Enable improved bandwidth estiamtor on wifi.
+  Settable<bool> use_improved_wifi_bandwidth_estimator;
   // Enable payload padding.
   Settable<bool> use_payload_padding;
 };

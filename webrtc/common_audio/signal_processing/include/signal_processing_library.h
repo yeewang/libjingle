@@ -36,6 +36,19 @@
 #define WEBRTC_SPL_ABS_W32(a) \
     (((int32_t)a >= 0) ? ((int32_t)a) : -((int32_t)a))
 
+#ifdef WEBRTC_ARCH_LITTLE_ENDIAN
+#define WEBRTC_SPL_GET_BYTE(a, nr)  (((int8_t *)a)[nr])
+#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
+    (((int8_t *)d_ptr)[index] = (val))
+#else
+#define WEBRTC_SPL_GET_BYTE(a, nr) \
+    ((((int16_t *)a)[nr >> 1]) >> (((nr + 1) & 0x1) * 8) & 0x00ff)
+#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
+    ((int16_t *)d_ptr)[index >> 1] = \
+    ((((int16_t *)d_ptr)[index >> 1]) \
+    & (0x00ff << (8 * ((index) & 0x1)))) | (val << (8 * ((index + 1) & 0x1)))
+#endif
+
 #define WEBRTC_SPL_MUL(a, b) \
     ((int32_t) ((int32_t)(a) * (int32_t)(b)))
 #define WEBRTC_SPL_UMUL(a, b) \
@@ -44,6 +57,8 @@
     ((uint32_t) (uint16_t)(a) * (uint16_t)(b))
 #define WEBRTC_SPL_UMUL_32_16(a, b) \
     ((uint32_t) ((uint32_t)(a) * (uint16_t)(b)))
+#define WEBRTC_SPL_UMUL_32_16_RSFT16(a, b) \
+    ((uint32_t) ((uint32_t)(a) * (uint16_t)(b)) >> 16)
 #define WEBRTC_SPL_MUL_16_U16(a, b) \
     ((int32_t)(int16_t)(a) * (uint16_t)(b))
 #define WEBRTC_SPL_DIV(a, b) \
@@ -116,6 +131,9 @@ extern "C" {
   memcpy(v1, v2, (length) * sizeof(char))
 #define WEBRTC_SPL_MEMCPY_W16(v1, v2, length) \
   memcpy(v1, v2, (length) * sizeof(int16_t))
+
+#define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length) \
+  memmove(v1, v2, (length) * sizeof(int16_t))
 
 // inline functions:
 #include "webrtc/common_audio/signal_processing/include/spl_inl.h"

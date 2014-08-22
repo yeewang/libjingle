@@ -93,6 +93,8 @@ const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
 const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
 const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
     "googSuspendBelowMinBitrate";
+const char MediaConstraintsInterface::kImprovedWifiBwe[] =
+    "googImprovedWifiBwe";
 const char MediaConstraintsInterface::kNumUnsignalledRecvStreams[] =
     "googNumUnsignalledRecvStreams";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
@@ -117,6 +119,7 @@ const char MediaConstraintsInterface::kHighBitrate[] =
 const char MediaConstraintsInterface::kVeryHighBitrate[] =
     "googVeryHighBitrate";
 const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
+const char MediaConstraintsInterface::kOpusFec[] = "googOpusFec";
 
 
 // Set |value| to the value associated with the first appearance of |key|, or

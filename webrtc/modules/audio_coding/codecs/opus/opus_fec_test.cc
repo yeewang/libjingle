@@ -15,8 +15,10 @@
 
 using ::std::string;
 using ::std::tr1::tuple;
+using ::std::tr1::make_tuple;
 using ::std::tr1::get;
 using ::testing::TestWithParam;
+using ::testing::ValuesIn;
 
 namespace webrtc {
 
@@ -224,15 +226,15 @@ TEST_P(OpusFecTest, RandomPacketLossTest) {
 }
 
 const coding_param param_set[] =
-    {::std::tr1::make_tuple(1, 64000, string("audio_coding/testfile32kHz"),
-                            string("pcm")),
-     ::std::tr1::make_tuple(1, 32000, string("audio_coding/testfile32kHz"),
-                            string("pcm")),
-     ::std::tr1::make_tuple(2, 64000, string("audio_coding/teststereo32kHz"),
-                            string("pcm"))};
+    {make_tuple(1, 64000, string("audio_coding/testfile32kHz"),
+                string("pcm")),
+     make_tuple(1, 32000, string("audio_coding/testfile32kHz"),
+                string("pcm")),
+     make_tuple(2, 64000, string("audio_coding/teststereo32kHz"),
+                string("pcm"))};
 
 // 64 kbps, stereo
 INSTANTIATE_TEST_CASE_P(AllTest, OpusFecTest,
-                        ::testing::ValuesIn(param_set));
+                        ValuesIn(param_set));
 
 }  // namespace webrtc

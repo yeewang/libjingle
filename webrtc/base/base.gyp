@@ -127,6 +127,8 @@
         'linux.h',
         'linuxfdwalk.c',
         'linuxfdwalk.h',
+        'linuxwindowpicker.cc',
+        'linuxwindowpicker.h',
         'linked_ptr.h',
         'logging.cc',
         'logging.h',
@@ -309,8 +311,6 @@
         'winping.h',
         'worker.cc',
         'worker.h',
-        'x11windowpicker.cc',
-        'x11windowpicker.h',
         '../overrides/webrtc/base/basictypes.h',
         '../overrides/webrtc/base/constructormagic.h',
         '../overrides/webrtc/base/logging.cc',
@@ -381,8 +381,8 @@
             'libdbusglibsymboltable.h',
             'linuxfdwalk.c',
             'linuxfdwalk.h',
-            'x11windowpicker.cc',
-            'x11windowpicker.h',
+            'linuxwindowpicker.cc',
+            'linuxwindowpicker.h',
             'logging.cc',
             'logging.h',
             'macasyncsocket.cc',
@@ -569,7 +569,7 @@
             }],
           ],
         }],
-        ['use_x11 == 1', {
+        ['OS=="linux"', {
           'link_settings': {
             'libraries': [
               '-ldl',
@@ -578,20 +578,6 @@
               '-lX11',
               '-lXcomposite',
               '-lXrender',
-            ],
-          },
-        }, {
-          'sources!': [
-            'x11windowpicker.cc',
-            'x11windowpicker.h',
-          ],
-        }],
-        ['OS=="linux"', {
-          'link_settings': {
-            'libraries': [
-              '-lcrypto',
-              '-ldl',
-              '-lrt',
             ],
           },
           'conditions': [
@@ -616,6 +602,8 @@
             'libdbusglibsymboltable.cc',
             'libdbusglibsymboltable.h',
             'linuxfdwalk.c',
+            'linuxwindowpicker.cc',
+            'linuxwindowpicker.h',
           ],
         }],
         ['OS=="mac"', {
