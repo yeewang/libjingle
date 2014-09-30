@@ -222,8 +222,7 @@ int32_t DeviceInfoAndroid::GetOrientation(
     VideoCaptureRotation& orientation) {
   const AndroidCameraInfo* info = FindCameraInfoByName(deviceUniqueIdUTF8);
   if (info == NULL ||
-      VideoCaptureImpl::RotationFromDegrees(info->orientation,
-                                            &orientation) != 0) {
+      !VideoCaptureImpl::RotationFromDegrees(info->orientation, &orientation)) {
     return -1;
   }
   return 0;

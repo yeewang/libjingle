@@ -194,8 +194,6 @@ class UDPPort : public Port {
   // changed to SignalPortReady.
   void MaybeSetPortCompleteOrError();
 
-  bool HasCandidateWithAddress(const rtc::SocketAddress& addr) const;
-
   ServerAddresses server_addresses_;
   ServerAddresses bind_request_succeeded_servers_;
   ServerAddresses bind_request_failed_servers_;

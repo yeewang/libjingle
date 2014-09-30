@@ -139,7 +139,7 @@ class P2PTransportChannelTestBase : public testing::Test,
         nss_(new rtc::NATSocketServer(vss_.get())),
         ss_(new rtc::FirewallSocketServer(nss_.get())),
         ss_scope_(ss_.get()),
-        stun_server_(cricket::TestStunServer::Create(main_, kStunAddr)),
+        stun_server_(main_, kStunAddr),
         turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
         relay_server_(main_, kRelayUdpIntAddr, kRelayUdpExtAddr,
                       kRelayTcpIntAddr, kRelayTcpExtAddr,
@@ -365,6 +365,14 @@ class P2PTransportChannelTestBase : public testing::Test,
   static const Result kLocalTcpToLocalTcp;
   static const Result kLocalTcpToPrflxTcp;
   static const Result kPrflxTcpToLocalTcp;
+
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
 
   rtc::NATSocketServer* nat() { return nss_.get(); }
   rtc::FirewallSocketServer* fw() { return ss_.get(); }
@@ -737,7 +745,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::scoped_ptr<rtc::NATSocketServer> nss_;
   rtc::scoped_ptr<rtc::FirewallSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
-  rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
+  cricket::TestStunServer stun_server_;
   cricket::TestTurnServer turn_server_;
   cricket::TestRelayServer relay_server_;
   rtc::SocksProxyServer socks_server1_;

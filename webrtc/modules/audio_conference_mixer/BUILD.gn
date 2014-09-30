@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-config("audio_conference_mixer_config") {
+config("internal_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
     "interface",
@@ -31,12 +31,7 @@ source_set("audio_conference_mixer") {
     "source/time_scheduler.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":audio_conference_mixer_config",
-  ]
+  direct_dependent_configs = [ ":internal_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

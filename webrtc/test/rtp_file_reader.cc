@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
@@ -114,17 +113,13 @@ class RtpDumpReader : public RtpFileReaderImpl {
     // Use 'len' here because a 'plen' of 0 specifies rtcp.
     len -= kPacketHeaderSize;
     if (packet->length < len) {
-      FATAL() << "Packet is too large to fit: " << len << " bytes vs "
-              << packet->length
-              << " bytes allocated. Consider increasing the buffer "
-                 "size";
+      return false;
     }
     if (fread(rtp_data, 1, len, file_) != len) {
       return false;
     }
 
     packet->length = len;
-    packet->original_length = plen;
     packet->time_ms = offset;
     return true;
   }
@@ -295,7 +290,6 @@ class PcapReader : public RtpFileReaderImpl {
     if (NextPcap(packet->data, &length, &packet->time_ms) != kResultSuccess)
       return false;
     packet->length = static_cast<size_t>(length);
-    packet->original_length = packet->length;
     return true;
   }
 

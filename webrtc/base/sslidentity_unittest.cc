@@ -45,6 +45,14 @@ class SSLIdentityTest : public testing::Test {
   ~SSLIdentityTest() {
   }
 
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
+
   virtual void SetUp() {
     identity1_.reset(SSLIdentity::Generate("test1"));
     identity2_.reset(SSLIdentity::Generate("test2"));

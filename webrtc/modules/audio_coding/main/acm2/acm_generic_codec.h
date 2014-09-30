@@ -580,10 +580,10 @@ class ACMGenericCodec {
   //                         disabled.
   //
   // Return value:
-  //   -1 if failed,
+  //   -1 if failed, or the codec does not support FEC
   //    0 if succeeded.
   //
-  virtual int SetFEC(bool enable_fec);
+  virtual int SetFEC(bool /* enable_fec */) { return -1; }
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetPacketLossRate()

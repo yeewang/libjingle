@@ -83,6 +83,14 @@ class FakeDataReceiver : public sigslot::has_slots<> {
 
 class RtpDataMediaChannelTest : public testing::Test {
  protected:
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
+
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.
     iface_.reset(new cricket::FakeNetworkInterface());

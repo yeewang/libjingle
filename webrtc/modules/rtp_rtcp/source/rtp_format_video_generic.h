@@ -10,8 +10,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
 
-#include <string>
-
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 #include "webrtc/typedefs.h"
@@ -66,11 +64,18 @@ class RtpPacketizerGeneric : public RtpPacketizer {
 // Depacketizer for generic codec.
 class RtpDepacketizerGeneric : public RtpDepacketizer {
  public:
+  explicit RtpDepacketizerGeneric(RtpData* const callback);
+
   virtual ~RtpDepacketizerGeneric() {}
 
-  virtual bool Parse(ParsedPayload* parsed_payload,
+  virtual bool Parse(WebRtcRTPHeader* rtp_header,
                      const uint8_t* payload_data,
                      size_t payload_data_length) OVERRIDE;
+
+ private:
+  RtpData* const callback_;
+
+  DISALLOW_COPY_AND_ASSIGN(RtpDepacketizerGeneric);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_

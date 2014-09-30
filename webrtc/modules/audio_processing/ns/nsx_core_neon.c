@@ -102,7 +102,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
     // if (tmp16 < 0) {
     //   tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
     // } else {
-    //   tmp32no1 <<= tmp16;
+    //   tmp32no1 = WEBRTC_SPL_LSHIFT_W32(tmp32no1, tmp16);
     // }
     v32x4B = vshlq_s32(v32x4A, v32x4B);
 
@@ -127,7 +127,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
   if (tmp16 < 0) {
     tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
   } else {
-    tmp32no1 <<= tmp16;
+    tmp32no1 = WEBRTC_SPL_LSHIFT_W32(tmp32no1, tmp16);
   }
   *ptr_noiseEstQuantile = WebRtcSpl_SatW32ToW16(tmp32no1);
 }
@@ -690,7 +690,7 @@ void WebRtcNsx_CreateComplexBufferNeon(NsxInst_t* inst,
     // Loop unrolled once, so ptr_in is incremented by 8 twice,
     // and ptr_out is incremented by 8 four times.
     __asm__ __volatile__(
-      // out[j] = in[i] << inst->normData;  // Q(normData)
+      // out[j] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
       "vld1.16 {d22, d23}, [%[ptr_in]]!\n\t"
       "vshl.s16 q11, q10\n\t"
       "vmov d24, d23\n\t"
@@ -700,7 +700,7 @@ void WebRtcNsx_CreateComplexBufferNeon(NsxInst_t* inst,
       "vst2.16 {d22, d23}, [%[ptr_out]]!\n\t"
       "vst2.16 {d24, d25}, [%[ptr_out]]!\n\t"
 
-      // out[j] = in[i] << inst->normData;  // Q(normData)
+      // out[j] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
       "vld1.16 {d22, d23}, [%[ptr_in]]!\n\t"
       "vshl.s16 q11, q10\n\t"
       "vmov d24, d23\n\t"

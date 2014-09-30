@@ -247,6 +247,14 @@ class SSLAdapterTestBase : public testing::Test,
         handshake_wait_(kTimeout) {
   }
 
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
+
   void SetHandshakeWait(int wait) {
     handshake_wait_ = wait;
   }

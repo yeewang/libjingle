@@ -210,7 +210,7 @@ class Thread : public MessageQueue {
   bool RunningForTest() { return running(); }
 
   // Sets the per-thread allow-blocking-calls flag and returns the previous
-  // value. Must be called on this thread.
+  // value.
   bool SetAllowBlockingCalls(bool allow);
 
  protected:

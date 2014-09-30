@@ -143,6 +143,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         error_(T::MediaChannel::ERROR_NONE) {
   }
 
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
+
   void CreateChannels(int flags1, int flags2) {
     CreateChannels(new typename T::MediaChannel(NULL),
                    new typename T::MediaChannel(NULL),
