@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 {
   'includes': ['build/common.gypi'],
-  'targets': [],
   'conditions': [
     ['OS=="android"', {
       'targets': [

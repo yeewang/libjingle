@@ -303,7 +303,8 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const int16_t* echo_path)
     memcpy(aecm->channelAdapt16, echo_path, sizeof(int16_t) * PART_LEN1);
     for (i = 0; i < PART_LEN1; i++)
     {
-        aecm->channelAdapt32[i] = (int32_t)aecm->channelAdapt16[i] << 16;
+        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+            (int32_t)(aecm->channelAdapt16[i]), 16);
     }
 
     // Reset channel storing variables
@@ -369,12 +370,16 @@ static void ResetAdaptiveChannelC(AecmCore_t* aecm)
     // Restore the W32 channel
     for (i = 0; i < PART_LEN; i += 4)
     {
-        aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
-        aecm->channelAdapt32[i + 1] = (int32_t)aecm->channelStored[i + 1] << 16;
-        aecm->channelAdapt32[i + 2] = (int32_t)aecm->channelStored[i + 2] << 16;
-        aecm->channelAdapt32[i + 3] = (int32_t)aecm->channelStored[i + 3] << 16;
+        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+                (int32_t)aecm->channelStored[i], 16);
+        aecm->channelAdapt32[i + 1] = WEBRTC_SPL_LSHIFT_W32(
+                (int32_t)aecm->channelStored[i + 1], 16);
+        aecm->channelAdapt32[i + 2] = WEBRTC_SPL_LSHIFT_W32(
+                (int32_t)aecm->channelStored[i + 2], 16);
+        aecm->channelAdapt32[i + 3] = WEBRTC_SPL_LSHIFT_W32(
+                (int32_t)aecm->channelStored[i + 3], 16);
     }
-    aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
+    aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((int32_t)aecm->channelStored[i], 16);
 }
 
 // Initialize function pointers for ARM Neon platform.
@@ -709,20 +714,6 @@ static int16_t ExtractFractionPart(uint32_t a, int zeros) {
   return (int16_t)(((a << zeros) & 0x7FFFFFFF) >> 23);
 }
 
-// Calculates and returns the log of |energy| in Q8. The input |energy| is
-// supposed to be in Q(|q_domain|).
-static int16_t LogOfEnergyInQ8(uint32_t energy, int q_domain) {
-  static const int16_t kLogLowValue = PART_LEN_SHIFT << 7;
-  int16_t log_energy_q8 = kLogLowValue;
-  if (energy > 0) {
-    int zeros = WebRtcSpl_NormU32(energy);
-    int16_t frac = ExtractFractionPart(energy, zeros);
-    // log2 of |energy| in Q8.
-    log_energy_q8 += ((31 - zeros) << 8) + frac - (q_domain << 8);
-  }
-  return log_energy_q8;
-}
-
 // WebRtcAecm_CalcEnergies(...)
 //
 // This function calculates the log of energies for nearend, farend and estimated
@@ -749,11 +740,13 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
 
     int i;
 
+    int16_t zeros, frac;
     int16_t tmp16;
     int16_t increase_max_shifts = 4;
     int16_t decrease_max_shifts = 11;
     int16_t increase_min_shifts = 11;
     int16_t decrease_min_shifts = 3;
+    int16_t kLogLowValue = WEBRTC_SPL_LSHIFT_W16(PART_LEN_SHIFT, 7);
 
     // Get log of near end energy and store in buffer
 
@@ -762,7 +755,17 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
             sizeof(int16_t) * (MAX_BUF_LEN - 1));
 
     // Logarithm of integrated magnitude spectrum (nearEner)
-    aecm->nearLogEnergy[0] = LogOfEnergyInQ8(nearEner, aecm->dfaNoisyQDomain);
+    tmp16 = kLogLowValue;
+    if (nearEner)
+    {
+        zeros = WebRtcSpl_NormU32(nearEner);
+        frac = ExtractFractionPart(nearEner, zeros);
+        // log2 in Q8
+        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
+        tmp16 -= WEBRTC_SPL_LSHIFT_W16(aecm->dfaNoisyQDomain, 8);
+    }
+    aecm->nearLogEnergy[0] = tmp16;
+    // END: Get log of near end energy
 
     WebRtcAecm_CalcLinearEnergies(aecm, far_spectrum, echoEst, &tmpFar, &tmpAdapt, &tmpStored);
 
@@ -773,15 +776,40 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
             sizeof(int16_t) * (MAX_BUF_LEN - 1));
 
     // Logarithm of delayed far end energy
-    aecm->farLogEnergy = LogOfEnergyInQ8(tmpFar, far_q);
+    tmp16 = kLogLowValue;
+    if (tmpFar)
+    {
+        zeros = WebRtcSpl_NormU32(tmpFar);
+        frac = ExtractFractionPart(tmpFar, zeros);
+        // log2 in Q8
+        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
+        tmp16 -= WEBRTC_SPL_LSHIFT_W16(far_q, 8);
+    }
+    aecm->farLogEnergy = tmp16;
 
     // Logarithm of estimated echo energy through adapted channel
-    aecm->echoAdaptLogEnergy[0] = LogOfEnergyInQ8(tmpAdapt,
-                                                  RESOLUTION_CHANNEL16 + far_q);
+    tmp16 = kLogLowValue;
+    if (tmpAdapt)
+    {
+        zeros = WebRtcSpl_NormU32(tmpAdapt);
+        frac = ExtractFractionPart(tmpAdapt, zeros);
+        //log2 in Q8
+        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
+        tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);
+    }
+    aecm->echoAdaptLogEnergy[0] = tmp16;
 
     // Logarithm of estimated echo energy through stored channel
-    aecm->echoStoredLogEnergy[0] =
-        LogOfEnergyInQ8(tmpStored, RESOLUTION_CHANNEL16 + far_q);
+    tmp16 = kLogLowValue;
+    if (tmpStored)
+    {
+        zeros = WebRtcSpl_NormU32(tmpStored);
+        frac = ExtractFractionPart(tmpStored, zeros);
+        //log2 in Q8
+        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
+        tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);
+    }
+    aecm->echoStoredLogEnergy[0] = tmp16;
 
     // Update farend energy levels (min, max, vad, mse)
     if (aecm->farLogEnergy > FAR_ENERGY_MIN)

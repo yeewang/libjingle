@@ -194,6 +194,14 @@ class SSLStreamAdapterTestBase : public testing::Test,
     rtc::SetRandomTestMode(false);
   }
 
+  static void SetUpTestCase() {
+    rtc::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    rtc::CleanupSSL();
+  }
+
   // Recreate the client/server identities with the specified validity period.
   // |not_before| and |not_after| are offsets from the current time in number
   // of seconds.
@@ -681,13 +689,6 @@ TEST_F(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
 // Test that we can make a handshake work
 TEST_F(SSLStreamAdapterTestTLS, TestTLSConnect) {
   TestHandshake();
-};
-
-// Test that closing the connection on one side updates the other side.
-TEST_F(SSLStreamAdapterTestTLS, TestTLSClose) {
-  TestHandshake();
-  client_ssl_->Close();
-  EXPECT_EQ_WAIT(rtc::SS_CLOSED, server_ssl_->GetState(), handshake_wait_);
 };
 
 // Test transfer -- trivial

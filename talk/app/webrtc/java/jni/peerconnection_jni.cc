@@ -2055,17 +2055,8 @@ int MediaCodecVideoDecoder::SetAndroidObjects(JNIEnv* jni,
     render_egl_context_ = NULL;
   } else {
     render_egl_context_ = jni->NewGlobalRef(render_egl_context);
-    CHECK_EXCEPTION(jni) << "error calling NewGlobalRef for EGL Context.";
-    jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
-    if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
-      ALOGE("Wrong EGL Context.");
-      jni->DeleteGlobalRef(render_egl_context_);
-      render_egl_context_ = NULL;
-    }
   }
-  if (render_egl_context_ == NULL) {
-    ALOGD("NULL VideoDecoder EGL context - HW surface decoding is disabled.");
-  }
+  ALOGD("VideoDecoder EGL context set.");
   return 0;
 }
 

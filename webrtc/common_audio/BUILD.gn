@@ -116,13 +116,15 @@ source_set("common_audio") {
       sources += [ "signal_processing/vector_scaling_operations_mips.c" ]
     }
   } else {
-    sources += [ "signal_processing/complex_fft.c" ]
+    sources += [
+      "signal_processing/complex_fft.c",
+      "signal_processing/filter_ar_fast_q12.c",
+    ]
   }
 
   if (cpu_arch != "arm" && cpu_arch != "mipsel") {
     sources += [
       "signal_processing/complex_bit_reverse.c",
-      "signal_processing/filter_ar_fast_q12.c",
       "signal_processing/spl_sqrt_floor.c",
     ]
   }
@@ -133,9 +135,7 @@ source_set("common_audio") {
     ]
   }
 
-  configs += [ "..:common_config" ]
-
-  public_configs = [
+  direct_dependent_configs = [
     "..:common_inherited_config",
     ":common_audio_config",
   ]
@@ -181,9 +181,10 @@ if (rtc_build_armv7_neon) {
       "signal_processing/vector_scaling_operations_neon.S",
     ]
 
-    configs += [ "..:common_config" ]
-    public_configs = [ "..:common_inherited_config" ]
-
+    configs += [
+       "..:common_config",
+       "..:common_inherited_config",
+    ]
 
     # Enable compilation for the ARM v7 Neon instruction set. This is needed
     # since //build/config/arm.gni only enables Neon for iOS, not Android.

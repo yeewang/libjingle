@@ -919,6 +919,9 @@ class P2PTestConductor : public testing::Test {
     receiving_client_->VerifyLocalIceUfragAndPassword();
   }
 
+  P2PTestConductor() {
+    rtc::InitializeSSL(NULL);
+  }
   ~P2PTestConductor() {
     if (initiating_client_) {
       initiating_client_->set_signaling_message_receiver(NULL);
@@ -926,6 +929,7 @@ class P2PTestConductor : public testing::Test {
     if (receiving_client_) {
       receiving_client_->set_signaling_message_receiver(NULL);
     }
+    rtc::CleanupSSL();
   }
 
   bool CreateTestClients() {
@@ -1489,8 +1493,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsAudio) {
 }
 
 // Test receive bandwidth stats with combined BWE.
-// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3871.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_ReceivedBweStatsCombined) {
+TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsCombined) {
   FakeConstraints setup_constraints;
   setup_constraints.AddOptional(
       MediaConstraintsInterface::kCombinedAudioVideoBwe, true);
@@ -1516,8 +1519,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_ReceivedBweStatsCombined) {
 
 // Test receive bandwidth stats with 1 video, 3 audio streams but no combined
 // BWE.
-// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3871.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_ReceivedBweStatsNotCombined) {
+TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsNotCombined) {
   FakeConstraints setup_constraints;
   setup_constraints.AddOptional(
       MediaConstraintsInterface::kCombinedAudioVideoBwe, false);

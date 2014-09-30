@@ -137,6 +137,12 @@ void ChannelManager::Construct(MediaEngineInterface* me,
       this, &ChannelManager::OnVideoCaptureStateChange);
   capture_manager_->SignalCapturerStateChange.connect(
       this, &ChannelManager::OnVideoCaptureStateChange);
+
+  if (worker_thread_ != rtc::Thread::Current()) {
+    // Do not allow invoking calls to other threads on the worker thread.
+    worker_thread_->Invoke<bool>(
+        rtc::Bind(&rtc::Thread::SetAllowBlockingCalls, worker_thread_, false));
+  }
 }
 
 ChannelManager::~ChannelManager() {
@@ -218,12 +224,6 @@ bool ChannelManager::Init() {
 
   ASSERT(worker_thread_ != NULL);
   if (worker_thread_) {
-    if (worker_thread_ != rtc::Thread::Current()) {
-      // Do not allow invoking calls to other threads on the worker thread.
-      worker_thread_->Invoke<bool>(rtc::Bind(
-          &rtc::Thread::SetAllowBlockingCalls, worker_thread_, false));
-    }
-
     if (media_engine_->Init(worker_thread_)) {
       initialized_ = true;
 

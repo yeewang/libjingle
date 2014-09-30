@@ -81,12 +81,7 @@ source_set("audio_coding") {
 
   defines = []
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":audio_coding_config",
-  ]
+  direct_dependent_configs = [ ":audio_coding_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -128,12 +123,7 @@ source_set("cng") {
     "codecs/cng/webrtc_cng.c",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":cng_config",
-  ]
+  direct_dependent_configs = [ ":cng_config" ]
 
   deps = [ "../../common_audio" ]
 }
@@ -153,12 +143,7 @@ source_set("g711") {
     "codecs/g711/g711.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":g711_config",
-  ]
+  direct_dependent_configs = [ ":g711_config" ]
 }
 
 config("g722_config") {
@@ -177,12 +162,7 @@ source_set("g722") {
     "codecs/g722/g722_enc_dec.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":g722_config",
-  ]
+  direct_dependent_configs = [ ":g722_config" ]
 }
 
 config("ilbc_config") {
@@ -335,12 +315,7 @@ source_set("ilbc") {
     "codecs/ilbc/xcorr_coef.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":ilbc_config",
-  ]
+  direct_dependent_configs = [ ":ilbc_config" ]
 
   deps = [ "../../common_audio" ]
 }
@@ -409,12 +384,9 @@ source_set("isac") {
     libs = [ "m" ]
   }
 
-  configs += [ "../..:common_config" ]
+  configs += [ "../..:common_inherited_config" ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":isac_config",
-  ]
+  direct_dependent_configs = [ ":isac_config" ]
 
   deps = [ "../../common_audio" ]
 }
@@ -474,12 +446,7 @@ source_set("isacfix") {
     defines = [ "WEBRTC_LINUX" ]
   }
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":isac_fix_config",
-  ]
+  direct_dependent_configs = [ ":isac_fix_config" ]
 
   deps = [
     "../../common_audio",
@@ -528,12 +495,13 @@ source_set("isacfix") {
     } else {
       sources += [ "codecs/isac/fix/source/pitch_filter_c.c" ]
     }
-  } else {
-    sources += [ "codecs/isac/fix/source/pitch_estimator_c.c" ]
   }
 
-  if (!rtc_build_armv7_neon && cpu_arch != "mipsel") {
-    sources += [ "codecs/isac/fix/source/lattice_c.c" ]
+  if (rtc_build_armv7_neon) {
+    sources += [
+      "codecs/isac/fix/source/lattice_c.c",
+      "codecs/isac/fix/source/pitch_estimator_c.c",
+   ]
   }
 }
 
@@ -572,9 +540,6 @@ if (rtc_build_armv7_neon) {
       "-mfpu=neon",
     ]
 
-    configs += [ "../..:common_config" ]
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [ "../../common_audio" ]
   }
 }
@@ -592,12 +557,7 @@ source_set("pcm16b") {
     "codecs/pcm16b/pcm16b.c",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":pcm16b_config",
-  ]
+  direct_dependent_configs = [ ":pcm16b_config" ]
 }
 
 config("opus_config") {
@@ -613,8 +573,7 @@ source_set("webrtc_opus") {
   if (build_with_mozilla) {
     include_dirs = [ getenv("DIST") + "/include/opus" ]
   } else {
-    configs += [ "../..:common_config" ]
-    public_configs = [ "../..:common_inherited_config" ]
+    configs += [ "../..:common_inherited_config" ]
 
     deps = [ "//third_party/opus" ]
   }
@@ -699,12 +658,7 @@ source_set("neteq") {
     "neteq/time_stretch.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
-  public_configs = [
-    "../..:common_inherited_config",
-    ":neteq_config",
-  ]
+  direct_dependent_configs = [ ":neteq_config" ]
 
   forward_dependent_configs_from = [ "//third_party/opus" ]
 
