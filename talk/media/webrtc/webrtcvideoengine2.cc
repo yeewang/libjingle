@@ -230,12 +230,6 @@ void* WebRtcVideoEncoderFactory2::CreateVideoEncoderSettings(
     options.video_noise_reduction.Get(&settings->denoisingOn);
     return settings;
   }
-  if (CodecNameMatches(codec.name, kVp9CodecName)) {
-    webrtc::VideoCodecVP9* settings = new webrtc::VideoCodecVP9(
-        webrtc::VideoEncoder::GetDefaultVp9Settings());
-    options.video_noise_reduction.Get(&settings->denoisingOn);
-    return settings;
-  }
   return NULL;
 }
 
@@ -247,9 +241,6 @@ void WebRtcVideoEncoderFactory2::DestroyVideoEncoderSettings(
   }
   if (CodecNameMatches(codec.name, kVp8CodecName)) {
     delete reinterpret_cast<webrtc::VideoCodecVP8*>(encoder_settings);
-  }
-  if (CodecNameMatches(codec.name, kVp9CodecName)) {
-    delete reinterpret_cast<webrtc::VideoCodecVP9*>(encoder_settings);
   }
 }
 
@@ -359,17 +350,9 @@ int WebRtcVideoEngine2::GetCapabilities() { return VIDEO_RECV | VIDEO_SEND; }
 bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
   const VideoCodec& codec = config.max_codec;
-  bool supports_codec = false;
-  for (size_t i = 0; i < video_codecs_.size(); ++i) {
-    if (CodecNameMatches(video_codecs_[i].name, codec.name)) {
-      video_codecs_[i] = codec;
-      supports_codec = true;
-      break;
-    }
-  }
-
-  if (!supports_codec) {
-    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported: "
+  // TODO(pbos): Make use of external encoder factory.
+  if (!CodecIsInternallySupported(codec.name)) {
+    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported:"
                   << codec.ToString();
     return false;
   }
@@ -379,6 +362,8 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
                   codec.height,
                   VideoFormat::FpsToInterval(codec.framerate),
                   FOURCC_ANY);
+  video_codecs_.clear();
+  video_codecs_.push_back(codec);
   return true;
 }
 
@@ -747,7 +732,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.cpu_overuse_detection.Set(false);
-  options_.dscp.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
   options_.use_payload_padding.Set(false);
   options_.video_noise_reduction.Set(true);
@@ -1320,10 +1304,6 @@ bool WebRtcVideoChannel2::SetOptions(const VideoOptions& options) {
     // No new options to set.
     return true;
   }
-  rtc::DiffServCodePoint dscp = options_.dscp.GetWithDefaultIfUnset(false)
-                                    ? rtc::DSCP_AF41
-                                    : rtc::DSCP_DEFAULT;
-  MediaChannel::SetDscp(dscp);
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();
@@ -1624,8 +1604,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
   if (CodecNameMatches(name, kVp8CodecName)) {
     return webrtc::kVideoCodecVP8;
-  } else if (CodecNameMatches(name, kVp9CodecName)) {
-    return webrtc::kVideoCodecVP9;
   } else if (CodecNameMatches(name, kH264CodecName)) {
     return webrtc::kVideoCodecH264;
   }
@@ -1653,9 +1631,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
   if (type == webrtc::kVideoCodecVP8) {
     return AllocatedEncoder(
         webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp8), type, false);
-  } else if (type == webrtc::kVideoCodecVP9) {
-    return AllocatedEncoder(
-        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp9), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't
