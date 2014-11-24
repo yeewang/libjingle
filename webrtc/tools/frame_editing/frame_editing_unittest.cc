@@ -24,7 +24,7 @@ namespace test {
 
 const int kWidth = 352;
 const int kHeight = 288;
-const size_t kFrameSize = CalcBufferSize(kI420, kWidth, kHeight);
+const int kFrameSize = CalcBufferSize(kI420, kWidth, kHeight);
 
 class FrameEditingTest : public ::testing::Test {
  protected:
@@ -79,7 +79,7 @@ class FrameEditingTest : public ::testing::Test {
   std::string test_video_;
   FILE* original_fid_;
   FILE* edited_fid_;
-  size_t num_bytes_read_;
+  int num_bytes_read_;
   scoped_ptr<int[]> original_buffer_;
   scoped_ptr<int[]> edited_buffer_;
   int num_frames_read_;

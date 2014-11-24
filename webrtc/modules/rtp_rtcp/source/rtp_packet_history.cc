@@ -94,7 +94,7 @@ bool RTPPacketHistory::StorePackets() const {
 }
 
 // private, lock should already be taken
-void RTPPacketHistory::VerifyAndAllocatePacketLength(size_t packet_length) {
+void RTPPacketHistory::VerifyAndAllocatePacketLength(uint16_t packet_length) {
   assert(packet_length > 0);
   if (!store_) {
     return;
@@ -112,8 +112,8 @@ void RTPPacketHistory::VerifyAndAllocatePacketLength(size_t packet_length) {
 }
 
 int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
-                                       size_t packet_length,
-                                       size_t max_packet_length,
+                                       uint16_t packet_length,
+                                       uint16_t max_packet_length,
                                        int64_t capture_time_ms,
                                        StorageType type) {
   if (type == kDontStore) {
@@ -169,7 +169,7 @@ bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
     return false;
   }
 
-  size_t length = stored_lengths_.at(index);
+  uint16_t length = stored_lengths_.at(index);
   if (length == 0 || length > max_packet_length_) {
     // Invalid length.
     return false;
@@ -181,7 +181,7 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
                                                uint32_t min_elapsed_time_ms,
                                                bool retransmit,
                                                uint8_t* packet,
-                                               size_t* packet_length,
+                                               uint16_t* packet_length,
                                                int64_t* stored_time_ms) {
   assert(*packet_length >= max_packet_length_);
   CriticalSectionScoped cs(critsect_);
@@ -196,7 +196,7 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
     return false;
   }
 
-  size_t length = stored_lengths_.at(index);
+  uint16_t length = stored_lengths_.at(index);
   assert(length <= max_packet_length_);
   if (length == 0) {
     LOG(LS_WARNING) << "No match for getting seqNum " << sequence_number
@@ -223,10 +223,10 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
 
 void RTPPacketHistory::GetPacket(int index,
                                  uint8_t* packet,
-                                 size_t* packet_length,
+                                 uint16_t* packet_length,
                                  int64_t* stored_time_ms) const {
   // Get packet.
-  size_t length = stored_lengths_.at(index);
+  uint16_t length = stored_lengths_.at(index);
   std::vector<std::vector<uint8_t> >::const_iterator it_found_packet =
       stored_packets_.begin() + index;
   std::copy(it_found_packet->begin(), it_found_packet->begin() + length,
@@ -236,7 +236,7 @@ void RTPPacketHistory::GetPacket(int index,
 }
 
 bool RTPPacketHistory::GetBestFittingPacket(uint8_t* packet,
-                                            size_t* packet_length,
+                                            uint16_t* packet_length,
                                             int64_t* stored_time_ms) {
   CriticalSectionScoped cs(critsect_);
   if (!store_)
@@ -283,21 +283,22 @@ bool RTPPacketHistory::FindSeqNum(uint16_t sequence_number,
   return false;
 }
 
-int RTPPacketHistory::FindBestFittingPacket(size_t size) const {
+int RTPPacketHistory::FindBestFittingPacket(uint16_t size) const {
   if (size < kMinPacketRequestBytes || stored_lengths_.empty())
     return -1;
-  size_t min_diff = std::numeric_limits<size_t>::max();
-  int best_index = -1;  // Returned unchanged if we don't find anything.
+  int min_diff = -1;
+  size_t best_index = 0;
   for (size_t i = 0; i < stored_lengths_.size(); ++i) {
     if (stored_lengths_[i] == 0)
       continue;
-    size_t diff = (stored_lengths_[i] > size) ?
-        (stored_lengths_[i] - size) : (size - stored_lengths_[i]);
-    if (diff < min_diff) {
+    int diff = abs(stored_lengths_[i] - size);
+    if (min_diff < 0 || diff < min_diff) {
       min_diff = diff;
-      best_index = static_cast<int>(i);
+      best_index = i;
     }
   }
+  if (min_diff < 0)
+    return -1;
   return best_index;
 }
 }  // namespace webrtc

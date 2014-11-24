@@ -56,7 +56,7 @@ public:
    uint8_t send_payload_type;
    uint32_t frequency_hz;
    uint32_t packets_sent;
-   size_t media_bytes_sent;
+   uint32_t media_bytes_sent;
    uint32_t send_bitrate;
 
    uint32_t last_rr_ntp_secs;
@@ -133,7 +133,8 @@ public:
     int32_t SetREMBStatus(const bool enable);
 
     int32_t SetREMBData(const uint32_t bitrate,
-                        const std::vector<uint32_t>& ssrcs);
+                        const uint8_t numberOfSSRC,
+                        const uint32_t* SSRC);
 
     /*
     *   TMMBR
@@ -167,14 +168,17 @@ public:
 
     bool RtcpXrReceiverReferenceTime() const;
 
-    void SetCsrcs(const std::vector<uint32_t>& csrcs);
+    int32_t SetCSRCs(const uint32_t arrOfCSRC[kRtpCsrcSize],
+                     const uint8_t arrLength);
+
+    int32_t SetCSRCStatus(const bool include);
 
     void SetTargetBitrate(unsigned int target_bitrate);
 
     void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
 private:
-    int32_t SendToNetwork(const uint8_t* dataBuffer, const size_t length);
+    int32_t SendToNetwork(const uint8_t* dataBuffer, const uint16_t length);
 
     int32_t WriteAllReportBlocksToBuffer(uint8_t* rtcpbuffer,
                             int pos,
@@ -322,14 +326,18 @@ private:
         GUARDED_BY(_criticalSectionRTCPSender);
 
     // send CSRCs
-    std::vector<uint32_t> csrcs_ GUARDED_BY(_criticalSectionRTCPSender);
+    uint8_t         _CSRCs GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t        _CSRC[kRtpCsrcSize] GUARDED_BY(_criticalSectionRTCPSender);
+    bool                _includeCSRCs GUARDED_BY(_criticalSectionRTCPSender);
 
     // Full intra request
     uint8_t         _sequenceNumberFIR GUARDED_BY(_criticalSectionRTCPSender);
 
     // REMB
+    uint8_t       _lengthRembSSRC GUARDED_BY(_criticalSectionRTCPSender);
+    uint8_t       _sizeRembSSRC GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t*     _rembSSRC GUARDED_BY(_criticalSectionRTCPSender);
     uint32_t      _rembBitrate GUARDED_BY(_criticalSectionRTCPSender);
-    std::vector<uint32_t>  remb_ssrcs_ GUARDED_BY(_criticalSectionRTCPSender);
 
     TMMBRHelp           _tmmbrHelp GUARDED_BY(_criticalSectionRTCPSender);
     uint32_t      _tmmbr_Send GUARDED_BY(_criticalSectionRTCPSender);

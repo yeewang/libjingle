@@ -11,7 +11,6 @@
 // COMPILE_ASSERT macro, borrowed from google3/base/macros.h.
 #ifndef WEBRTC_BASE_COMPILE_ASSERT_H_
 #define WEBRTC_BASE_COMPILE_ASSERT_H_
-#include "webrtc/typedefs.h"
 
 // The COMPILE_ASSERT macro can be used to verify that a compile time
 // expression is true. For example, you could use it to verify the
@@ -36,7 +35,7 @@ struct CompileAssert {
 };
 
 #define COMPILE_ASSERT(expr, msg) \
-  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1] ATTRIBUTE_UNUSED
+  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]  // NOLINT
 #endif  // COMPILE_ASSERT
 
 // Implementation details of COMPILE_ASSERT:

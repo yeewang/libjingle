@@ -262,8 +262,7 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
   // demonstrated to work well for AEC in most practical scenarios.
   rev_proc_format_.set(rev_proc_rate, 1);
 
-  if (fwd_proc_format_.rate() == kSampleRate32kHz ||
-      fwd_proc_format_.rate() == kSampleRate48kHz) {
+  if (fwd_proc_format_.rate() == kSampleRate32kHz) {
     split_rate_ = kSampleRate16kHz;
   } else {
     split_rate_ = fwd_proc_format_.rate();
@@ -405,8 +404,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   // Must be a native rate.
   if (frame->sample_rate_hz_ != kSampleRate8kHz &&
       frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz &&
-      frame->sample_rate_hz_ != kSampleRate48kHz) {
+      frame->sample_rate_hz_ != kSampleRate32kHz) {
     return kBadSampleRateError;
   }
   if (echo_control_mobile_->is_enabled() &&
@@ -471,7 +469,15 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   AudioBuffer* ca = capture_audio_.get();  // For brevity.
   bool data_processed = is_data_processed();
   if (analysis_needed(data_processed)) {
-    ca->SplitIntoFrequencyBands();
+    for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
+      // Split into a low and high band.
+      WebRtcSpl_AnalysisQMF(ca->data(i),
+                            ca->samples_per_channel(),
+                            ca->low_pass_split_data(i),
+                            ca->high_pass_split_data(i),
+                            ca->filter_states(i)->analysis_filter_state1,
+                            ca->filter_states(i)->analysis_filter_state2);
+    }
   }
 
   RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
@@ -488,7 +494,15 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(ca));
 
   if (synthesis_needed(data_processed)) {
-    ca->MergeFrequencyBands();
+    for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
+      // Recombine low and high bands.
+      WebRtcSpl_SynthesisQMF(ca->low_pass_split_data(i),
+                             ca->high_pass_split_data(i),
+                             ca->samples_per_split_channel(),
+                             ca->data(i),
+                             ca->filter_states(i)->synthesis_filter_state1,
+                             ca->filter_states(i)->synthesis_filter_state2);
+    }
   }
 
   // The level estimator operates on the recombined data.
@@ -542,8 +556,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   // Must be a native rate.
   if (frame->sample_rate_hz_ != kSampleRate8kHz &&
       frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz &&
-      frame->sample_rate_hz_ != kSampleRate48kHz) {
+      frame->sample_rate_hz_ != kSampleRate32kHz) {
     return kBadSampleRateError;
   }
   // This interface does not tolerate different forward and reverse rates.
@@ -580,7 +593,15 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 int AudioProcessingImpl::AnalyzeReverseStreamLocked() {
   AudioBuffer* ra = render_audio_.get();  // For brevity.
   if (rev_proc_format_.rate() == kSampleRate32kHz) {
-    ra->SplitIntoFrequencyBands();
+    for (int i = 0; i < rev_proc_format_.num_channels(); i++) {
+      // Split into low and high band.
+      WebRtcSpl_AnalysisQMF(ra->data(i),
+                            ra->samples_per_channel(),
+                            ra->low_pass_split_data(i),
+                            ra->high_pass_split_data(i),
+                            ra->filter_states(i)->analysis_filter_state1,
+                            ra->filter_states(i)->analysis_filter_state2);
+    }
   }
 
   RETURN_ON_ERR(echo_cancellation_->ProcessRenderAudio(ra));
@@ -778,16 +799,14 @@ bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
 }
 
 bool AudioProcessingImpl::synthesis_needed(bool is_data_processed) const {
-  return (is_data_processed && (fwd_proc_format_.rate() == kSampleRate32kHz ||
-          fwd_proc_format_.rate() == kSampleRate48kHz));
+  return (is_data_processed && fwd_proc_format_.rate() == kSampleRate32kHz);
 }
 
 bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
   if (!is_data_processed && !voice_detection_->is_enabled()) {
     // Only level_estimator_ is enabled.
     return false;
-  } else if (fwd_proc_format_.rate() == kSampleRate32kHz ||
-             fwd_proc_format_.rate() == kSampleRate48kHz) {
+  } else if (fwd_proc_format_.rate() == kSampleRate32kHz) {
     // Something besides level_estimator_ is enabled, and we have super-wb.
     return true;
   }

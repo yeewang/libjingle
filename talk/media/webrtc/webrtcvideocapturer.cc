@@ -36,7 +36,6 @@
 #include "talk/media/webrtc/webrtcvideoframefactory.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 
@@ -352,8 +351,8 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
   // Signal down stream components on captured frame.
   // The CapturedFrame class doesn't support planes. We have to ExtractBuffer
   // to one block for it.
-  size_t length =
-      webrtc::CalcBufferSize(webrtc::kI420, sample.width(), sample.height());
+  int length = webrtc::CalcBufferSize(webrtc::kI420,
+                                      sample.width(), sample.height());
   capture_buffer_.resize(length);
   // TODO(ronghuawu): Refactor the WebRtcCapturedFrame to avoid memory copy.
   webrtc::ExtractBuffer(sample, length, &capture_buffer_[0]);
@@ -369,7 +368,7 @@ void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
 // WebRtcCapturedFrame
 WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::I420VideoFrame& sample,
                                          void* buffer,
-                                         size_t length) {
+                                         int length) {
   width = sample.width();
   height = sample.height();
   fourcc = FOURCC_I420;
@@ -379,7 +378,7 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::I420VideoFrame& sample,
   // Convert units from VideoFrame RenderTimeMs to CapturedFrame (nanoseconds).
   elapsed_time = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
   time_stamp = elapsed_time;
-  data_size = rtc::checked_cast<uint32>(length);
+  data_size = length;
   data = buffer;
 }
 

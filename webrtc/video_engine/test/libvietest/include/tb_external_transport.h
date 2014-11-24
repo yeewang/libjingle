@@ -85,10 +85,8 @@ public:
                         TbExternalTransport::SsrcChannelMap* receive_channels);
     ~TbExternalTransport(void);
 
-    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
-    virtual int SendRTCPPacket(int channel,
-                               const void *data,
-                               size_t len) OVERRIDE;
+    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE;
 
     // Should only be called before/after traffic is being processed.
     // Only one observer can be set (multiple calls will overwrite each other).
@@ -141,7 +139,7 @@ private:
     typedef struct
     {
         int8_t packetBuffer[KMaxPacketSize];
-        size_t length;
+        int32_t length;
         int32_t channel;
         int64_t receiveTime;
     } VideoPacket;

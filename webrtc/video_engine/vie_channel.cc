@@ -130,6 +130,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       codec_observer_(NULL),
       do_key_frame_callbackRequest_(false),
       rtp_observer_(NULL),
+      rtcp_observer_(NULL),
       intra_frame_observer_(intra_frame_observer),
       rtt_stats_(rtt_stats),
       paced_sender_(paced_sender),
@@ -149,9 +150,22 @@ ViEChannel::ViEChannel(int32_t channel_id,
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
       start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
-  RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
+  RtpRtcp::Configuration configuration;
+  configuration.id = ViEModuleId(engine_id, channel_id);
+  configuration.audio = false;
+  configuration.default_module = default_rtp_rtcp;
+  configuration.outgoing_transport = &vie_sender_;
+  configuration.rtcp_feedback = this;
+  configuration.intra_frame_callback = intra_frame_observer;
+  configuration.bandwidth_callback = bandwidth_observer;
+  configuration.rtt_stats = rtt_stats;
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
+  configuration.paced_sender = paced_sender;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
+  configuration.send_bitrate_observer = &send_bitrate_observer_;
+  configuration.send_frame_count_observer = &send_frame_count_observer_;
+  configuration.send_side_delay_observer = &send_side_delay_observer_;
+
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
   vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
@@ -999,6 +1013,20 @@ int32_t ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
   return 0;
 }
 
+int32_t ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  if (observer) {
+    if (rtcp_observer_) {
+      LOG_F(LS_ERROR) << "Observer already registered.";
+      return -1;
+    }
+    rtcp_observer_ = observer;
+  } else {
+    rtcp_observer_ = NULL;
+  }
+  return 0;
+}
+
 int32_t ViEChannel::SendApplicationDefinedRTCPPacket(
     const uint8_t sub_type,
     uint32_t name,
@@ -1128,9 +1156,9 @@ void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
       callback);
 }
 
-int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
+int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
                                      uint32_t* packets_sent,
-                                     size_t* bytes_received,
+                                     uint32_t* bytes_received,
                                      uint32_t* packets_received) const {
   StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
       GetStatistician(vie_receiver_.GetRemoteSsrc());
@@ -1145,7 +1173,7 @@ int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
-    size_t bytes_sent_temp = 0;
+    uint32_t bytes_sent_temp = 0;
     uint32_t packets_sent_temp = 0;
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
@@ -1154,7 +1182,7 @@ int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
   }
   for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
        it != removed_rtp_rtcp_.end(); ++it) {
-    size_t bytes_sent_temp = 0;
+    uint32_t bytes_sent_temp = 0;
     uint32_t packets_sent_temp = 0;
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
@@ -1395,7 +1423,7 @@ int32_t ViEChannel::DeregisterSendTransport() {
 }
 
 int32_t ViEChannel::ReceivedRTPPacket(
-    const void* rtp_packet, const size_t rtp_packet_length,
+    const void* rtp_packet, const int32_t rtp_packet_length,
     const PacketTime& packet_time) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
@@ -1408,7 +1436,7 @@ int32_t ViEChannel::ReceivedRTPPacket(
 }
 
 int32_t ViEChannel::ReceivedRTCPPacket(
-  const void* rtcp_packet, const size_t rtcp_packet_length) {
+  const void* rtcp_packet, const int32_t rtcp_packet_length) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
@@ -1475,8 +1503,9 @@ int32_t ViEChannel::FrameToRender(
     if (pre_render_callback_ != NULL)
       pre_render_callback_->FrameCallback(&video_frame);
     if (effect_filter_) {
-      size_t length =
-          CalcBufferSize(kI420, video_frame.width(), video_frame.height());
+      unsigned int length = CalcBufferSize(kI420,
+                                           video_frame.width(),
+                                           video_frame.height());
       scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
       ExtractBuffer(video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
@@ -1497,9 +1526,7 @@ int32_t ViEChannel::FrameToRender(
     arr_ofCSRC[0] = vie_receiver_.GetRemoteSsrc();
     no_of_csrcs = 1;
   }
-  std::vector<uint32_t> csrcs(arr_ofCSRC, arr_ofCSRC + no_of_csrcs);
-  DeliverFrame(&video_frame, csrcs);
-
+  DeliverFrame(&video_frame, no_of_csrcs, arr_ofCSRC);
   return 0;
 }
 
@@ -1613,25 +1640,19 @@ RtpRtcp* ViEChannel::GetRtpRtcpModule(size_t index) const {
   return *it;
 }
 
-RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
+RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
-  configuration.audio = false;
+  configuration.audio = false;  // Video.
   configuration.default_module = default_rtp_rtcp_;
   configuration.outgoing_transport = &vie_sender_;
   configuration.intra_frame_callback = intra_frame_observer_;
   configuration.bandwidth_callback = bandwidth_observer_.get();
   configuration.rtt_stats = rtt_stats_;
   configuration.paced_sender = paced_sender_;
-  configuration.send_bitrate_observer = &send_bitrate_observer_;
-  configuration.send_frame_count_observer = &send_frame_count_observer_;
   configuration.send_side_delay_observer = &send_side_delay_observer_;
 
-  return configuration;
-}
-
-RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
-  return RtpRtcp::CreateRtpRtcp(CreateRtpRtcpConfiguration());
+  return RtpRtcp::CreateRtpRtcp(configuration);
 }
 
 int32_t ViEChannel::StartDecodeThread() {
@@ -1711,6 +1732,24 @@ void ViEChannel::RegisterPreDecodeImageCallback(
   vcm_->RegisterPreDecodeImageCallback(pre_decode_callback);
 }
 
+void ViEChannel::OnApplicationDataReceived(const int32_t id,
+                                           const uint8_t sub_type,
+                                           const uint32_t name,
+                                           const uint16_t length,
+                                           const uint8_t* data) {
+  if (channel_id_ != ChannelId(id)) {
+    return;
+  }
+  CriticalSectionScoped cs(callback_cs_.get());
+  {
+    if (rtcp_observer_) {
+      rtcp_observer_->OnApplicationDataReceived(
+          channel_id_, sub_type, name, reinterpret_cast<const char*>(data),
+          length);
+    }
+  }
+}
+
 int32_t ViEChannel::OnInitializeDecoder(
     const int32_t id,
     const int8_t payload_type,
@@ -1764,8 +1803,7 @@ void ViEChannel::RegisterSendFrameCountObserver(
 }
 
 void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
-                                   size_t payload_size,
-                                   const RTPHeader& header) {
+    int payload_size, const RTPHeader& header) {
   vie_receiver_.ReceivedBWEPacket(arrival_time_ms, payload_size, header);
 }
 }  // namespace webrtc

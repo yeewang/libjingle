@@ -12,7 +12,6 @@
 // vie_autotest_render.cc
 //
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
@@ -58,14 +57,14 @@ public:
     }
 
     virtual int DeliverFrame(unsigned char* buffer,
-                             size_t bufferSize,
+                             int bufferSize,
                              uint32_t time_stamp,
                              int64_t ntp_time_ms,
                              int64_t render_time,
                              void* /*handle*/) {
       if (bufferSize != CalcBufferSize(webrtc::kI420, _width, _height)) {
-        ViETest::Log("Incorrect render buffer received, of length = %" PRIuS
-                     "\n", bufferSize);
+        ViETest::Log("Incorrect render buffer received, of length = %d\n",
+                     bufferSize);
         return 0;
       }
       return 0;

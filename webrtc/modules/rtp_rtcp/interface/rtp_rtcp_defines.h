@@ -143,7 +143,7 @@ enum RtxMode {
                                   // instead of padding.
 };
 
-const size_t kRtxHeaderSize = 2;
+const int kRtxHeaderSize = 2;
 
 struct RTCPSenderInfo
 {
@@ -220,11 +220,31 @@ public:
 
     virtual int32_t OnReceivedPayloadData(
         const uint8_t* payloadData,
-        const size_t payloadSize,
+        const uint16_t payloadSize,
         const WebRtcRTPHeader* rtpHeader) = 0;
 
     virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                   size_t packet_length) = 0;
+                                   int packet_length) = 0;
+};
+
+class RtcpFeedback
+{
+public:
+    virtual void OnApplicationDataReceived(const int32_t /*id*/,
+                                           const uint8_t /*subType*/,
+                                           const uint32_t /*name*/,
+                                           const uint16_t /*length*/,
+                                           const uint8_t* /*data*/)  {};
+
+    virtual void OnXRVoIPMetricReceived(
+        const int32_t /*id*/,
+        const RTCPVoIPMetric* /*metric*/)  {};
+
+    virtual void OnReceiveReportReceived(const int32_t id,
+                                         const uint32_t senderSSRC)  {};
+
+protected:
+    virtual ~RtcpFeedback() {}
 };
 
 class RtpFeedback
@@ -334,13 +354,13 @@ class NullRtpData : public RtpData {
 
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
-      const size_t payloadSize,
+      const uint16_t payloadSize,
       const WebRtcRTPHeader* rtpHeader) OVERRIDE {
     return 0;
   }
 
   virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 size_t packet_length) OVERRIDE {
+                                 int packet_length) OVERRIDE {
     return true;
   }
 };

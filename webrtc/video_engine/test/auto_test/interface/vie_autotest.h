@@ -100,6 +100,7 @@ public:
 
     // vie_autotest_rtp_rtcp.cc
     void ViERtpRtcpStandardTest();
+    void ViERtpRtcpExtendedTest();
     void ViERtpRtcpAPITest();
 
 private:

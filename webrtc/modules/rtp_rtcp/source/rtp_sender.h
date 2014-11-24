@@ -52,16 +52,16 @@ class RTPSenderInterface {
                                  const bool timestamp_provided = true,
                                  const bool inc_sequence_number = true) = 0;
 
-  virtual size_t RTPHeaderLength() const = 0;
+  virtual uint16_t RTPHeaderLength() const = 0;
   virtual uint16_t IncrementSequenceNumber() = 0;
   virtual uint16_t SequenceNumber() const = 0;
-  virtual size_t MaxPayloadLength() const = 0;
-  virtual size_t MaxDataPayloadLength() const = 0;
+  virtual uint16_t MaxPayloadLength() const = 0;
+  virtual uint16_t MaxDataPayloadLength() const = 0;
   virtual uint16_t PacketOverHead() const = 0;
   virtual uint16_t ActualSendBitrateKbit() const = 0;
 
   virtual int32_t SendToNetwork(
-      uint8_t *data_buffer, size_t payload_length, size_t rtp_header_length,
+      uint8_t *data_buffer, int payload_length, int rtp_header_length,
       int64_t capture_time_ms, StorageType storage,
       PacedSender::Priority priority) = 0;
 };
@@ -91,8 +91,8 @@ class RTPSender : public RTPSenderInterface {
   void SetTargetBitrate(uint32_t bitrate);
   uint32_t GetTargetBitrate();
 
-  // Includes size of RTP and FEC headers.
-  virtual size_t MaxDataPayloadLength() const OVERRIDE;
+  virtual uint16_t MaxDataPayloadLength() const
+      OVERRIDE;  // with RTP and FEC headers.
 
   int32_t RegisterPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -126,9 +126,14 @@ class RTPSender : public RTPSenderInterface {
   virtual uint16_t SequenceNumber() const OVERRIDE;
   void SetSequenceNumber(uint16_t seq);
 
-  void SetCsrcs(const std::vector<uint32_t>& csrcs);
+  int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const;
 
-  int32_t SetMaxPayloadLength(const size_t length,
+  void SetCSRCStatus(const bool include);
+
+  void SetCSRCs(const uint32_t arr_of_csrc[kRtpCsrcSize],
+                const uint8_t arr_length);
+
+  int32_t SetMaxPayloadLength(const uint16_t length,
                               const uint16_t packet_over_head);
 
   int32_t SendOutgoingData(const FrameType frame_type,
@@ -136,7 +141,7 @@ class RTPSender : public RTPSenderInterface {
                            const uint32_t timestamp,
                            int64_t capture_time_ms,
                            const uint8_t* payload_data,
-                           const size_t payload_size,
+                           const uint32_t payload_size,
                            const RTPFragmentationHeader* fragmentation,
                            VideoCodecInformation* codec_info = NULL,
                            const RTPVideoTypeHeader* rtp_type_hdr = NULL);
@@ -152,7 +157,7 @@ class RTPSender : public RTPSenderInterface {
 
   int32_t DeregisterRtpHeaderExtension(const RTPExtensionType type);
 
-  size_t RtpHeaderExtensionTotalLength() const;
+  uint16_t RtpHeaderExtensionTotalLength() const;
 
   uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer) const;
 
@@ -161,14 +166,14 @@ class RTPSender : public RTPSenderInterface {
   uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
 
   bool UpdateAudioLevel(uint8_t *rtp_packet,
-                        const size_t rtp_packet_length,
+                        const uint16_t rtp_packet_length,
                         const RTPHeader &rtp_header,
                         const bool is_voiced,
                         const uint8_t dBov) const;
 
   bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms,
                         bool retransmission);
-  size_t TimeToSendPadding(size_t bytes);
+  int TimeToSendPadding(int bytes);
 
   // NACK.
   int SelectiveRetransmissions() const;
@@ -205,9 +210,9 @@ class RTPSender : public RTPSenderInterface {
       const bool timestamp_provided = true,
       const bool inc_sequence_number = true) OVERRIDE;
 
-  virtual size_t RTPHeaderLength() const OVERRIDE;
+  virtual uint16_t RTPHeaderLength() const OVERRIDE;
   virtual uint16_t IncrementSequenceNumber() OVERRIDE;
-  virtual size_t MaxPayloadLength() const OVERRIDE;
+  virtual uint16_t MaxPayloadLength() const OVERRIDE;
   virtual uint16_t PacketOverHead() const OVERRIDE;
 
   // Current timestamp.
@@ -215,7 +220,7 @@ class RTPSender : public RTPSenderInterface {
   virtual uint32_t SSRC() const OVERRIDE;
 
   virtual int32_t SendToNetwork(
-      uint8_t *data_buffer, size_t payload_length, size_t rtp_header_length,
+      uint8_t *data_buffer, int payload_length, int rtp_header_length,
       int64_t capture_time_ms, StorageType storage,
       PacedSender::Priority priority) OVERRIDE;
 
@@ -262,9 +267,9 @@ class RTPSender : public RTPSenderInterface {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
-  size_t SendPadData(uint32_t timestamp,
-                     int64_t capture_time_ms,
-                     size_t bytes);
+  int SendPadData(uint32_t timestamp,
+                  int64_t capture_time_ms,
+                  int32_t bytes);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
@@ -287,47 +292,43 @@ class RTPSender : public RTPSenderInterface {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  size_t CreateRtpHeader(uint8_t* header,
-                         int8_t payload_type,
-                         uint32_t ssrc,
-                         bool marker_bit,
-                         uint32_t timestamp,
-                         uint16_t sequence_number,
-                         const std::vector<uint32_t>& csrcs) const;
+  int CreateRTPHeader(uint8_t* header, int8_t payload_type,
+                      uint32_t ssrc, bool marker_bit,
+                      uint32_t timestamp, uint16_t sequence_number,
+                      const uint32_t* csrcs, uint8_t csrcs_length) const;
 
-  void UpdateNACKBitRate(const size_t bytes, const uint32_t now);
+  void UpdateNACKBitRate(const uint32_t bytes, const uint32_t now);
 
   bool PrepareAndSendPacket(uint8_t* buffer,
-                            size_t length,
+                            uint16_t length,
                             int64_t capture_time_ms,
                             bool send_over_rtx,
                             bool is_retransmit);
 
-  // Return the number of bytes sent.  Note that both of these functions may
-  // return a larger value that their argument.
-  size_t TrySendRedundantPayloads(size_t bytes);
-  size_t TrySendPadData(size_t bytes);
+  // Return the number of bytes sent.
+  int TrySendRedundantPayloads(int bytes);
+  int TrySendPadData(int bytes);
 
-  size_t BuildPaddingPacket(uint8_t* packet, size_t header_length);
+  int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
 
-  void BuildRtxPacket(uint8_t* buffer, size_t* length,
+  void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
                       uint8_t* buffer_rtx);
 
-  bool SendPacketToNetwork(const uint8_t *packet, size_t size);
+  bool SendPacketToNetwork(const uint8_t *packet, uint32_t size);
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
 
   void UpdateTransmissionTimeOffset(uint8_t *rtp_packet,
-                                    const size_t rtp_packet_length,
+                                    const uint16_t rtp_packet_length,
                                     const RTPHeader &rtp_header,
                                     const int64_t time_diff_ms) const;
   void UpdateAbsoluteSendTime(uint8_t *rtp_packet,
-                              const size_t rtp_packet_length,
+                              const uint16_t rtp_packet_length,
                               const RTPHeader &rtp_header,
                               const int64_t now_ms) const;
 
   void UpdateRtpStats(const uint8_t* buffer,
-                      size_t size,
+                      uint32_t size,
                       const RTPHeader& header,
                       bool is_rtx,
                       bool is_retransmit);
@@ -351,7 +352,7 @@ class RTPSender : public RTPSenderInterface {
   Transport *transport_;
   bool sending_media_ GUARDED_BY(send_critsect_);
 
-  size_t max_payload_length_;
+  uint16_t max_payload_length_;
   uint16_t packet_over_head_;
 
   int8_t payload_type_ GUARDED_BY(send_critsect_);
@@ -363,7 +364,7 @@ class RTPSender : public RTPSenderInterface {
 
   // NACK
   uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];
-  size_t nack_byte_count_[NACK_BYTECOUNT_SIZE];
+  int32_t nack_byte_count_[NACK_BYTECOUNT_SIZE];
   Bitrate nack_bitrate_;
 
   RTPPacketHistory packet_history_;
@@ -393,7 +394,9 @@ class RTPSender : public RTPSenderInterface {
   int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
   bool media_has_been_sent_ GUARDED_BY(send_critsect_);
   bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
-  std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
+  uint8_t num_csrcs_ GUARDED_BY(send_critsect_);
+  uint32_t csrcs_[kRtpCsrcSize] GUARDED_BY(send_critsect_);
+  bool include_csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
   int payload_type_rtx_ GUARDED_BY(send_critsect_);

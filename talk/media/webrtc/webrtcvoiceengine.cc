@@ -74,8 +74,7 @@ static const CodecPref kCodecPrefs[] = {
   { "ISAC",   32000,  1, 104, true },
   { "CELT",   32000,  1, 109, true },
   { "CELT",   32000,  2, 110, true },
-  // G722 should be advertised as 8000 Hz because of the RFC "bug".
-  { "G722",   8000,   1, 9,   false },
+  { "G722",   16000,  1, 9,   false },
   { "ILBC",   8000,   1, 102, false },
   { "PCMU",   8000,   1, 0,   false },
   { "PCMA",   8000,   1, 8,   false },
@@ -111,7 +110,6 @@ static const int kDefaultAudioDeviceId = 0;
 
 static const char kIsacCodecName[] = "ISAC";
 static const char kL16CodecName[] = "L16";
-static const char kG722CodecName[] = "G722";
 
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
@@ -487,24 +485,12 @@ static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
 }
 
-// Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
-// which says that G722 should be advertised as 8 kHz although it is a 16 kHz
-// codec.
-static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
-  if (_stricmp(voe_codec->plname, kG722CodecName) == 0) {
-    // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
-    // has changed, and this special case is no longer needed.
-    ASSERT(voe_codec->plfreq != new_plfreq);
-    voe_codec->plfreq = new_plfreq;
-  }
-}
-
 void WebRtcVoiceEngine::ConstructCodecs() {
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, &voe_codec)) {
+    if (voe_wrapper_->codec()->GetCodec(i, voe_codec) != -1) {
       // Skip uncompressed formats.
       if (_stricmp(voe_codec.plname, kL16CodecName) == 0) {
         continue;
@@ -541,9 +527,7 @@ void WebRtcVoiceEngine::ConstructCodecs() {
             codec.params[kCodecParamMaxPTime] =
                 rtc::ToString(kPreferredMaxPTime);
           }
-          codec.SetParam(kCodecParamUseInbandFec, "1");
-
-          // TODO(hellner): Add ptime, sprop-stereo, and stereo
+          // TODO(hellner): Add ptime, sprop-stereo, stereo and useinbandfec
           // when they can be set to values other than the default.
         }
         codecs_.push_back(codec);
@@ -554,15 +538,6 @@ void WebRtcVoiceEngine::ConstructCodecs() {
   }
   // Make sure they are in local preference order.
   std::sort(codecs_.begin(), codecs_.end(), &AudioCodec::Preferable);
-}
-
-bool WebRtcVoiceEngine::GetVoeCodec(int index, webrtc::CodecInst* codec) {
-  if (voe_wrapper_->codec()->GetCodec(index, *codec) == -1) {
-    return false;
-  }
-  // Change the sample rate of G722 to 8000 to match SDP.
-  MaybeFixupG722(codec, 8000);
-  return true;
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -1249,7 +1224,7 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, &voe_codec)) {
+    if (voe_wrapper_->codec()->GetCodec(i, voe_codec) != -1) {
       AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
                        voe_codec.rate, voe_codec.channels, 0);
       bool multi_rate = IsCodecMultiRate(voe_codec);
@@ -1267,9 +1242,6 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
           if (multi_rate && in.bitrate != 0) {
             voe_codec.rate = in.bitrate;
           }
-
-          // Reset G722 sample rate to 16000 to match WebRTC.
-          MaybeFixupG722(&voe_codec, 16000);
 
           // Apply codec-specific settings.
           if (IsIsac(codec)) {
@@ -3154,7 +3126,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
   engine()->voe()->network()->ReceivedRTPPacket(
       which_channel,
       packet->data(),
-      packet->length(),
+      static_cast<unsigned int>(packet->length()),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -3179,7 +3151,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
       engine()->voe()->network()->ReceivedRTCPPacket(
           which_channel,
           packet->data(),
-          packet->length());
+          static_cast<unsigned int>(packet->length()));
 
       if (IsDefaultChannel(which_channel))
         has_sent_to_default_channel = true;
@@ -3199,7 +3171,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
     engine()->voe()->network()->ReceivedRTCPPacket(
         iter->second->channel(),
         packet->data(),
-        packet->length());
+        static_cast<unsigned int>(packet->length()));
   }
 }
 
@@ -3730,7 +3702,7 @@ bool WebRtcVoiceMediaChannel::SetupSharedBweOnChannel(int voe_channel) {
   return true;
 }
 
-int WebRtcSoundclipStream::Read(void *buf, size_t len) {
+int WebRtcSoundclipStream::Read(void *buf, int len) {
   size_t res = 0;
   mem_.Read(buf, len, &res, NULL);
   return static_cast<int>(res);

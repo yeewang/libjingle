@@ -26,7 +26,7 @@ public:
 
     virtual int32_t InitEncode(const webrtc::VideoCodec* codecSettings,
                                int32_t numberOfCores,
-                               size_t maxPayloadSize) OVERRIDE;
+                               uint32_t maxPayloadSize) OVERRIDE;
 
     virtual int32_t Encode(
         const webrtc::I420VideoFrame& inputImage,

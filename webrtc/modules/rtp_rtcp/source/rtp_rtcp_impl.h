@@ -40,7 +40,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Called when we receive an RTCP packet.
   virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                                     size_t incoming_packet_length) OVERRIDE;
+                                     uint16_t incoming_packet_length) OVERRIDE;
 
   virtual void SetRemoteSSRC(const uint32_t ssrc) OVERRIDE;
 
@@ -82,7 +82,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Configure SSRC, default is a random number.
   virtual void SetSSRC(const uint32_t ssrc) OVERRIDE;
 
-  virtual void SetCsrcs(const std::vector<uint32_t>& csrcs) OVERRIDE;
+  virtual int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const OVERRIDE;
+
+  virtual int32_t SetCSRCs(const uint32_t arr_of_csrc[kRtpCsrcSize],
+                           const uint8_t arr_length) OVERRIDE;
+
+  virtual int32_t SetCSRCStatus(const bool include) OVERRIDE;
 
   RTCPSender::FeedbackState GetFeedbackState();
 
@@ -115,7 +120,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       const uint32_t time_stamp,
       int64_t capture_time_ms,
       const uint8_t* payload_data,
-      const size_t payload_size,
+      const uint32_t payload_size,
       const RTPFragmentationHeader* fragmentation = NULL,
       const RTPVideoHeader* rtp_video_hdr = NULL) OVERRIDE;
 
@@ -125,7 +130,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                                 bool retransmission) OVERRIDE;
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
-  virtual size_t TimeToSendPadding(size_t bytes) OVERRIDE;
+  virtual int TimeToSendPadding(int bytes) OVERRIDE;
 
   virtual bool GetSendSideDelay(int* avg_send_delay_ms,
                                 int* max_send_delay_ms) const OVERRIDE;
@@ -174,7 +179,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t ResetSendDataCountersRTP() OVERRIDE;
 
   // Statistics of the amount of data sent and received.
-  virtual int32_t DataCountersRTP(size_t* bytes_sent,
+  virtual int32_t DataCountersRTP(uint32_t* bytes_sent,
                                   uint32_t* packets_sent) const OVERRIDE;
 
   // Get received RTCP report, sender info.
@@ -200,7 +205,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SetREMBStatus(const bool enable) OVERRIDE;
 
   virtual int32_t SetREMBData(const uint32_t bitrate,
-                              const std::vector<uint32_t>& ssrcs) OVERRIDE;
+                              const uint8_t number_of_ssrc,
+                              const uint32_t* ssrc) OVERRIDE;
 
   // (IJ) Extended jitter report.
   virtual bool IJ() const OVERRIDE;

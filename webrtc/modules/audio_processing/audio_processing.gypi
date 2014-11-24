@@ -72,8 +72,6 @@
         'noise_suppression_impl.h',
         'processing_component.cc',
         'processing_component.h',
-        'splitting_filter.cc',
-        'splitting_filter.h',
         'rms_level.cc',
         'rms_level.h',
         'typing_detection.cc',
@@ -114,7 +112,7 @@
             'ns/nsx_defines.h',
           ],
           'conditions': [
-            ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+            ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
               'sources': [
                 'ns/nsx_core_mips.c',
               ],
@@ -141,7 +139,7 @@
         ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7"', {
           'dependencies': ['audio_processing_neon',],
         }],
-        ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+        ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
             'aecm/aecm_core_mips.c',
           ],

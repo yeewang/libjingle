@@ -62,15 +62,7 @@ import org.webrtc.MediaCodecVideoEncoder;
  */
 public class ConnectActivity extends Activity {
 
-  public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";
-  public static final String EXTRA_CMDLINE = "org.appspot.apprtc.CMDLINE";
-  public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
   private static final String TAG = "ConnectActivity";
-  private final boolean USE_WEBSOCKETS = false;
-  private final String APPRTC_SERVER = "https://apprtc.appspot.com";
-  private final String APPRTC_WS_SERVER = "https://8-dot-apprtc.appspot.com";
-  private final int CONNECTION_REQUEST = 1;
-
   private ImageButton addRoomButton;
   private ImageButton removeRoomButton;
   private ImageButton connectButton;
@@ -78,15 +70,13 @@ public class ConnectActivity extends Activity {
   private EditText roomEditText;
   private ListView roomListView;
   private SharedPreferences sharedPref;
+  private String keyprefUrl;
   private String keyprefResolution;
   private String keyprefFps;
-  private String keyprefCpuUsageDetection;
   private String keyprefRoom;
   private String keyprefRoomList;
   private ArrayList<String> roomList;
   private ArrayAdapter<String> adapter;
-  private boolean commandLineRun;
-  private int runTimeMs;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -95,26 +85,33 @@ public class ConnectActivity extends Activity {
     // Get setting keys.
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+    keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
-    keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
+
+    // If an implicit VIEW intent is launching the app, go directly to that URL.
+    final Intent intent = getIntent();
+    if ("android.intent.action.VIEW".equals(intent.getAction())) {
+      connectToRoom(intent.getData().toString());
+      return;
+    }
 
     setContentView(R.layout.activity_connect);
 
     roomEditText = (EditText) findViewById(R.id.room_edittext);
     roomEditText.setOnEditorActionListener(
-      new TextView.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(
-            TextView textView, int i, KeyEvent keyEvent) {
-          if (i == EditorInfo.IME_ACTION_DONE) {
-            addRoomButton.performClick();
-            return true;
+        new TextView.OnEditorActionListener() {
+          @Override
+          public boolean onEditorAction(
+              TextView textView, int i, KeyEvent keyEvent) {
+            if (i == EditorInfo.IME_ACTION_DONE) {
+              addRoomButton.performClick();
+              return true;
+            }
+            return false;
           }
-          return false;
-        }
     });
     roomEditText.requestFocus();
 
@@ -130,21 +127,6 @@ public class ConnectActivity extends Activity {
     connectLoopbackButton =
         (ImageButton) findViewById(R.id.connect_loopback_button);
     connectLoopbackButton.setOnClickListener(connectListener);
-
-    // If an implicit VIEW intent is launching the app, go directly to that URL.
-    commandLineRun = false;
-    final Intent intent = getIntent();
-    if ("android.intent.action.VIEW".equals(intent.getAction())) {
-      commandLineRun = true;
-      boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
-      runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
-      String url = intent.getData().toString();
-      if (loopback && !url.contains("debug=loopback")) {
-        url += "/?debug=loopback";
-      }
-      connectToRoom(url, loopback);
-      return;
-    }
   }
 
   @Override
@@ -202,16 +184,6 @@ public class ConnectActivity extends Activity {
     }
   }
 
-  @Override
-  protected void onActivityResult(
-      int requestCode, int resultCode, Intent data) {
-    if (requestCode == CONNECTION_REQUEST && commandLineRun) {
-      Log.d(TAG, "Return: " + resultCode);
-      setResult(resultCode);
-      finish();
-    }
-  }
-
   private final OnClickListener connectListener = new OnClickListener() {
     @Override
     public void onClick(View view) {
@@ -219,12 +191,8 @@ public class ConnectActivity extends Activity {
       if (view.getId() == R.id.connect_loopback_button) {
         loopback = true;
       }
-      String url;
-      if (USE_WEBSOCKETS) {
-        url = APPRTC_WS_SERVER;
-      } else {
-        url = APPRTC_SERVER;
-      }
+      String url = sharedPref.getString(keyprefUrl,
+          getString(R.string.pref_url_default));
       if (loopback) {
         url += "/?debug=loopback";
       } else {
@@ -284,28 +252,17 @@ public class ConnectActivity extends Activity {
           url += "&hd=true";
         }
       }
-      // Test if CpuOveruseDetection should be disabled. By default is on.
-      boolean cpuOveruseDetection = sharedPref.getBoolean(
-          keyprefCpuUsageDetection,
-          Boolean.valueOf(
-              getString(R.string.pref_cpu_usage_detection_default)));
-      if (!cpuOveruseDetection) {
-        url += "&googCpuOveruseDetection=false";
-      }
       // TODO(kjellander): Add support for custom parameters to the URL.
-      connectToRoom(url, loopback);
+      connectToRoom(url);
     }
   };
 
-  private void connectToRoom(String roomUrl, boolean loopback) {
+  private void connectToRoom(String roomUrl) {
     if (validateUrl(roomUrl)) {
       Uri url = Uri.parse(roomUrl);
       Intent intent = new Intent(this, AppRTCDemoActivity.class);
       intent.setData(url);
-      intent.putExtra(EXTRA_LOOPBACK, loopback);
-      intent.putExtra(EXTRA_CMDLINE, commandLineRun);
-      intent.putExtra(EXTRA_RUNTIME, runTimeMs);
-      startActivityForResult(intent, CONNECTION_REQUEST);
+      startActivity(intent);
     }
   }
 

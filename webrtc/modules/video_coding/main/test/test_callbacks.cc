@@ -57,7 +57,7 @@ VCMEncodeCompleteCallback::SendData(
         const uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        const size_t payloadSize,
+        const uint32_t payloadSize,
         const RTPFragmentationHeader& fragmentationHeader,
         const RTPVideoHeader* videoHdr)
 {
@@ -106,7 +106,7 @@ VCMEncodeCompleteCallback::SendData(
     return ret;
 }
 
-size_t
+float
 VCMEncodeCompleteCallback::EncodedBytes()
 {
     return _encodedBytes;
@@ -147,12 +147,12 @@ VCMEncodeCompleteCallback::ResetByteCount()
 
 int32_t
 VCMRTPEncodeCompleteCallback::SendData(
-        FrameType frameType,
-        uint8_t  payloadType,
-        uint32_t timeStamp,
+        const FrameType frameType,
+        const uint8_t  payloadType,
+        const uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        size_t payloadSize,
+        const uint32_t payloadSize,
         const RTPFragmentationHeader& fragmentationHeader,
         const RTPVideoHeader* videoHdr)
 {
@@ -169,11 +169,11 @@ VCMRTPEncodeCompleteCallback::SendData(
                                         videoHdr);
 }
 
-size_t
+float
 VCMRTPEncodeCompleteCallback::EncodedBytes()
 {
     // only good for one call  - after which will reset value;
-    size_t tmp = _encodedBytes;
+    float tmp = _encodedBytes;
     _encodedBytes = 0;
     return tmp;
  }
@@ -197,12 +197,12 @@ VCMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
   if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
     return -1;
   }
-  _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
-                                  videoFrame.height());
+  _decodedBytes+= CalcBufferSize(kI420, videoFrame.width(),
+                                 videoFrame.height());
   return VCM_OK;
  }
 
-size_t
+int32_t
 VCMDecodeCompleteCallback::DecodedBytes()
 {
     return _decodedBytes;
@@ -248,7 +248,7 @@ RTPSendCompleteCallback::~RTPSendCompleteCallback()
 }
 
 int
-RTPSendCompleteCallback::SendPacket(int channel, const void *data, size_t len)
+RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {
     _sendCount++;
     _totalSentLength += len;
@@ -319,13 +319,11 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, size_t len)
         delete packet;
         packet = NULL;
     }
-    return static_cast<int>(len); // OK
+    return len; // OK
 }
 
 int
-RTPSendCompleteCallback::SendRTCPPacket(int channel,
-                                        const void *data,
-                                        size_t len)
+RTPSendCompleteCallback::SendRTCPPacket(int channel, const void *data, int len)
 {
     // Incorporate network conditions
     return SendPacket(channel, data, len);

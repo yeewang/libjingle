@@ -213,7 +213,7 @@ class DataChannel : public DataChannelInterface,
   void DeliverQueuedReceivedData();
 
   void SendQueuedDataMessages();
-  bool SendDataMessage(const DataBuffer& buffer, bool queue_if_blocked);
+  bool SendDataMessage(const DataBuffer& buffer);
   bool QueueSendDataMessage(const DataBuffer& buffer);
 
   void SendQueuedControlMessages();

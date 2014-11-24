@@ -53,7 +53,7 @@ private:
         uint32_t /*timeStamp*/,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        size_t payloadSize,
+        uint32_t payloadSize,
         const RTPFragmentationHeader& /* fragmentationHeader*/,
         const RTPVideoHeader* rtpTypeHdr) OVERRIDE;
 

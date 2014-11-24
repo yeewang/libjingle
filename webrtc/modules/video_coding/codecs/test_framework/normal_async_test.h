@@ -153,12 +153,12 @@ public:
     Encoded(webrtc::EncodedImage& encodedImage,
             const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
             const webrtc::RTPFragmentationHeader* fragmentation = NULL);
-    size_t EncodedBytes();
+    uint32_t EncodedBytes();
 private:
     FILE*             _encodedFile;
     FrameQueue*       _frameQueue;
     NormalAsyncTest&  _test;
-    size_t _encodedBytes;
+    uint32_t    _encodedBytes;
 };
 
 class VideoDecodeCompleteCallback : public webrtc::DecodedImageCallback
@@ -176,11 +176,11 @@ public:
     ReceivedDecodedReferenceFrame(const uint64_t pictureId);
     virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 
-    size_t DecodedBytes();
+    uint32_t DecodedBytes();
 private:
     FILE* _decodedFile;
     NormalAsyncTest& _test;
-    size_t _decodedBytes;
+    uint32_t    _decodedBytes;
 };
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAMEWORK_NORMAL_ASYNC_TEST_H_

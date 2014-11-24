@@ -44,7 +44,7 @@ class TestScaler : public ::testing::Test {
   const int half_height_;
   const int size_y_;
   const int size_uv_;
-  const size_t frame_length_;
+  const int frame_length_;
 };
 
 TestScaler::TestScaler()
@@ -392,7 +392,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
   rewind(input_file);
   rewind(output_file);
 
-  size_t required_size = CalcBufferSize(kI420, width, height);
+  int required_size = CalcBufferSize(kI420, width, height);
   uint8_t* input_buffer = new uint8_t[required_size];
   uint8_t* output_buffer = new uint8_t[required_size];
 
@@ -400,10 +400,12 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
   double avg_psnr = 0;
   I420VideoFrame in_frame, out_frame;
   while (feof(input_file) == 0) {
-    if (fread(input_buffer, 1, required_size, input_file) != required_size) {
+    if ((size_t)required_size !=
+        fread(input_buffer, 1, required_size, input_file)) {
       break;
     }
-    if (fread(output_buffer, 1, required_size, output_file) != required_size) {
+    if ((size_t)required_size !=
+        fread(output_buffer, 1, required_size, output_file)) {
       break;
     }
     frame_count++;
@@ -439,15 +441,15 @@ void TestScaler::ScaleSequence(ScaleMethod method,
   int64_t start_clock, total_clock;
   total_clock = 0;
   int frame_count = 0;
-  size_t src_required_size = CalcBufferSize(kI420, src_width, src_height);
+  int src_required_size = CalcBufferSize(kI420, src_width, src_height);
   scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[src_required_size]);
   int size_y = src_width * src_height;
   int size_uv = ((src_width + 1) / 2) * ((src_height + 1) / 2);
 
   // Running through entire sequence.
   while (feof(source_file) == 0) {
-    if (fread(frame_buffer.get(), 1, src_required_size, source_file) !=
-        src_required_size)
+    if ((size_t)src_required_size !=
+      fread(frame_buffer.get(), 1, src_required_size, source_file))
       break;
 
     input_frame.CreateFrame(size_y, frame_buffer.get(),

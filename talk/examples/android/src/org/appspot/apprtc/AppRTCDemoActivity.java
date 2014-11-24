@@ -49,7 +49,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.AppRTCClient.AppRTCSignalingParameters;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
@@ -60,18 +60,17 @@ import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
- * Activity of the AppRTCDemo Android app demonstrating interoperability
+ * Main Activity of the AppRTCDemo Android app demonstrating interoperability
  * between the Android/Java implementation of PeerConnection and the
  * apprtc.appspot.com demo webapp.
  */
 public class AppRTCDemoActivity extends Activity
-    implements AppRTCClient.SignalingEvents,
+    implements AppRTCClient.AppRTCSignalingEvents,
       PeerConnectionClient.PeerConnectionEvents {
   private static final String TAG = "AppRTCClient";
-  private final boolean USE_WEBSOCKETS = false;
   private PeerConnectionClient pc;
-  private AppRTCClient appRtcClient;
-  private SignalingParameters signalingParameters;
+  private AppRTCClient appRtcClient = new GAERTCClient(this, this);
+  private AppRTCSignalingParameters appRtcParameters;
   private AppRTCAudioManager audioManager = null;
   private View rootView;
   private View menuBar;
@@ -85,10 +84,7 @@ public class AppRTCDemoActivity extends Activity
   private TextView hudView;
   private TextView roomName;
   private ImageButton videoScalingButton;
-  private boolean commandLineRun;
-  private int runTimeMs;
   private boolean iceConnected;
-  private boolean isError;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -117,8 +113,8 @@ public class AppRTCDemoActivity extends Activity
 
     VideoRendererGui.setView(videoView);
     scalingType = ScalingType.SCALE_ASPECT_FILL;
-    remoteRender = VideoRendererGui.create(0, 0, 100, 100, scalingType, false);
-    localRender = VideoRendererGui.create(0, 0, 100, 100, scalingType, true);
+    remoteRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
+    localRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
 
     videoView.setOnClickListener(
         new View.OnClickListener() {
@@ -197,44 +193,25 @@ public class AppRTCDemoActivity extends Activity
 
     final Intent intent = getIntent();
     Uri url = intent.getData();
-    boolean loopback = intent.getBooleanExtra(
-        ConnectActivity.EXTRA_LOOPBACK, false);
-    commandLineRun = intent.getBooleanExtra(
-        ConnectActivity.EXTRA_CMDLINE, false);
-    runTimeMs = intent.getIntExtra(
-        ConnectActivity.EXTRA_RUNTIME, 0);
     if (url != null) {
       String room = url.getQueryParameter("r");
-      if (loopback || (room != null && !room.equals(""))) {
+      String loopback = url.getQueryParameter("debug");
+      if ((room != null && !room.equals("")) ||
+          (loopback != null && loopback.equals("loopback"))) {
         logAndToast(getString(R.string.connecting_to, url));
-        if (USE_WEBSOCKETS) {
-          appRtcClient = new WebSocketRTCClient(this);
-        } else {
-          appRtcClient = new GAERTCClient(this, this);
-        }
-        appRtcClient.connectToRoom(url.toString(), loopback);
-        if (loopback) {
-          roomName.setText("loopback");
-        } else {
+        appRtcClient.connectToRoom(url.toString());
+        if (room != null && !room.equals("")) {
           roomName.setText(room);
-        }
-        if (commandLineRun && runTimeMs > 0) {
-          // For command line execution run connection for <runTimeMs> and exit.
-          videoView.postDelayed(new Runnable() {
-            public void run() {
-              disconnect();
-            }
-          }, runTimeMs);
+        } else {
+          roomName.setText("loopback");
         }
       } else {
         logAndToast("Empty or missing room name!");
-        setResult(RESULT_CANCELED);
         finish();
       }
     } else {
       logAndToast(getString(R.string.missing_url));
-      Log.e(TAG, "Didn't get any URL in intent!");
-      setResult(RESULT_CANCELED);
+      Log.wtf(TAG, "Didn't get any URL in intent!");
       finish();
     }
   }
@@ -270,6 +247,10 @@ public class AppRTCDemoActivity extends Activity
   @Override
   protected void onDestroy() {
     disconnect();
+    if (audioManager != null) {
+      audioManager.close();
+      audioManager = null;
+    }
     super.onDestroy();
   }
 
@@ -340,34 +321,20 @@ public class AppRTCDemoActivity extends Activity
       pc.close();
       pc = null;
     }
-    if (audioManager != null) {
-      audioManager.close();
-      audioManager = null;
-    }
-    if (iceConnected && !isError) {
-      setResult(RESULT_OK);
-    } else {
-      setResult(RESULT_CANCELED);
-    }
     finish();
   }
 
-  private void disconnectWithErrorMessage(final String errorMessage) {
-    if (commandLineRun) {
-      Log.e(TAG, "Critical error: " + errorMessage);
-      disconnect();
-    } else {
-      new AlertDialog.Builder(this)
-      .setTitle(getText(R.string.channel_error_title))
-      .setMessage(errorMessage)
-      .setCancelable(false)
-      .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-          public void onClick(DialogInterface dialog, int id) {
-            dialog.cancel();
-            disconnect();
-          }
-        }).create().show();
-    }
+  private void disconnectWithMessage(String errorMessage) {
+    new AlertDialog.Builder(this)
+    .setTitle(getText(R.string.channel_error_title))
+    .setMessage(errorMessage)
+    .setCancelable(false)
+    .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int id) {
+          dialog.cancel();
+          disconnect();
+        }
+      }).create().show();
   }
 
   // Poor-man's assert(): die with |msg| unless |condition| is true.
@@ -390,20 +357,20 @@ public class AppRTCDemoActivity extends Activity
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All events are called from UI thread.
   @Override
-  public void onConnectedToRoom(final SignalingParameters params) {
+  public void onConnectedToRoom(final AppRTCSignalingParameters params) {
     if (audioManager != null) {
       // Store existing audio settings and change audio mode to
       // MODE_IN_COMMUNICATION for best possible VoIP performance.
       logAndToast("Initializing the audio manager...");
       audioManager.init();
     }
-    signalingParameters = params;
+    appRtcParameters = params;
     abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
       this, true, true, VideoRendererGui.getEGLContext()),
         "Failed to initializeAndroidGlobals");
     logAndToast("Creating peer connection...");
     pc = new PeerConnectionClient(
-        this, localRender, remoteRender, signalingParameters, this);
+        this, localRender, remoteRender, appRtcParameters, this);
     if (pc.isHDVideo()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     } else {
@@ -450,7 +417,7 @@ public class AppRTCDemoActivity extends Activity
     if (pc == null) {
       return;
     }
-    if (signalingParameters.initiator) {
+    if (appRtcParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
@@ -465,7 +432,7 @@ public class AppRTCDemoActivity extends Activity
     }
     logAndToast("Received remote " + sdp.type + " ...");
     pc.setRemoteDescription(sdp);
-    if (!signalingParameters.initiator) {
+    if (!appRtcParameters.initiator) {
       logAndToast("Creating ANSWER...");
       // Create answer. Answer SDP will be sent to offering client in
       // PeerConnectionEvents.onLocalDescription event.
@@ -487,11 +454,8 @@ public class AppRTCDemoActivity extends Activity
   }
 
   @Override
-  public void onChannelError(final String description) {
-    if (!isError) {
-      isError = true;
-      disconnectWithErrorMessage(description);
-    }
+  public void onChannelError(int code, String description) {
+    disconnectWithMessage(description);
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -501,11 +465,7 @@ public class AppRTCDemoActivity extends Activity
   public void onLocalDescription(final SessionDescription sdp) {
     if (appRtcClient != null) {
       logAndToast("Sending " + sdp.type + " ...");
-      if (signalingParameters.initiator) {
-        appRtcClient.sendOfferSdp(sdp);
-      } else {
-        appRtcClient.sendAnswerSdp(sdp);
-      }
+      appRtcClient.sendLocalDescription(sdp);
     }
   }
 
@@ -531,10 +491,7 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onPeerConnectionError(String description) {
-    if (!isError) {
-      isError = true;
-      disconnectWithErrorMessage(description);
-    }
+    disconnectWithMessage(description);
   }
 
 }

@@ -39,7 +39,7 @@ struct PerIoContext {
     WSAOVERLAPPED overlapped;
     char buffer[MAX_IO_BUFF_SIZE];
     WSABUF wsabuf;
-    size_t nTotalBytes;
+    int nTotalBytes;
     int nSentBytes;
     int bytes;
     IO_OPERATION ioOperation;

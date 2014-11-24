@@ -13,9 +13,7 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits>
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/wav_header.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -236,7 +234,7 @@ int32_t ModuleFileUtility::InitAviWriting(
 
 int32_t ModuleFileUtility::WriteAviAudioData(
     const int8_t* buffer,
-    size_t bufferLengthInBytes)
+    uint32_t bufferLengthInBytes)
 {
     if( _aviOutFile != 0)
     {
@@ -253,7 +251,7 @@ int32_t ModuleFileUtility::WriteAviAudioData(
 
 int32_t ModuleFileUtility::WriteAviVideoData(
         const int8_t* buffer,
-        size_t bufferLengthInBytes)
+        uint32_t bufferLengthInBytes)
 {
     if( _aviOutFile != 0)
     {
@@ -372,7 +370,7 @@ int32_t ModuleFileUtility::InitAviReading(const char* filename, bool videoOnly,
 
 int32_t ModuleFileUtility::ReadAviAudioData(
     int8_t*  outBuffer,
-    size_t bufferLengthInBytes)
+    const uint32_t bufferLengthInBytes)
 {
     if(_aviAudioInFile == 0)
     {
@@ -380,20 +378,22 @@ int32_t ModuleFileUtility::ReadAviAudioData(
         return -1;
     }
 
-    if(_aviAudioInFile->ReadAudio(reinterpret_cast<uint8_t*>(outBuffer),
-                                  bufferLengthInBytes) != 0)
+    int32_t length = bufferLengthInBytes;
+    if(_aviAudioInFile->ReadAudio(
+        reinterpret_cast<uint8_t*>(outBuffer),
+        length) != 0)
     {
         return -1;
     }
     else
     {
-        return static_cast<int32_t>(bufferLengthInBytes);
+        return length;
     }
 }
 
 int32_t ModuleFileUtility::ReadAviVideoData(
     int8_t* outBuffer,
-    size_t bufferLengthInBytes)
+    const uint32_t bufferLengthInBytes)
 {
     if(_aviVideoInFile == 0)
     {
@@ -401,12 +401,14 @@ int32_t ModuleFileUtility::ReadAviVideoData(
         return -1;
     }
 
-    if(_aviVideoInFile->ReadVideo(reinterpret_cast<uint8_t*>(outBuffer),
-                                  bufferLengthInBytes) != 0)
+    int32_t length = bufferLengthInBytes;
+    if( _aviVideoInFile->ReadVideo(
+        reinterpret_cast<uint8_t*>(outBuffer),
+        length) != 0)
     {
         return -1;
     } else {
-        return static_cast<int32_t>(bufferLengthInBytes);
+        return length;
     }
 }
 
@@ -772,14 +774,14 @@ int32_t ModuleFileUtility::InitWavReading(InStream& wav,
 int32_t ModuleFileUtility::ReadWavDataAsMono(
     InStream& wav,
     int8_t* outData,
-    const size_t bufferSize)
+    const uint32_t bufferSize)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::ReadWavDataAsMono(wav= 0x%x, outData= 0x%d, "
-        "bufSize= %" PRIuS ")",
+        "ModuleFileUtility::ReadWavDataAsMono(wav= 0x%x, outData= 0x%d,\
+ bufSize= %ld)",
         &wav,
         outData,
         bufferSize);
@@ -851,14 +853,14 @@ int32_t ModuleFileUtility::ReadWavDataAsStereo(
     InStream& wav,
     int8_t* outDataLeft,
     int8_t* outDataRight,
-    const size_t bufferSize)
+    const uint32_t bufferSize)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::ReadWavDataAsStereo(wav= 0x%x, outLeft= 0x%x, "
-        "outRight= 0x%x, bufSize= %" PRIuS ")",
+        "ModuleFileUtility::ReadWavDataAsStereo(wav= 0x%x, outLeft= 0x%x,\
+ outRight= 0x%x, bufSize= %ld)",
         &wav,
         outDataLeft,
         outDataRight,
@@ -1081,14 +1083,13 @@ int32_t ModuleFileUtility::InitWavWriting(OutStream& wav,
 
 int32_t ModuleFileUtility::WriteWavData(OutStream& out,
                                         const int8_t*  buffer,
-                                        const size_t dataLength)
+                                        const uint32_t dataLength)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::WriteWavData(out= 0x%x, buf= 0x%x, dataLen= %" PRIuS
-        ")",
+        "ModuleFileUtility::WriteWavData(out= 0x%x, buf= 0x%x, dataLen= %d)",
         &out,
         buffer,
         dataLength);
@@ -1105,7 +1106,7 @@ int32_t ModuleFileUtility::WriteWavData(OutStream& out,
         return -1;
     }
     _bytesWritten += dataLength;
-    return static_cast<int32_t>(dataLength);
+    return dataLength;
 }
 
 
@@ -1191,14 +1192,14 @@ int32_t ModuleFileUtility::InitPreEncodedReading(InStream& in,
 int32_t ModuleFileUtility::ReadPreEncodedData(
     InStream& in,
     int8_t* outData,
-    const size_t bufferSize)
+    const uint32_t bufferSize)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::ReadPreEncodedData(in= 0x%x, outData= 0x%x, "
-        "bufferSize= %" PRIuS ")",
+        "ModuleFileUtility::ReadPreEncodedData(in= 0x%x, outData= 0x%x,\
+ bufferSize= %d)",
         &in,
         outData,
         bufferSize);
@@ -1258,14 +1259,14 @@ int32_t ModuleFileUtility::InitPreEncodedWriting(
 int32_t ModuleFileUtility::WritePreEncodedData(
     OutStream& out,
     const int8_t*  buffer,
-    const size_t dataLength)
+    const uint32_t dataLength)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::WritePreEncodedData(out= 0x%x, inData= 0x%x, "
-        "dataLen= %" PRIuS ")",
+        "ModuleFileUtility::WritePreEncodedData(out= 0x%x, inData= 0x%x,\
+ dataLen= %d)",
         &out,
         buffer,
         dataLength);
@@ -1275,12 +1276,11 @@ int32_t ModuleFileUtility::WritePreEncodedData(
         WEBRTC_TRACE(kTraceError, kTraceFile, _id,"buffer NULL");
     }
 
-    size_t bytesWritten = 0;
+    int32_t bytesWritten = 0;
     // The first two bytes is the size of the frame.
     int16_t lengthBuf;
     lengthBuf = (int16_t)dataLength;
-    if(dataLength > static_cast<size_t>(std::numeric_limits<int16_t>::max()) ||
-       !out.Write(&lengthBuf, 2))
+    if(!out.Write(&lengthBuf, 2))
     {
        return -1;
     }
@@ -1291,7 +1291,7 @@ int32_t ModuleFileUtility::WritePreEncodedData(
         return -1;
     }
     bytesWritten += dataLength;
-    return static_cast<int32_t>(bytesWritten);
+    return bytesWritten;
 }
 
 int32_t ModuleFileUtility::InitCompressedReading(
@@ -1495,14 +1495,14 @@ int32_t ModuleFileUtility::InitCompressedReading(
 
 int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
                                               int8_t* outData,
-                                              size_t bufferSize)
+                                              uint32_t bufferSize)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::ReadCompressedData(in=0x%x, outData=0x%x, bytes=%"
-        PRIuS ")",
+        "ModuleFileUtility::ReadCompressedData(in=0x%x, outData=0x%x,\
+ bytes=%ld)",
         &in,
         outData,
         bufferSize);
@@ -1554,7 +1554,7 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         }
         if(mode != 15)
         {
-            if(bufferSize < static_cast<size_t>(AMRmode2bytes[mode] + 1))
+            if(bufferSize < AMRmode2bytes[mode] + 1)
             {
                 WEBRTC_TRACE(
                     kTraceError,
@@ -1612,7 +1612,7 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         }
         if(mode != 15)
         {
-            if(bufferSize < static_cast<size_t>(AMRWBmode2bytes[mode] + 1))
+            if(bufferSize < AMRWBmode2bytes[mode] + 1)
             {
                 WEBRTC_TRACE(kTraceError, kTraceFile, _id,
                            "output buffer is too short to read AMRWB\
@@ -1770,14 +1770,14 @@ int32_t ModuleFileUtility::InitCompressedWriting(
 int32_t ModuleFileUtility::WriteCompressedData(
     OutStream& out,
     const int8_t* buffer,
-    const size_t dataLength)
+    const uint32_t dataLength)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::WriteCompressedData(out= 0x%x, buf= 0x%x, "
-        "dataLen= %" PRIuS ")",
+        "ModuleFileUtility::WriteCompressedData(out= 0x%x, buf= 0x%x,\
+ dataLen= %d)",
         &out,
         buffer,
         dataLength);
@@ -1791,7 +1791,7 @@ int32_t ModuleFileUtility::WriteCompressedData(
     {
         return -1;
     }
-    return static_cast<int32_t>(dataLength);
+    return dataLength;
 }
 
 int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
@@ -1872,14 +1872,13 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
 
 int32_t ModuleFileUtility::ReadPCMData(InStream& pcm,
                                        int8_t* outData,
-                                       size_t bufferSize)
+                                       uint32_t bufferSize)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::ReadPCMData(pcm= 0x%x, outData= 0x%x, bufSize= %"
-        PRIuS ")",
+        "ModuleFileUtility::ReadPCMData(pcm= 0x%x, outData= 0x%x, bufSize= %d)",
         &pcm,
         outData,
         bufferSize);
@@ -2007,14 +2006,13 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq)
 
 int32_t ModuleFileUtility::WritePCMData(OutStream& out,
                                         const int8_t*  buffer,
-                                        const size_t dataLength)
+                                        const uint32_t dataLength)
 {
     WEBRTC_TRACE(
         kTraceStream,
         kTraceFile,
         _id,
-        "ModuleFileUtility::WritePCMData(out= 0x%x, buf= 0x%x, dataLen= %" PRIuS
-        ")",
+        "ModuleFileUtility::WritePCMData(out= 0x%x, buf= 0x%x, dataLen= %d)",
         &out,
         buffer,
         dataLength);
@@ -2030,7 +2028,7 @@ int32_t ModuleFileUtility::WritePCMData(OutStream& out,
     }
 
     _bytesWritten += dataLength;
-    return static_cast<int32_t>(dataLength);
+    return dataLength;
 }
 
 int32_t ModuleFileUtility::codec_info(CodecInst& codecInst)

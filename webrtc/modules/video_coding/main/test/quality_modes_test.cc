@@ -212,7 +212,7 @@ QualityModesTest::Perform(const CmdArgs& args)
   // register a decoder (same codec for decoder and encoder )
   TEST(_vcm->RegisterReceiveCodec(&codec, 2) == VCM_OK);
   /* Callback Settings */
-  VCMQMDecodeCompleteCallback  _decodeCallback(
+  VCMQMDecodeCompleCallback  _decodeCallback(
       _decodedFile, _nativeFrameRate, feature_table_name_);
   _vcm->RegisterReceiveCallback(&_decodeCallback);
   VCMNTEncodeCompleteCallback   _encodeCompleteCallback(_encodedFile, *this);
@@ -449,7 +449,7 @@ QMTestVideoSettingsCallback::SetVideoQMSettings(const uint32_t frameRate,
 }
 
 // Decoded Frame Callback Implementation
-VCMQMDecodeCompleteCallback::VCMQMDecodeCompleteCallback(
+VCMQMDecodeCompleCallback::VCMQMDecodeCompleCallback(
     FILE* decodedFile, int frame_rate, std::string feature_table_name):
 _decodedFile(decodedFile),
 _decodedBytes(0),
@@ -468,7 +468,7 @@ feature_table_name_(feature_table_name)
     //
 }
 
-VCMQMDecodeCompleteCallback::~VCMQMDecodeCompleteCallback()
+VCMQMDecodeCompleCallback::~VCMQMDecodeCompleCallback()
  {
 //     if (_interpolator != NULL)
 //     {
@@ -483,7 +483,7 @@ VCMQMDecodeCompleteCallback::~VCMQMDecodeCompleteCallback()
  }
 
 int32_t
-VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
+VCMQMDecodeCompleCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
   ++frames_cnt_since_drop_;
 
@@ -537,19 +537,19 @@ VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
   return VCM_OK;
 }
 
-size_t VCMQMDecodeCompleteCallback::DecodedBytes()
+int32_t VCMQMDecodeCompleCallback::DecodedBytes()
 {
   return _decodedBytes;
 }
 
-void VCMQMDecodeCompleteCallback::SetOriginalFrameDimensions(int32_t width,
-                                                             int32_t height)
+void VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(int32_t width,
+                                                           int32_t height)
 {
   _origWidth = width;
   _origHeight = height;
 }
 
-int32_t VCMQMDecodeCompleteCallback::buildInterpolator()
+int32_t VCMQMDecodeCompleCallback::buildInterpolator()
 {
   uint32_t decFrameLength  = _origWidth*_origHeight*3 >> 1;
   if (_decBuffer != NULL)
@@ -569,7 +569,7 @@ int32_t VCMQMDecodeCompleteCallback::buildInterpolator()
 // frame (or several consecutive frames from the end) must have been dropped. If
 // this is the case, the last frame is repeated so that there are as many
 // frames rendered as there are number of frames encoded.
-void VCMQMDecodeCompleteCallback::WriteEnd(int input_frame_count)
+void VCMQMDecodeCompleCallback::WriteEnd(int input_frame_count)
 {
   int num_missing_frames = input_frame_count - _frameCnt;
 

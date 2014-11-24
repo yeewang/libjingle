@@ -78,6 +78,7 @@
             'iSACFix',
             'media_file',
             'neteq',
+            'neteq_test_tools',
             'neteq_unittest_tools',
             'paced_sender',
             'PCM16B',  # Needed by NetEq tests.
@@ -165,7 +166,6 @@
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/utility/ring_buffer_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
-            'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
             'desktop_capture/desktop_and_cursor_composer_unittest.cc',
             'desktop_capture/desktop_region_unittest.cc',
             'desktop_capture/differ_block_unittest.cc',

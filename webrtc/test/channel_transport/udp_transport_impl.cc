@@ -1765,7 +1765,7 @@ void UdpTransportImpl::BuildSockaddrIn(uint16_t portnr,
 }
 
 int32_t UdpTransportImpl::SendRaw(const int8_t *data,
-                                  size_t length,
+                                  uint32_t length,
                                   int32_t isRTCP,
                                   uint16_t portnr,
                                   const char* ip)
@@ -1841,7 +1841,7 @@ int32_t UdpTransportImpl::SendRaw(const int8_t *data,
 }
 
 int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
-                                          size_t length,
+                                          uint32_t length,
                                           const SocketAddress& to)
 {
     CriticalSectionScoped cs(_crit);
@@ -1857,7 +1857,7 @@ int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
 }
 
 int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
-                                           size_t length,
+                                           uint32_t length,
                                            const SocketAddress& to)
 {
 
@@ -1875,7 +1875,7 @@ int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
 }
 
 int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
-                                          size_t length,
+                                          uint32_t length,
                                           const uint16_t rtpPort)
 {
     CriticalSectionScoped cs(_crit);
@@ -1903,7 +1903,7 @@ int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
 }
 
 int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
-                                           size_t length,
+                                           uint32_t length,
                                            const uint16_t rtcpPort)
 {
     CriticalSectionScoped cs(_crit);
@@ -1931,9 +1931,7 @@ int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
     return -1;
 }
 
-int UdpTransportImpl::SendPacket(int /*channel*/,
-                                 const void* data,
-                                 size_t length)
+int UdpTransportImpl::SendPacket(int /*channel*/, const void* data, int length)
 {
     WEBRTC_TRACE(kTraceStream, kTraceTransport, _id, "%s", __FUNCTION__);
 
@@ -2001,7 +1999,7 @@ int UdpTransportImpl::SendPacket(int /*channel*/,
 }
 
 int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
-                                     size_t length)
+                                     int length)
 {
 
     CriticalSectionScoped cs(_crit);
@@ -2096,7 +2094,7 @@ int32_t UdpTransportImpl::SetSendPorts(uint16_t rtpPort, uint16_t rtcpPort)
 
 void UdpTransportImpl::IncomingRTPCallback(CallbackObj obj,
                                            const int8_t* rtpPacket,
-                                           size_t rtpPacketLength,
+                                           int32_t rtpPacketLength,
                                            const SocketAddress* from)
 {
     if (rtpPacket && rtpPacketLength > 0)
@@ -2108,7 +2106,7 @@ void UdpTransportImpl::IncomingRTPCallback(CallbackObj obj,
 
 void UdpTransportImpl::IncomingRTCPCallback(CallbackObj obj,
                                             const int8_t* rtcpPacket,
-                                            size_t rtcpPacketLength,
+                                            int32_t rtcpPacketLength,
                                             const SocketAddress* from)
 {
     if (rtcpPacket && rtcpPacketLength > 0)
@@ -2120,7 +2118,7 @@ void UdpTransportImpl::IncomingRTCPCallback(CallbackObj obj,
 }
 
 void UdpTransportImpl::IncomingRTPFunction(const int8_t* rtpPacket,
-                                           size_t rtpPacketLength,
+                                           int32_t rtpPacketLength,
                                            const SocketAddress* fromSocket)
 {
     char ipAddress[kIpAddressVersion6Length];
@@ -2183,7 +2181,7 @@ void UdpTransportImpl::IncomingRTPFunction(const int8_t* rtpPacket,
 }
 
 void UdpTransportImpl::IncomingRTCPFunction(const int8_t* rtcpPacket,
-                                            size_t rtcpPacketLength,
+                                            int32_t rtcpPacketLength,
                                             const SocketAddress* fromSocket)
 {
     char ipAddress[kIpAddressVersion6Length];

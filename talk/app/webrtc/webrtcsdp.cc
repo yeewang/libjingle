@@ -206,9 +206,7 @@ static const char kMediaPortRejected[] = "0";
 // draft-ietf-mmusic-trickle-ice-01
 // When no candidates have been gathered, set the connection
 // address to IP6 ::.
-// TODO(perkj): FF can not parse IP6 ::. See http://crbug/430333
-// Use IPV4 per default.
-static const char kDummyAddress[] = "0.0.0.0";
+static const char kDummyAddress[] = "::";
 static const char kDummyPort[] = "9";
 // RFC 3556
 static const char kApplicationSpecificMaximum[] = "AS";
@@ -677,7 +675,7 @@ static void GetDefaultDestination(
     const std::vector<Candidate>& candidates,
     int component_id, std::string* port,
     std::string* ip, std::string* addr_type) {
-  *addr_type = kConnectionIpv4Addrtype;
+  *addr_type = kConnectionIpv6Addrtype;
   *port = kDummyPort;
   *ip = kDummyAddress;
   int current_preference = kPreferenceUnknown;

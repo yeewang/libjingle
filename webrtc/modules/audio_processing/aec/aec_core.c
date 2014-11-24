@@ -1356,7 +1356,7 @@ static void ReopenWav(rtc_WavWriter** wav_file,
                       int seq1,
                       int seq2,
                       int sample_rate) {
-  int written ATTRIBUTE_UNUSED;
+  int written UNUSED;
   char filename[64];
   if (*wav_file) {
     if (rtc_WavSampleRate(*wav_file) == sample_rate)

@@ -107,7 +107,7 @@ TbExternalTransport::~TbExternalTransport()
     delete &_statCrit;
 }
 
-int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
+int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 {
   // Parse timestamp from RTP header according to RFC 3550, section 5.1.
     uint8_t* ptr = (uint8_t*)data;
@@ -137,7 +137,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
         ssrc += ptr[11];
         if (ssrc != _SSRC)
         {
-            return static_cast<int>(len); // avoid error in trace file
+            return len; // return len to avoid error in trace file
         }
     }
     if (_temporalLayers) {
@@ -182,7 +182,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
             }
             if (_currentRelayLayer < TID)
             {
-                return static_cast<int>(len); // avoid error in trace file
+                return len; // return len to avoid error in trace file
             }
             if (ptr[14] & 0x80) // 2 byte PID
             {
@@ -227,7 +227,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
         _statCrit.Enter();
         _dropCount++;
         _statCrit.Leave();
-        return static_cast<int>(len);
+        return len;
     }
 
     VideoPacket* newPacket = new VideoPacket();
@@ -266,7 +266,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
     _rtpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
-    return static_cast<int>(len);
+    return len;
 }
 
 void TbExternalTransport::RegisterSendFrameCallback(
@@ -285,9 +285,7 @@ void TbExternalTransport::SetTemporalToggle(unsigned char layers)
     _temporalLayers = layers;
 }
 
-int TbExternalTransport::SendRTCPPacket(int channel,
-                                        const void *data,
-                                        size_t len)
+int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
 {
     _statCrit.Enter();
     _rtcpCount++;
@@ -306,7 +304,7 @@ int TbExternalTransport::SendRTCPPacket(int channel,
     _rtcpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
-    return static_cast<int>(len);
+    return len;
 }
 
 void TbExternalTransport::SetNetworkParameters(

@@ -30,7 +30,7 @@ TransportCallback::~TransportCallback()
 }
 
 int
-TransportCallback::SendPacket(int channel, const void *data, size_t len)
+TransportCallback::SendPacket(int channel, const void *data, int len)
 {
     _sendCount++;
     _totalSentLength += len;

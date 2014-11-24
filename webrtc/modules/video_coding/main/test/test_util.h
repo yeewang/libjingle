@@ -51,7 +51,7 @@ double NormalDist(double mean, double stdDev);
 
 struct RtpPacket {
   uint8_t data[1650]; // max packet size
-  size_t length;
+  int32_t length;
   int64_t receiveTime;
 };
 

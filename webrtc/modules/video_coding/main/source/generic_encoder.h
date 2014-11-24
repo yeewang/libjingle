@@ -84,7 +84,7 @@ public:
     */
     int32_t InitEncode(const VideoCodec* settings,
                        int32_t numberOfCores,
-                       size_t maxPayloadSize);
+                       uint32_t maxPayloadSize);
     /**
     * Encode raw image
     * inputFrame        : Frame containing raw image

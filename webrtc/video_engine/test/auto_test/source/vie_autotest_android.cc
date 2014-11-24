@@ -150,8 +150,7 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
           break;
 
         case 8: // RTP/RTCP
-          // Note that this test is removed. It hasn't been properly cleaned up
-          // because this hopefully going away soon.
+          vieAutoTest.ViERtpRtcpExtendedTest();
           break;
 
         default:

@@ -12,7 +12,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <limits>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -146,7 +145,7 @@ bool RtpDumpImpl::IsActive() const
     return _file.Open();
 }
 
-int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, size_t packetLength)
+int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, uint16_t packetLength)
 {
     CriticalSectionScoped lock(_critSect);
     if (!IsActive())
@@ -159,9 +158,7 @@ int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, size_t packetLength)
         return -1;
     }
 
-    rtpDumpPktHdr_t hdr;
-    size_t total_size = packetLength + sizeof hdr;
-    if (packetLength < 1 || total_size > std::numeric_limits<uint16_t>::max())
+    if (packetLength < 1)
     {
         return -1;
     }
@@ -170,8 +167,11 @@ int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, size_t packetLength)
     // considered RTP (without further verification).
     bool isRTCP = RTCP(packet);
 
+    rtpDumpPktHdr_t hdr;
+    uint32_t offset;
+
     // Offset is relative to when recording was started.
-    uint32_t offset = GetTimeInMS();
+    offset = GetTimeInMS();
     if (offset < _startTime)
     {
         // Compensate for wraparound.
@@ -181,7 +181,7 @@ int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, size_t packetLength)
     }
     hdr.offset = RtpDumpHtonl(offset);
 
-    hdr.length = RtpDumpHtons((uint16_t)(total_size));
+    hdr.length = RtpDumpHtons((uint16_t)(packetLength + sizeof(hdr)));
     if (isRTCP)
     {
         hdr.plen = 0;

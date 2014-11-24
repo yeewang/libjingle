@@ -42,6 +42,8 @@ class RtpRtcp : public Module {
     *                         will do nothing.
     *  outgoing_transport   - Transport object that will be called when packets
     *                         are ready to be sent out on the network
+    *  rtcp_feedback        - Callback object that will receive the incoming
+    *                         RTCP messages.
     *  intra_frame_callback - Called when the receiver request a intra frame.
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
@@ -58,6 +60,7 @@ class RtpRtcp : public Module {
     RtpRtcp* default_module;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
+    RtcpFeedback* rtcp_feedback;
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
     RtcpRttStats* rtt_stats;
@@ -83,7 +86,7 @@ class RtpRtcp : public Module {
    ***************************************************************************/
 
     virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                                       size_t incoming_packet_length) = 0;
+                                       uint16_t incoming_packet_length) = 0;
 
     virtual void SetRemoteSSRC(const uint32_t ssrc) = 0;
 
@@ -220,11 +223,37 @@ class RtpRtcp : public Module {
     virtual void SetSSRC(const uint32_t ssrc) = 0;
 
     /*
+    *   Get CSRC
+    *
+    *   arrOfCSRC   - array of CSRCs
+    *
+    *   return -1 on failure else number of valid entries in the array
+    */
+    virtual int32_t CSRCs(
+        uint32_t arrOfCSRC[kRtpCsrcSize]) const = 0;
+
+    /*
     *   Set CSRC
     *
-    *   csrcs   - vector of CSRCs
+    *   arrOfCSRC   - array of CSRCs
+    *   arrLength   - number of valid entries in the array
+    *
+    *   return -1 on failure else 0
     */
-    virtual void SetCsrcs(const std::vector<uint32_t>& csrcs) = 0;
+    virtual int32_t SetCSRCs(
+        const uint32_t arrOfCSRC[kRtpCsrcSize],
+        const uint8_t arrLength) = 0;
+
+    /*
+    *   includes CSRCs in RTP header if enabled
+    *
+    *   include CSRC - on/off
+    *
+    *    default:on
+    *
+    *   return -1 on failure else 0
+    */
+    virtual int32_t SetCSRCStatus(const bool include) = 0;
 
     /*
     * Turn on/off sending RTX (RFC 4588). The modes can be set as a combination
@@ -302,7 +331,7 @@ class RtpRtcp : public Module {
         const uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        const size_t payloadSize,
+        const uint32_t payloadSize,
         const RTPFragmentationHeader* fragmentation = NULL,
         const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
@@ -311,7 +340,7 @@ class RtpRtcp : public Module {
                                   int64_t capture_time_ms,
                                   bool retransmission) = 0;
 
-    virtual size_t TimeToSendPadding(size_t bytes) = 0;
+    virtual int TimeToSendPadding(int bytes) = 0;
 
     virtual bool GetSendSideDelay(int* avg_send_delay_ms,
                                   int* max_send_delay_ms) const = 0;
@@ -439,7 +468,7 @@ class RtpRtcp : public Module {
     *   return -1 on failure else 0
     */
     virtual int32_t DataCountersRTP(
-        size_t* bytesSent,
+        uint32_t* bytesSent,
         uint32_t* packetsSent) const = 0;
     /*
     *   Get received RTCP sender info
@@ -511,7 +540,8 @@ class RtpRtcp : public Module {
     virtual int32_t SetREMBStatus(const bool enable) = 0;
 
     virtual int32_t SetREMBData(const uint32_t bitrate,
-                                const std::vector<uint32_t>& ssrcs) = 0;
+                                const uint8_t numberOfSSRC,
+                                const uint32_t* SSRC) = 0;
 
     /*
     *   (IJ) Extended jitter report.

@@ -43,7 +43,7 @@ class RTPReceiverStrategy {
                                  const PayloadUnion& specific_payload,
                                  bool is_red,
                                  const uint8_t* payload,
-                                 size_t payload_length,
+                                 uint16_t payload_length,
                                  int64_t timestamp_ms,
                                  bool is_first_packet) = 0;
 

@@ -64,7 +64,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace {
 
@@ -107,7 +106,6 @@ const int kVideoMtu = 1200;
 const int kVideoRtpBufferSize = 65536;
 
 const char kVp8CodecName[] = "VP8";
-const char kVp9CodecName[] = "VP9";
 
 // TODO(ronghuawu): Change to 640x360.
 const int kDefaultVideoMaxWidth = 640;
@@ -223,21 +221,11 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
   if (CodecNameMatches(codec_name, kVp8CodecName)) {
     return true;
   }
-  if (CodecNameMatches(codec_name, kVp9CodecName)) {
-    const std::string group_name =
-        webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
-    return group_name == "Enabled" || group_name == "EnabledByFlag";
-  }
   return false;
 }
 
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
-  if (CodecIsInternallySupported(kVp9CodecName)) {
-    codecs.push_back(
-        MakeVideoCodecWithDefaultFeedbackParams(101, kVp9CodecName));
-    // TODO(andresp): Add rtx codec for vp9 and verify it works.
-  }
   codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(100, kVp8CodecName));
   codecs.push_back(MakeRtxCodec(96, 100));
   codecs.push_back(MakeVideoCodec(116, kRedCodecName));
@@ -305,7 +293,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   }
 
   virtual int DeliverFrame(unsigned char* buffer,
-                           size_t buffer_size,
+                           int buffer_size,
                            uint32_t rtp_time_stamp,
                            int64_t ntp_time_ms,
                            int64_t render_time,
@@ -347,14 +335,14 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual bool IsTextureSupported() { return true; }
 
-  int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,
+  int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
                          int64 time_stamp, int64 elapsed_time) {
     WebRtcVideoFrame video_frame;
     video_frame.Alias(buffer, buffer_size, width_, height_,
                       1, 1, elapsed_time, time_stamp, 0);
 
     // Sanity check on decoded frame size.
-    if (buffer_size != VideoFrame::SizeOf(width_, height_)) {
+    if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
       LOG(LS_WARNING) << "WebRtcRenderAdapter (channel " << channel_id_
                       << ") received a strange frame size: "
                       << buffer_size;
@@ -927,20 +915,15 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   void ProcessFrame(const VideoFrame& original_frame, bool mute,
                     VideoFrame** processed_frame) {
     if (!mute) {
-      *processed_frame = original_frame.Copy();  // Shallow copy.
+      *processed_frame = original_frame.Copy();
     } else {
-      // Cache a black frame of the same dimensions as original_frame.
-      if (black_frame_.GetWidth() != original_frame.GetWidth() ||
-          black_frame_.GetHeight() != original_frame.GetHeight()) {
-        black_frame_.InitToBlack(static_cast<int>(original_frame.GetWidth()),
-                                 static_cast<int>(original_frame.GetHeight()),
-                                 1, 1,
-                                 original_frame.GetElapsedTime(),
-                                 original_frame.GetTimeStamp());
-      }
-      *processed_frame = black_frame_.Copy();  // Shallow copy.
-      (*processed_frame)->SetElapsedTime(original_frame.GetElapsedTime());
-      (*processed_frame)->SetTimeStamp(original_frame.GetTimeStamp());
+      WebRtcVideoFrame* black_frame = new WebRtcVideoFrame();
+      black_frame->InitToBlack(static_cast<int>(original_frame.GetWidth()),
+                               static_cast<int>(original_frame.GetHeight()),
+                               1, 1,
+                               original_frame.GetElapsedTime(),
+                               original_frame.GetTimeStamp());
+      *processed_frame = black_frame;
     }
     local_stream_info_.UpdateFrame(*processed_frame);
   }
@@ -984,7 +967,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   VideoFormat adapt_format_;
   AdaptFormatType adapt_format_type_;
-  WebRtcVideoFrame black_frame_;  // Cached frame for mute.
 };
 
 static bool GetCpuOveruseOptions(const VideoOptions& options,
@@ -2505,8 +2487,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         ASSERT(channel_id == default_channel_id_);
         continue;
       }
-      size_t bytes_sent, bytes_recv;
-      unsigned int packets_sent, packets_recv;
+      unsigned int bytes_sent, packets_sent, bytes_recv, packets_recv;
       if (engine_->vie()->rtp()->GetRTPStatistics(channel_id, bytes_sent,
                                                   packets_sent, bytes_recv,
                                                   packets_recv) != 0) {
@@ -2836,7 +2817,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   engine()->vie()->network()->ReceivedRTPPacket(
       processing_channel_id,
       packet->data(),
-      packet->length(),
+      static_cast<int>(packet->length()),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -2865,7 +2846,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
       engine_->vie()->network()->ReceivedRTCPPacket(
           recv_channel_id,
           packet->data(),
-          packet->length());
+          static_cast<int>(packet->length()));
     }
   }
   // SR may continue RR and any RR entry may correspond to any one of the send
@@ -2878,7 +2859,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
     engine_->vie()->network()->ReceivedRTCPPacket(
         channel_id,
         packet->data(),
-        packet->length());
+        static_cast<int>(packet->length()));
   }
 }
 
@@ -4029,16 +4010,16 @@ void WebRtcVideoMediaChannel::OnMessage(rtc::Message* msg) {
 }
 
 int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
-                                        size_t len) {
+                                        int len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
+  return MediaChannel::SendPacket(&packet) ? len : -1;
 }
 
 int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
                                             const void* data,
-                                            size_t len) {
+                                            int len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
+  return MediaChannel::SendRtcp(&packet) ? len : -1;
 }
 
 void WebRtcVideoMediaChannel::QueueBlackFrame(uint32 ssrc, int64 timestamp,

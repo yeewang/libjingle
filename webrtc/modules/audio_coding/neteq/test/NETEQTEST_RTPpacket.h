@@ -42,7 +42,7 @@ public:
     const webrtc::WebRtcRTPHeader* RTPinfo() const;
     uint8_t * datagram() const;
     uint8_t * payload() const;
-    size_t payloadLen();
+    int16_t payloadLen();
     int16_t dataLen() const;
     bool isParsed() const;
     bool isLost() const;
@@ -73,7 +73,7 @@ public:
     uint8_t *       _payloadPtr;
     int                 _memSize;
     int16_t         _datagramLen;
-    size_t          _payloadLen;
+    int16_t         _payloadLen;
     webrtc::WebRtcRTPHeader _rtpInfo;
     bool                _rtpParsed;
     uint32_t        _receiveTime;

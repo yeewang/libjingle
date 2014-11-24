@@ -353,8 +353,7 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
 
     if (SUCCEEDED (hr))
     {
-        const LONG length = pIMediaSample->GetActualDataLength();
-        ASSERT(length >= 0);
+        const int32_t length = pIMediaSample->GetActualDataLength();
 
         unsigned char* pBuffer = NULL;
         if(S_OK != pIMediaSample->GetPointer(&pBuffer))
@@ -365,7 +364,7 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
 
         // NOTE: filter unlocked within Send call
         reinterpret_cast <CaptureSinkFilter *> (m_pFilter)->ProcessCapturedFrame(
-            pBuffer, static_cast<size_t>(length), _resultingCapability);
+                                        pBuffer,length,_resultingCapability);
     }
     else
     {
@@ -486,10 +485,9 @@ void CaptureSinkFilter::SetFilterGraph(IGraphBuilder* graph)
     UnlockFilter();
 }
 
-void CaptureSinkFilter::ProcessCapturedFrame(
-    unsigned char* pBuffer,
-    size_t length,
-    const VideoCaptureCapability& frameInfo)
+void CaptureSinkFilter::ProcessCapturedFrame(unsigned char* pBuffer,
+                                         int32_t length,
+                                         const VideoCaptureCapability& frameInfo)
 {
     //  we have the receiver lock
     if (m_State == State_Running)

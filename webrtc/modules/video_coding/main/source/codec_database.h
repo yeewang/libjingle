@@ -22,6 +22,10 @@
 
 namespace webrtc {
 
+enum VCMCodecDBProperties {
+  kDefaultPayloadSize = 1440
+};
+
 struct VCMDecoderMapItem {
  public:
   VCMDecoderMapItem(VideoCodec* settings,
@@ -66,7 +70,7 @@ class VCMCodecDataBase {
   // Returns true if the codec was successfully registered, false otherwise.
   bool SetSendCodec(const VideoCodec* send_codec,
                     int number_of_cores,
-                    size_t max_payload_size,
+                    int max_payload_size,
                     VCMEncodedFrameCallback* encoded_frame_callback);
 
   // Gets the current send codec. Relevant for internal codecs only.
@@ -171,7 +175,7 @@ class VCMCodecDataBase {
       uint8_t payload_type) const;
 
   int number_of_cores_;
-  size_t max_payload_size_;
+  int max_payload_size_;
   bool periodic_key_frames_;
   bool pending_encoder_reset_;
   bool current_enc_is_external_;

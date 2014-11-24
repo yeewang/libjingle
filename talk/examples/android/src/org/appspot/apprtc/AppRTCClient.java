@@ -39,17 +39,13 @@ public interface AppRTCClient {
    * https://apprtc.appspot.com/?r=NNN. Once connection is established
    * onConnectedToRoom() callback with room parameters is invoked.
    */
-  public void connectToRoom(String url, boolean loopback);
+  public void connectToRoom(String url);
 
   /**
-   * Send offer SDP to the other participant.
+   * Send local SDP (offer or answer, depending on role) to the
+   * other participant.
    */
-  public void sendOfferSdp(final SessionDescription sdp);
-
-  /**
-   * Send answer SDP to the other participant.
-   */
-  public void sendAnswerSdp(final SessionDescription sdp);
+  public void sendLocalDescription(final SessionDescription sdp);
 
   /**
    * Send Ice candidate to the other participant.
@@ -64,54 +60,36 @@ public interface AppRTCClient {
   /**
    * Struct holding the signaling parameters of an AppRTC room.
    */
-  public class SignalingParameters {
-    public final boolean websocketSignaling;
+  public class AppRTCSignalingParameters {
     public final List<PeerConnection.IceServer> iceServers;
     public final boolean initiator;
     public final MediaConstraints pcConstraints;
     public final MediaConstraints videoConstraints;
     public final MediaConstraints audioConstraints;
-    public final String roomUrl;
-    public final String roomId;
-    public final String clientId;
-    public final String channelToken;
-    public final String offerSdp;
 
-    public SignalingParameters(
+    public AppRTCSignalingParameters(
         List<PeerConnection.IceServer> iceServers,
         boolean initiator, MediaConstraints pcConstraints,
-        MediaConstraints videoConstraints, MediaConstraints audioConstraints,
-        String roomUrl, String roomId, String clientId,
-        String channelToken, String offerSdp ) {
+        MediaConstraints videoConstraints, MediaConstraints audioConstraints) {
       this.iceServers = iceServers;
       this.initiator = initiator;
       this.pcConstraints = pcConstraints;
       this.videoConstraints = videoConstraints;
       this.audioConstraints = audioConstraints;
-      this.roomUrl = roomUrl;
-      this.roomId = roomId;
-      this.clientId = clientId;
-      this.channelToken = channelToken;
-      this.offerSdp = offerSdp;
-      if (channelToken == null || channelToken.length() == 0) {
-        this.websocketSignaling = true;
-      } else {
-        this.websocketSignaling = false;
-      }
     }
   }
 
   /**
-   * Callback interface for messages delivered on signaling channel.
+   * Callback interface for messages delivered on signalling channel.
    *
    * Methods are guaranteed to be invoked on the UI thread of |activity|.
    */
-  public static interface SignalingEvents {
+  public static interface AppRTCSignalingEvents {
     /**
      * Callback fired once the room's signaling parameters
-     * SignalingParameters are extracted.
+     * AppRTCSignalingParameters are extracted.
      */
-    public void onConnectedToRoom(final SignalingParameters params);
+    public void onConnectedToRoom(final AppRTCSignalingParameters params);
 
     /**
      * Callback fired once channel for signaling messages is opened and
@@ -137,6 +115,6 @@ public interface AppRTCClient {
     /**
      * Callback fired once channel error happened.
      */
-    public void onChannelError(final String description);
+    public void onChannelError(int code, String description);
   }
 }

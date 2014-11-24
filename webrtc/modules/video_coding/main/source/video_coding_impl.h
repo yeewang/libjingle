@@ -153,13 +153,14 @@ class VideoReceiver {
   int RegisterRenderBufferSizeCallback(VCMRenderBufferSizeCallback* callback);
 
   int32_t Decode(uint16_t maxWaitTimeMs);
+  int32_t DecodeDualFrame(uint16_t maxWaitTimeMs);
   int32_t ResetDecoder();
 
   int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const;
   VideoCodecType ReceiveCodec() const;
 
   int32_t IncomingPacket(const uint8_t* incomingPayload,
-                         size_t payloadLength,
+                         uint32_t payloadLength,
                          const WebRtcRTPHeader& rtpInfo);
   int32_t SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs);
   int32_t SetRenderDelay(uint32_t timeMS);
@@ -205,8 +206,11 @@ class VideoReceiver {
   CriticalSectionWrapper* _receiveCritSect;
   bool _receiverInited GUARDED_BY(_receiveCritSect);
   VCMTiming _timing;
+  VCMTiming _dualTiming;
   VCMReceiver _receiver;
+  VCMReceiver _dualReceiver;
   VCMDecodedFrameCallback _decodedFrameCallback;
+  VCMDecodedFrameCallback _dualDecodedFrameCallback;
   VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_sect_);
   VCMReceiveStatisticsCallback* _receiveStatsCallback
       GUARDED_BY(process_crit_sect_);
@@ -217,6 +221,7 @@ class VideoReceiver {
   VCMRenderBufferSizeCallback* render_buffer_callback_
       GUARDED_BY(process_crit_sect_);
   VCMGenericDecoder* _decoder;
+  VCMGenericDecoder* _dualDecoder;
 #ifdef DEBUG_DECODER_BIT_STREAM
   FILE* _bitStreamBeforeDecoder;
 #endif

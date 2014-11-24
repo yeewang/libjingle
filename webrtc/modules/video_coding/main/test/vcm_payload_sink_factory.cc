@@ -53,13 +53,13 @@ class VcmPayloadSinkFactory::VcmPayloadSink
   // PayloadSinkInterface
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,
-      const size_t payload_size,
+      const uint16_t payload_size,
       const WebRtcRTPHeader* rtp_header) OVERRIDE {
     return vcm_->IncomingPacket(payload_data, payload_size, *rtp_header);
   }
 
   virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 size_t packet_length) OVERRIDE {
+                                 int packet_length) OVERRIDE {
     // We currently don't handle FEC.
     return true;
   }
@@ -77,6 +77,8 @@ class VcmPayloadSinkFactory::VcmPayloadSink
         return -1;
       }
     }
+    while (decode_dual_frame && vcm_->DecodeDualFrame(0) == 1) {
+    }
     return Process() ? 0 : -1;
   }
 
@@ -91,6 +93,8 @@ class VcmPayloadSinkFactory::VcmPayloadSink
 
   bool Decode() {
     vcm_->Decode(10000);
+    while (vcm_->DecodeDualFrame(0) == 1) {
+    }
     return true;
   }
 

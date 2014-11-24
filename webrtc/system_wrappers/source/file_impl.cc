@@ -187,16 +187,19 @@ int FileWrapperImpl::OpenFromFileHandle(FILE* handle,
   return 0;
 }
 
-int FileWrapperImpl::Read(void* buf, size_t length) {
+int FileWrapperImpl::Read(void* buf, int length) {
   WriteLockScoped write(*rw_lock_);
+  if (length < 0)
+    return -1;
+
   if (id_ == NULL)
     return -1;
 
-  size_t bytes_read = fread(buf, 1, length, id_);
+  int bytes_read = static_cast<int>(fread(buf, 1, length, id_));
   if (bytes_read != length && !looping_) {
     CloseFileImpl();
   }
-  return static_cast<int>(bytes_read);
+  return bytes_read;
 }
 
 int FileWrapperImpl::WriteText(const char* format, ...) {
@@ -223,9 +226,12 @@ int FileWrapperImpl::WriteText(const char* format, ...) {
   }
 }
 
-bool FileWrapperImpl::Write(const void* buf, size_t length) {
+bool FileWrapperImpl::Write(const void* buf, int length) {
   WriteLockScoped write(*rw_lock_);
   if (buf == NULL)
+    return false;
+
+  if (length < 0)
     return false;
 
   if (read_only_)

@@ -71,7 +71,7 @@ public:
 
     VideoSize GetSize() const;
     static VideoSize GetSize(uint16_t width, uint16_t height);
-    size_t GetFrameLength() const;
+    unsigned int GetFrameLength() const;
 
     // Returns a human-readable size string.
     static const char* GetSizeString(VideoSize size);

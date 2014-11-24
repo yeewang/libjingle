@@ -137,7 +137,8 @@ int32_t ViERenderer::Init(const uint32_t z_order,
 
 void ViERenderer::DeliverFrame(int id,
                                I420VideoFrame* video_frame,
-                               const std::vector<uint32_t>& csrcs) {
+                               int num_csrcs,
+                               const uint32_t CSRC[kRtpCsrcSize]) {
   render_callback_->RenderFrame(render_id_, *video_frame);
 }
 
@@ -194,9 +195,9 @@ int32_t ViEExternalRendererImpl::RenderFrame(
   // Convert to requested format.
   VideoType type =
       RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
-  size_t buffer_size = CalcBufferSize(type, video_frame.width(),
-                                      video_frame.height());
-  if (buffer_size == 0) {
+  int buffer_size = CalcBufferSize(type, video_frame.width(),
+                                   video_frame.height());
+  if (buffer_size <= 0) {
     // Unsupported video format.
     assert(false);
     return -1;

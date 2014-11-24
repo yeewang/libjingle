@@ -76,6 +76,7 @@ void ViEAutoTest::ViEExtendedTest()
     ViECodecExtendedTest();
     ViEImageProcessExtendedTest();
     ViERenderExtendedTest();
+    ViERtpRtcpExtendedTest();
 }
 
 void ViEAutoTest::ViEAPITest()

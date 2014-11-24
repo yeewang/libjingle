@@ -49,6 +49,7 @@ enum VCMVideoProtection {
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only
   kProtectionNackReceiver,        // Receive-side only
+  kProtectionDualDecoder,
   kProtectionFEC,
   kProtectionNackFEC,
   kProtectionKeyOnLoss,
@@ -74,7 +75,7 @@ class VCMPacketizationCallback {
       uint32_t timeStamp,
       int64_t capture_time_ms,
       const uint8_t* payloadData,
-      size_t payloadSize,
+      uint32_t payloadSize,
       const RTPFragmentationHeader& fragmentationHeader,
       const RTPVideoHeader* rtpVideoHdr) = 0;
  protected:

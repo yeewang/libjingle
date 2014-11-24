@@ -10,7 +10,6 @@
 
 #include <assert.h>
 
-#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/media_file/source/media_file_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
@@ -110,25 +109,25 @@ int32_t MediaFileImpl::Process()
 
 int32_t MediaFileImpl::PlayoutAVIVideoData(
     int8_t* buffer,
-    size_t& dataLengthInBytes)
+    uint32_t& dataLengthInBytes)
 {
     return PlayoutData( buffer, dataLengthInBytes, true);
 }
 
 int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
-                                        size_t& dataLengthInBytes)
+                                        uint32_t& dataLengthInBytes)
 {
     return PlayoutData( buffer, dataLengthInBytes, false);
 }
 
-int32_t MediaFileImpl::PlayoutData(int8_t* buffer, size_t& dataLengthInBytes,
+int32_t MediaFileImpl::PlayoutData(int8_t* buffer, uint32_t& dataLengthInBytes,
                                    bool video)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-               "MediaFileImpl::PlayoutData(buffer= 0x%x, bufLen= %" PRIuS ")",
+               "MediaFileImpl::PlayoutData(buffer= 0x%x, bufLen= %ld)",
                  buffer, dataLengthInBytes);
 
-    const size_t bufferLengthInBytes = dataLengthInBytes;
+    const uint32_t bufferLengthInBytes = dataLengthInBytes;
     dataLengthInBytes = 0;
 
     if(buffer == NULL || bufferLengthInBytes == 0)
@@ -186,7 +185,7 @@ int32_t MediaFileImpl::PlayoutData(int8_t* buffer, size_t& dataLengthInBytes,
                     bufferLengthInBytes);
                 if(bytesRead > 0)
                 {
-                    dataLengthInBytes = static_cast<size_t>(bytesRead);
+                    dataLengthInBytes = bytesRead;
                     return 0;
                 }
                 break;
@@ -217,7 +216,7 @@ int32_t MediaFileImpl::PlayoutData(int8_t* buffer, size_t& dataLengthInBytes,
 
         if( bytesRead > 0)
         {
-            dataLengthInBytes = static_cast<size_t>(bytesRead);
+            dataLengthInBytes =(uint32_t) bytesRead;
         }
     }
     HandlePlayCallbacks(bytesRead);
@@ -267,16 +266,16 @@ void MediaFileImpl::HandlePlayCallbacks(int32_t bytesRead)
 int32_t MediaFileImpl::PlayoutStereoData(
     int8_t* bufferLeft,
     int8_t* bufferRight,
-    size_t& dataLengthInBytes)
+    uint32_t& dataLengthInBytes)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-                 "MediaFileImpl::PlayoutStereoData(Left = 0x%x, Right = 0x%x,"
-                 " Len= %" PRIuS ")",
+                 "MediaFileImpl::PlayoutStereoData(Left = 0x%x, Right = 0x%x,\
+ Len= %ld)",
                  bufferLeft,
                  bufferRight,
                  dataLengthInBytes);
 
-    const size_t bufferLengthInBytes = dataLengthInBytes;
+    const uint32_t bufferLengthInBytes = dataLengthInBytes;
     dataLengthInBytes = 0;
 
     if(bufferLeft == NULL || bufferRight == NULL || bufferLengthInBytes == 0)
@@ -329,7 +328,7 @@ int32_t MediaFileImpl::PlayoutStereoData(
 
         if(bytesRead > 0)
         {
-            dataLengthInBytes = static_cast<size_t>(bytesRead);
+            dataLengthInBytes = bytesRead;
 
             // Check if it's time for PlayNotification(..).
             _playoutPositionMs = _ptrFileUtilityObj->PlayoutPositionMs();
@@ -691,25 +690,25 @@ bool MediaFileImpl::IsPlaying()
 
 int32_t MediaFileImpl::IncomingAudioData(
     const int8_t*  buffer,
-    const size_t bufferLengthInBytes)
+    const uint32_t bufferLengthInBytes)
 {
     return IncomingAudioVideoData( buffer, bufferLengthInBytes, false);
 }
 
 int32_t MediaFileImpl::IncomingAVIVideoData(
     const int8_t*  buffer,
-    const size_t bufferLengthInBytes)
+    const uint32_t bufferLengthInBytes)
 {
     return IncomingAudioVideoData( buffer, bufferLengthInBytes, true);
 }
 
 int32_t MediaFileImpl::IncomingAudioVideoData(
     const int8_t*  buffer,
-    const size_t bufferLengthInBytes,
+    const uint32_t bufferLengthInBytes,
     const bool video)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
-                 "MediaFile::IncomingData(buffer= 0x%x, bufLen= %" PRIuS,
+                 "MediaFile::IncomingData(buffer= 0x%x, bufLen= %hd",
                  buffer, bufferLengthInBytes);
 
     if(buffer == NULL || bufferLengthInBytes == 0)
@@ -804,7 +803,7 @@ int32_t MediaFileImpl::IncomingAudioVideoData(
             {
                 if(_ptrOutStream->Write(buffer, bufferLengthInBytes))
                 {
-                    bytesWritten = static_cast<int32_t>(bufferLengthInBytes);
+                    bytesWritten = bufferLengthInBytes;
                 }
             }
         }

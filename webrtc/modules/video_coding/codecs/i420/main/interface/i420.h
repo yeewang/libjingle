@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+enum { kI420HeaderSize = 4 };
+
 class I420Encoder : public VideoEncoder {
  public:
   I420Encoder();
@@ -36,7 +38,7 @@ class I420Encoder : public VideoEncoder {
 //                                <0 - Error
   virtual int InitEncode(const VideoCodec* codecSettings,
                          int /*numberOfCores*/,
-                         size_t /*maxPayloadSize*/) OVERRIDE;
+                         uint32_t /*maxPayloadSize*/) OVERRIDE;
 
 // "Encode" an I420 image (as a part of a video stream). The encoded image
 // will be returned to the user via the encode complete callback.

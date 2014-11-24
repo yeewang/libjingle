@@ -127,7 +127,6 @@
         'firewallsocketserver.h',
         'flags.cc',
         'flags.h',
-        'format_macros.h',
         'gunit_prod.h',
         'helpers.cc',
         'helpers.h',

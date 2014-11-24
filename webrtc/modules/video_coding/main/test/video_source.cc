@@ -55,7 +55,7 @@ _frameRate(frameRate)
     assert(frameRate > 0);
 }
 
-size_t
+int32_t
 VideoSource::GetFrameLength() const
 {
     return webrtc::CalcBufferSize(_type, _width, _height);

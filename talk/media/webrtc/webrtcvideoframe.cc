@@ -71,8 +71,8 @@ WebRtcVideoFrame::FrameBuffer::~FrameBuffer() {
   // Make sure that |video_frame_| doesn't delete the buffer, as |owned_data_|
   // will release the buffer if this FrameBuffer owns it.
   uint8_t* new_memory = NULL;
-  size_t new_length = 0;
-  size_t new_size = 0;
+  uint32_t new_length = 0;
+  uint32_t new_size = 0;
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 
@@ -84,8 +84,8 @@ void WebRtcVideoFrame::FrameBuffer::Attach(uint8* data, size_t length) {
 void WebRtcVideoFrame::FrameBuffer::Alias(uint8* data, size_t length) {
   owned_data_.reset();
   uint8_t* new_memory = reinterpret_cast<uint8_t*>(data);
-  size_t new_length = length;
-  size_t new_size = length;
+  uint32_t new_length = static_cast<uint32_t>(length);
+  uint32_t new_size = static_cast<uint32_t>(length);
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 
@@ -106,7 +106,7 @@ const webrtc::VideoFrame* WebRtcVideoFrame::FrameBuffer::frame() const {
 }
 
 WebRtcVideoFrame::WebRtcVideoFrame()
-    : video_buffer_(new RefCountedBuffer()) {}
+    : video_buffer_(new RefCountedBuffer()), is_black_(false) {}
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
@@ -148,7 +148,10 @@ bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
                                    size_t pixel_height, int64 elapsed_time,
                                    int64 time_stamp) {
   InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
-  return SetToBlack();
+  if (!is_black_) {
+    return SetToBlack();
+  }
+  return true;
 }
 
 void WebRtcVideoFrame::Alias(
@@ -243,12 +246,30 @@ size_t WebRtcVideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
   return needed;
 }
 
+// TODO(fbarchard): Refactor into base class and share with lmi
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                             size_t size, int stride_rgb) const {
   if (!frame()->Buffer()) {
     return 0;
   }
-  return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
+  size_t width = frame()->Width();
+  size_t height = frame()->Height();
+  size_t needed = (stride_rgb >= 0 ? stride_rgb : -stride_rgb) * height;
+  if (size < needed) {
+    LOG(LS_WARNING) << "RGB buffer is not large enough";
+    return needed;
+  }
+
+  if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
+                              GetUPitch(), GetVPlane(), GetVPitch(), buffer,
+                              stride_rgb,
+                              static_cast<int>(width),
+                              static_cast<int>(height),
+                              to_fourcc)) {
+    LOG(LS_WARNING) << "RGB type not supported: " << to_fourcc;
+    return 0;  // 0 indicates error
+  }
+  return needed;
 }
 
 void WebRtcVideoFrame::Attach(
@@ -258,6 +279,7 @@ void WebRtcVideoFrame::Attach(
   if (video_buffer_.get() == video_buffer) {
     return;
   }
+  is_black_ = false;
   video_buffer_ = video_buffer;
   frame()->SetWidth(w);
   frame()->SetHeight(h);

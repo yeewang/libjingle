@@ -188,7 +188,7 @@ TEST(NACKStringBuilderTest, TestCase13) {
 void CreateRtpPacket(const bool marker_bit, const uint8_t payload,
     const uint16_t seq_num, const uint32_t timestamp,
     const uint32_t ssrc, uint8_t* array,
-    size_t* cur_pos) {
+    uint16_t* cur_pos) {
   ASSERT_TRUE(payload <= 127);
   array[(*cur_pos)++] = 0x80;
   array[(*cur_pos)++] = payload | (marker_bit ? 0x80 : 0);
@@ -229,15 +229,15 @@ class TestTransport : public Transport,
   }
   virtual int SendPacket(int /*ch*/,
                          const void* /*data*/,
-                         size_t /*len*/) OVERRIDE {
+                         int /*len*/) OVERRIDE {
     return -1;
   }
 
   virtual int SendRTCPPacket(int /*ch*/,
                              const void *packet,
-                             size_t packet_len) OVERRIDE {
+                             int packet_len) OVERRIDE {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
-                                         packet_len,
+                                         (int32_t)packet_len,
                                          true); // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
@@ -262,11 +262,11 @@ class TestTransport : public Transport,
     rtcp_packet_info_.ntp_frac = rtcpPacketInformation.ntp_frac;
     rtcp_packet_info_.rtp_timestamp = rtcpPacketInformation.rtp_timestamp;
 
-    return static_cast<int>(packet_len);
+    return packet_len;
   }
 
   virtual int OnReceivedPayloadData(const uint8_t* payloadData,
-                                    const size_t payloadSize,
+                                    const uint16_t payloadSize,
                                     const WebRtcRTPHeader* rtpHeader) OVERRIDE {
     return 0;
   }
@@ -357,10 +357,10 @@ TEST_F(RtcpSenderTest, TestCompound) {
   const uint16_t seq_num = 11111;
   const uint32_t timestamp = 1234567;
   const uint32_t ssrc = 0x11111111;
-  size_t packet_length = 0;
+  uint16_t packet_length = 0;
   CreateRtpPacket(marker_bit, payload, seq_num, timestamp, ssrc, packet_,
       &packet_length);
-  EXPECT_EQ(25u, packet_length);
+  EXPECT_EQ(25, packet_length);
 
   VideoCodec codec_inst;
   strncpy(codec_inst.plName, "VP8", webrtc::kPayloadNameSize - 1);

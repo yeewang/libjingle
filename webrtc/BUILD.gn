@@ -178,7 +178,7 @@ config("common_config") {
   }
 }
 
-source_set("webrtc") {
+static_library("webrtc") {
   sources = [
     "call.h",
     "config.h",

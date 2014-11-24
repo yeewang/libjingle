@@ -29,14 +29,12 @@ class TestPack : public AudioPacketizationCallback {
   void RegisterReceiverACM(AudioCodingModule* acm);
 
   virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      size_t payload_size,
+      FrameType frame_type, uint8_t payload_type,
+      uint32_t timestamp, const uint8_t* payload_data,
+      uint16_t payload_size,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
-  size_t payload_size();
+  uint16_t payload_size();
   uint32_t timestamp_diff();
   void reset_payload_size();
 
@@ -47,7 +45,7 @@ class TestPack : public AudioPacketizationCallback {
   uint32_t timestamp_diff_;
   uint32_t last_in_timestamp_;
   uint64_t total_bytes_;
-  size_t payload_size_;
+  uint16_t payload_size_;
 };
 
 class TestAllCodecs : public ACMTest {
@@ -63,7 +61,7 @@ class TestAllCodecs : public ACMTest {
   // This is useful for codecs which support several sampling frequency.
   // Note! Only mono mode is tested in this test.
   void RegisterSendCodec(char side, char* codec_name, int32_t sampling_freq_hz,
-                         int rate, int packet_size, size_t extra_byte);
+                         int rate, int packet_size, int extra_byte);
 
   void Run(TestPack* channel);
   void OpenOutFile(int test_number);
@@ -77,7 +75,7 @@ class TestAllCodecs : public ACMTest {
   PCMFile outfile_b_;
   int test_count_;
   int packet_size_samples_;
-  size_t packet_size_bytes_;
+  int packet_size_bytes_;
 };
 
 }  // namespace webrtc

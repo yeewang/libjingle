@@ -25,10 +25,6 @@
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
-namespace {
-const size_t kDefaultPayloadSize = 1440;
-}
-
 namespace webrtc {
 
 VideoCodecVP8 VideoEncoder::GetDefaultVp8Settings() {
@@ -231,12 +227,12 @@ void VCMCodecDataBase::ResetSender() {
 bool VCMCodecDataBase::SetSendCodec(
     const VideoCodec* send_codec,
     int number_of_cores,
-    size_t max_payload_size,
+    int max_payload_size,
     VCMEncodedFrameCallback* encoded_frame_callback) {
   if (!send_codec) {
     return false;
   }
-  if (max_payload_size == 0) {
+  if (max_payload_size <= 0) {
     max_payload_size = kDefaultPayloadSize;
   }
   if (number_of_cores <= 0) {

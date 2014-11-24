@@ -51,7 +51,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
                                          bool is_red,
                                          const uint8_t* payload,
-                                         size_t payload_length,
+                                         uint16_t payload_length,
                                          int64_t timestamp_ms,
                                          bool is_first_packet) {
   TRACE_EVENT2("webrtc_rtp",
@@ -62,7 +62,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                rtp_header->header.timestamp);
   rtp_header->type.Video.codec = specific_payload.Video.videoCodecType;
 
-  const size_t payload_data_length =
+  const uint16_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
 
   if (payload == NULL || payload_data_length == 0) {

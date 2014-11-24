@@ -49,7 +49,7 @@ class RtpStream {
     int64_t send_time;
     int64_t arrival_time;
     uint32_t rtp_timestamp;
-    size_t size;
+    unsigned int size;
     unsigned int ssrc;
   };
 
@@ -165,7 +165,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   // estimator (all other fields are cleared) and call IncomingPacket on the
   // estimator.
   void IncomingPacket(uint32_t ssrc,
-                      size_t payload_size,
+                      uint32_t payload_size,
                       int64_t arrival_time,
                       uint32_t rtp_timestamp,
                       uint32_t absolute_send_time);

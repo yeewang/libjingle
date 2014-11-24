@@ -42,7 +42,7 @@ struct Packet {
          uint16_t seq_number,
          int64_t capture_time_ms,
          int64_t enqueue_time_ms,
-         size_t length_in_bytes,
+         int length_in_bytes,
          bool retransmission,
          uint64_t enqueue_order)
       : priority(priority),
@@ -59,7 +59,7 @@ struct Packet {
   uint16_t sequence_number;
   int64_t capture_time_ms;
   int64_t enqueue_time_ms;
-  size_t bytes;
+  int bytes;
   bool retransmission;
   uint64_t enqueue_order;
   std::list<Packet>::iterator this_it;
@@ -122,7 +122,7 @@ class PacketQueue {
 
   size_t SizeInPackets() const { return prio_queue_.size(); }
 
-  uint64_t SizeInBytes() const { return bytes_; }
+  uint32_t SizeInBytes() const { return bytes_; }
 
   int64_t OldestEnqueueTime() const {
     std::list<Packet>::const_reverse_iterator it = packet_list_.rbegin();
@@ -189,8 +189,8 @@ class IntervalBudget {
     }
   }
 
-  void UseBudget(size_t bytes) {
-    bytes_remaining_ = std::max(bytes_remaining_ - static_cast<int>(bytes),
+  void UseBudget(int bytes) {
+    bytes_remaining_ = std::max(bytes_remaining_ - bytes,
                                 -500 * target_rate_kbps_ / 8);
   }
 
@@ -258,7 +258,7 @@ void PacedSender::UpdateBitrate(int bitrate_kbps,
 }
 
 bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
-    uint16_t sequence_number, int64_t capture_time_ms, size_t bytes,
+    uint16_t sequence_number, int64_t capture_time_ms, int bytes,
     bool retransmission) {
   CriticalSectionScoped cs(critsect_.get());
 
@@ -281,11 +281,11 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   return false;
 }
 
-int64_t PacedSender::ExpectedQueueTimeMs() const {
+int PacedSender::ExpectedQueueTimeMs() const {
   CriticalSectionScoped cs(critsect_.get());
   int target_rate = media_budget_->target_rate_kbps();
   assert(target_rate > 0);
-  return static_cast<int64_t>(packets_->SizeInBytes() * 8 / target_rate);
+  return packets_->SizeInBytes() * 8 / target_rate;
 }
 
 size_t PacedSender::QueueSizePackets() const {
@@ -353,7 +353,7 @@ int32_t PacedSender::Process() {
 
     int padding_needed = padding_budget_->bytes_remaining();
     if (padding_needed > 0) {
-      SendPadding(static_cast<size_t>(padding_needed));
+      SendPadding(padding_needed);
     }
   }
   return 0;
@@ -377,9 +377,9 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
   return success;
 }
 
-void PacedSender::SendPadding(size_t padding_needed) {
+void PacedSender::SendPadding(int padding_needed) {
   critsect_->Leave();
-  size_t bytes_sent = callback_->TimeToSendPadding(padding_needed);
+  int bytes_sent = callback_->TimeToSendPadding(padding_needed);
   critsect_->Enter();
 
   // Update padding bytes sent.

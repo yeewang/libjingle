@@ -95,7 +95,8 @@ class ViEEncoder
   // Implementing ViEFrameCallback.
   virtual void DeliverFrame(int id,
                             I420VideoFrame* video_frame,
-                            const std::vector<uint32_t>& csrcs) OVERRIDE;
+                            int num_csrcs = 0,
+                            const uint32_t CSRC[kRtpCsrcSize] = NULL) OVERRIDE;
   virtual void DelayChanged(int id, int frame_delay) OVERRIDE;
   virtual int GetPreferedFrameSettings(int* width,
                                        int* height,
@@ -126,7 +127,7 @@ class ViEEncoder
     uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    size_t payload_size,
+    uint32_t payload_size,
     const RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
 
@@ -188,7 +189,7 @@ class ViEEncoder
   // Called by PacedSender.
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                         int64_t capture_time_ms, bool retransmission);
-  size_t TimeToSendPadding(size_t bytes);
+  int TimeToSendPadding(int bytes);
  private:
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);

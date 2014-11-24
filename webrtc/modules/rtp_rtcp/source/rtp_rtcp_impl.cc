@@ -31,6 +31,7 @@ RtpRtcp::Configuration::Configuration()
       default_module(NULL),
       receive_statistics(NullObjectReceiveStatistics()),
       outgoing_transport(NULL),
+      rtcp_feedback(NULL),
       intra_frame_callback(NULL),
       bandwidth_callback(NULL),
       rtt_stats(NULL),
@@ -101,7 +102,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   }
   // TODO(pwestin) move to constructors of each rtp/rtcp sender/receiver object.
   rtcp_receiver_.RegisterRtcpObservers(configuration.intra_frame_callback,
-                                       configuration.bandwidth_callback);
+                                       configuration.bandwidth_callback,
+                                       configuration.rtcp_feedback);
   rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
   // Make sure that RTCP objects are aware of our SSRC.
@@ -259,7 +261,7 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
 
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     const uint8_t* rtcp_packet,
-    const size_t length) {
+    const uint16_t length) {
   // Allow receive of non-compound RTCP packets.
   RTCPUtility::RTCPParserV2 rtcp_parser(rtcp_packet, length, true);
 
@@ -382,7 +384,20 @@ void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   SetRtcpReceiverSsrcs(ssrc);
 }
 
-void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
+int32_t ModuleRtpRtcpImpl::SetCSRCStatus(const bool include) {
+  rtcp_sender_.SetCSRCStatus(include);
+  rtp_sender_.SetCSRCStatus(include);
+  return 0;  // TODO(pwestin): change to void.
+}
+
+int32_t ModuleRtpRtcpImpl::CSRCs(
+  uint32_t arr_of_csrc[kRtpCsrcSize]) const {
+  return rtp_sender_.CSRCs(arr_of_csrc);
+}
+
+int32_t ModuleRtpRtcpImpl::SetCSRCs(
+    const uint32_t arr_of_csrc[kRtpCsrcSize],
+    const uint8_t arr_length) {
   if (IsDefaultModule()) {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
@@ -391,15 +406,15 @@ void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
-        module->SetCsrcs(csrcs);
+        module->SetCSRCs(arr_of_csrc, arr_length);
       }
       it++;
     }
-    return;
+  } else {
+    rtcp_sender_.SetCSRCs(arr_of_csrc, arr_length);
+    rtp_sender_.SetCSRCs(arr_of_csrc, arr_length);
   }
-
-  rtcp_sender_.SetCsrcs(csrcs);
-  rtp_sender_.SetCsrcs(csrcs);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 // TODO(pbos): Handle media and RTX streams separately (separate RTCP
@@ -491,7 +506,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    size_t payload_size,
+    uint32_t payload_size,
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_hdr) {
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
@@ -590,7 +605,7 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
   return true;
 }
 
-size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
+int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
   if (!IsDefaultModule()) {
     // Don't send from default module.
     return rtp_sender_.TimeToSendPadding(bytes);
@@ -803,7 +818,7 @@ bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
 }
 
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
-    size_t* bytes_sent,
+    uint32_t* bytes_sent,
     uint32_t* packets_sent) const {
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;
@@ -858,8 +873,9 @@ int32_t ModuleRtpRtcpImpl::SetREMBStatus(const bool enable) {
 }
 
 int32_t ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
-                                       const std::vector<uint32_t>& ssrcs) {
-  return rtcp_sender_.SetREMBData(bitrate, ssrcs);
+                                       const uint8_t number_of_ssrc,
+                                       const uint32_t* ssrc) {
+  return rtcp_sender_.SetREMBData(bitrate, number_of_ssrc, ssrc);
 }
 
 // (IJ) Extended jitter report.

@@ -286,6 +286,10 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->Decode(maxWaitTimeMs);
   }
 
+  virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs) OVERRIDE {
+    return receiver_->DecodeDualFrame(maxWaitTimeMs);
+  }
+
   virtual int32_t ResetDecoder() OVERRIDE { return receiver_->ResetDecoder(); }
 
   virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const OVERRIDE {
@@ -297,7 +301,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                 size_t payloadLength,
+                                 uint32_t payloadLength,
                                  const WebRtcRTPHeader& rtpInfo) OVERRIDE {
     return receiver_->IncomingPacket(incomingPayload, payloadLength, rtpInfo);
   }

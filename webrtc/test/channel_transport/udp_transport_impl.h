@@ -105,28 +105,26 @@ public:
     virtual bool SourcePortsInitialized() const OVERRIDE;
     virtual bool ReceiveSocketsInitialized() const OVERRIDE;
     virtual int32_t SendRaw(const int8_t* data,
-                            size_t length, int32_t isRTCP,
+                            uint32_t length, int32_t isRTCP,
                             uint16_t portnr = 0,
                             const char* ip = NULL) OVERRIDE;
     virtual int32_t SendRTPPacketTo(const int8_t *data,
-                                    size_t length,
+                                    uint32_t length,
                                     const SocketAddress& to) OVERRIDE;
     virtual int32_t SendRTCPPacketTo(const int8_t *data,
-                                     size_t length,
+                                     uint32_t length,
                                      const SocketAddress& to) OVERRIDE;
     virtual int32_t SendRTPPacketTo(const int8_t *data,
-                                    size_t length,
+                                    uint32_t length,
                                     uint16_t rtpPort) OVERRIDE;
     virtual int32_t SendRTCPPacketTo(const int8_t *data,
-                                     size_t length,
+                                     uint32_t length,
                                      uint16_t rtcpPort) OVERRIDE;
     // Transport functions
-    virtual int SendPacket(int channel,
-                           const void* data,
-                           size_t length) OVERRIDE;
+    virtual int SendPacket(int channel, const void* data, int length) OVERRIDE;
     virtual int SendRTCPPacket(int channel,
                                const void* data,
-                               size_t length) OVERRIDE;
+                               int length) OVERRIDE;
 
     // UdpTransport functions continue.
     virtual int32_t SetSendIP(const char* ipaddr) OVERRIDE;
@@ -146,11 +144,11 @@ protected:
     // UdpSocketWrapper.
     static void IncomingRTPCallback(CallbackObj obj,
                                     const int8_t* rtpPacket,
-                                    size_t rtpPacketLength,
+                                    int32_t rtpPacketLength,
                                     const SocketAddress* from);
     static void IncomingRTCPCallback(CallbackObj obj,
                                      const int8_t* rtcpPacket,
-                                     size_t rtcpPacketLength,
+                                     int32_t rtcpPacketLength,
                                      const SocketAddress* from);
 
     void CloseSendSockets();
@@ -171,10 +169,10 @@ protected:
     ErrorCode BindRTCPSendSocket();
 
     void IncomingRTPFunction(const int8_t* rtpPacket,
-                             size_t rtpPacketLength,
+                             int32_t rtpPacketLength,
                              const SocketAddress* from);
     void IncomingRTCPFunction(const int8_t* rtcpPacket,
-                              size_t rtcpPacketLength,
+                              int32_t rtcpPacketLength,
                               const SocketAddress* from);
 
     bool FilterIPAddress(const SocketAddress* fromAddress);

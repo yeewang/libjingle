@@ -338,6 +338,7 @@ int32_t VideoSender::SetVideoProtection(VCMVideoProtection videoProtection,
       break;
     }
     case kProtectionNackReceiver:
+    case kProtectionDualDecoder:
     case kProtectionKeyOnLoss:
     case kProtectionKeyOnKeyLoss:
       // Ignore decoder modes.

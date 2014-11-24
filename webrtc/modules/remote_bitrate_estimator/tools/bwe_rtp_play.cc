@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
       if (header.extension.transmissionTimeOffset != 0)
         ++non_zero_ts_offsets;
       rbe->IncomingPacket(clock.TimeInMilliseconds(),
-                          packet.length - header.headerLength,
+                          static_cast<int>(packet.length - header.headerLength),
                           header);
       ++packet_counter;
     }

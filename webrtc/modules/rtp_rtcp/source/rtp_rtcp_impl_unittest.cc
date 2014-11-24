@@ -67,17 +67,17 @@ class SendTransport : public Transport,
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
-  virtual int SendPacket(int /*ch*/, const void* data, size_t len) OVERRIDE {
+  virtual int SendPacket(int /*ch*/, const void* data, int len) OVERRIDE {
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
-    EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data), len, &header));
+    EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data),
+                              static_cast<size_t>(len),
+                              &header));
     ++rtp_packets_sent_;
     last_rtp_header_ = header;
-    return static_cast<int>(len);
+    return len;
   }
-  virtual int SendRTCPPacket(int /*ch*/,
-                             const void *data,
-                             size_t len) OVERRIDE {
+  virtual int SendRTCPPacket(int /*ch*/, const void *data, int len) OVERRIDE {
     test::RtcpPacketParser parser;
     parser.Parse(static_cast<const uint8_t*>(data), len);
     last_nack_list_ = parser.nack_item()->last_nack_list();
@@ -88,7 +88,7 @@ class SendTransport : public Transport,
     EXPECT_TRUE(receiver_ != NULL);
     EXPECT_EQ(0, receiver_->IncomingRtcpPacket(
         static_cast<const uint8_t*>(data), len));
-    return static_cast<int>(len);
+    return len;
   }
   ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;
@@ -398,9 +398,7 @@ class RtpSendingTestTransport : public Transport {
  public:
   void ResetCounters() { bytes_received_.clear(); }
 
-  virtual int SendPacket(int channel,
-                         const void* data,
-                         size_t length) OVERRIDE {
+  virtual int SendPacket(int channel, const void* data, int length) OVERRIDE {
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data),
@@ -408,13 +406,13 @@ class RtpSendingTestTransport : public Transport {
                               &header));
     bytes_received_[header.ssrc] += length;
     ++packets_received_[header.ssrc];
-    return static_cast<int>(length);
+    return length;
   }
 
   virtual int SendRTCPPacket(int channel,
                              const void* data,
-                             size_t length) OVERRIDE {
-    return static_cast<int>(length);
+                             int length) OVERRIDE {
+    return length;
   }
 
   int GetPacketsReceived(uint32_t ssrc) const {

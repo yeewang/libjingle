@@ -67,7 +67,7 @@ class AcmReceiver {
   //
   int InsertPacket(const WebRtcRTPHeader& rtp_header,
                    const uint8_t* incoming_payload,
-                   size_t length_payload);
+                   int length_payload);
 
   //
   // Asks NetEq for 10 milliseconds of decoded audio.

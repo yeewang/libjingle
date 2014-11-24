@@ -34,7 +34,7 @@ class VP9EncoderImpl : public VP9Encoder {
 
   virtual int InitEncode(const VideoCodec* codec_settings,
                          int number_of_cores,
-                         size_t max_payload_size) OVERRIDE;
+                         uint32_t max_payload_size) OVERRIDE;
 
   virtual int Encode(const I420VideoFrame& input_image,
                      const CodecSpecificInfo* codec_specific_info,

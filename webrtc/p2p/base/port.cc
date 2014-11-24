@@ -851,28 +851,15 @@ class ConnectionRequest : public StunRequest {
 // Connection
 //
 
-Connection::Connection(Port* port,
-                       size_t index,
+Connection::Connection(Port* port, size_t index,
                        const Candidate& remote_candidate)
-    : port_(port),
-      local_candidate_index_(index),
-      remote_candidate_(remote_candidate),
-      read_state_(STATE_READ_INIT),
-      write_state_(STATE_WRITE_INIT),
-      connected_(true),
-      pruned_(false),
-      use_candidate_attr_(false),
-      remote_ice_mode_(ICEMODE_FULL),
-      requests_(port->thread()),
-      rtt_(DEFAULT_RTT),
-      last_ping_sent_(0),
-      last_ping_received_(0),
-      last_data_received_(0),
-      last_ping_response_received_(0),
-      sent_packets_discarded_(0),
-      sent_packets_total_(0),
-      reported_(false),
-      state_(STATE_WAITING) {
+  : port_(port), local_candidate_index_(index),
+    remote_candidate_(remote_candidate), read_state_(STATE_READ_INIT),
+    write_state_(STATE_WRITE_INIT), connected_(true), pruned_(false),
+    use_candidate_attr_(false), remote_ice_mode_(ICEMODE_FULL),
+    requests_(port->thread()), rtt_(DEFAULT_RTT), last_ping_sent_(0),
+    last_ping_received_(0), last_data_received_(0),
+    last_ping_response_received_(0), reported_(false), state_(STATE_WAITING) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
@@ -1340,7 +1327,7 @@ void Connection::HandleRoleConflictFromPeer() {
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
 
-  LOG_J(LS_INFO, this) << "Connection deleted due to read or write timeout";
+  LOG_J(LS_INFO, this) << "Connection deleted";
   SignalDestroyed(this);
   delete this;
 }
@@ -1359,14 +1346,6 @@ size_t Connection::sent_bytes_second() {
 
 size_t Connection::sent_total_bytes() {
   return send_rate_tracker_.total_units();
-}
-
-size_t Connection::sent_discarded_packets() {
-  return sent_packets_discarded_;
-}
-
-size_t Connection::sent_total_packets() {
-  return sent_packets_total_;
 }
 
 void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
@@ -1444,13 +1423,11 @@ int ProxyConnection::Send(const void* data, size_t size,
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  sent_packets_total_++;
   int sent = port_->SendTo(data, size, remote_candidate_.address(),
                            options, true);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = port_->GetError();
-    sent_packets_discarded_++;
   } else {
     send_rate_tracker_.Update(sent);
   }

@@ -117,7 +117,7 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
     return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
                                     retransmission);
   }
-  virtual size_t TimeToSendPadding(size_t bytes) {
+  virtual int TimeToSendPadding(int bytes) {
     return owner_->TimeToSendPadding(bytes);
   }
  private:
@@ -443,7 +443,7 @@ bool ViEEncoder::TimeToSendPacket(uint32_t ssrc,
                                              capture_time_ms, retransmission);
 }
 
-size_t ViEEncoder::TimeToSendPadding(size_t bytes) {
+int ViEEncoder::TimeToSendPadding(int bytes) {
   bool send_padding;
   {
     CriticalSectionScoped cs(data_cs_.get());
@@ -501,7 +501,8 @@ RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
 
 void ViEEncoder::DeliverFrame(int id,
                               I420VideoFrame* video_frame,
-                              const std::vector<uint32_t>& csrcs) {
+                              int num_csrcs,
+                              const uint32_t CSRC[kRtpCsrcSize]) {
   if (default_rtp_rtcp_->SendingMedia() == false) {
     // We've paused or we have no channels attached, don't encode.
     return;
@@ -527,16 +528,16 @@ void ViEEncoder::DeliverFrame(int id,
   video_frame->set_timestamp(time_stamp);
 
   // Make sure the CSRC list is correct.
-  if (csrcs.size() > 0) {
-    std::vector<uint32_t> temp_csrcs(csrcs.size());
-    for (size_t i = 0; i < csrcs.size(); i++) {
-      if (csrcs[i] == 1) {
-        temp_csrcs[i] = default_rtp_rtcp_->SSRC();
+  if (num_csrcs > 0) {
+    uint32_t tempCSRC[kRtpCsrcSize];
+    for (int i = 0; i < num_csrcs; i++) {
+      if (CSRC[i] == 1) {
+        tempCSRC[i] = default_rtp_rtcp_->SSRC();
       } else {
-        temp_csrcs[i] = csrcs[i];
+        tempCSRC[i] = CSRC[i];
       }
     }
-    default_rtp_rtcp_->SetCsrcs(temp_csrcs);
+    default_rtp_rtcp_->SetCSRCs(tempCSRC, (uint8_t) num_csrcs);
   }
 
   I420VideoFrame* decimated_frame = NULL;
@@ -545,7 +546,7 @@ void ViEEncoder::DeliverFrame(int id,
     {
       CriticalSectionScoped cs(callback_cs_.get());
       if (effect_filter_) {
-        size_t length =
+        unsigned int length =
             CalcBufferSize(kI420, video_frame->width(), video_frame->height());
         scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
         ExtractBuffer(*video_frame, length, video_buffer.get());
@@ -730,7 +731,7 @@ int32_t ViEEncoder::SendData(
     const uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    const size_t payload_size,
+    const uint32_t payload_size,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
   // New encoded data, hand over to the rtp module.

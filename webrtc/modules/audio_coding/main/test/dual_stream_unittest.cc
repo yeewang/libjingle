@@ -36,11 +36,9 @@ class DualStreamTest : public AudioPacketizationCallback,
   void ApiTest();
 
   virtual int32_t SendData(
-      FrameType frameType,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      size_t payload_size,
+      FrameType frameType, uint8_t payload_type,
+      uint32_t timestamp, const uint8_t* payload_data,
+      uint16_t payload_size,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   void Perform(bool start_in_sync, int num_channels_input);
@@ -51,9 +49,9 @@ class DualStreamTest : public AudioPacketizationCallback,
   void PopulateCodecInstances(int frame_size_primary_ms,
                               int num_channels_primary, int sampling_rate);
 
-  void Validate(bool start_in_sync, size_t tolerance);
+  void Validate(bool start_in_sync, int tolerance);
   bool EqualTimestamp(int stream, int position);
-  size_t EqualPayloadLength(int stream, int position);
+  int EqualPayloadLength(int stream, int position);
   bool EqualPayloadData(int stream, int position);
 
   static const int kMaxNumStoredPayloads = 2;
@@ -79,8 +77,8 @@ class DualStreamTest : public AudioPacketizationCallback,
   uint32_t timestamp_ref_[kMaxNumStreams][kMaxNumStoredPayloads];
   uint32_t timestamp_dual_[kMaxNumStreams][kMaxNumStoredPayloads];
 
-  size_t payload_len_ref_[kMaxNumStreams][kMaxNumStoredPayloads];
-  size_t payload_len_dual_[kMaxNumStreams][kMaxNumStoredPayloads];
+  int payload_len_ref_[kMaxNumStreams][kMaxNumStoredPayloads];
+  int payload_len_dual_[kMaxNumStreams][kMaxNumStoredPayloads];
 
   uint8_t payload_data_ref_[kMaxNumStreams][MAX_PAYLOAD_SIZE_BYTE
       * kMaxNumStoredPayloads];
@@ -176,7 +174,7 @@ void DualStreamTest::Perform(bool start_in_sync, int num_channels_input) {
   pcm_file.ReadStereo(num_channels_input == 2);
   AudioFrame audio_frame;
 
-  size_t tolerance = 0;
+  int tolerance = 0;
   if (num_channels_input == 2 && primary_encoder_.channels == 2
       && secondary_encoder_.channels == 1) {
     tolerance = 12;
@@ -255,10 +253,10 @@ bool DualStreamTest::EqualTimestamp(int stream_index, int position) {
   return true;
 }
 
-size_t DualStreamTest::EqualPayloadLength(int stream_index, int position) {
-  size_t dual = payload_len_dual_[stream_index][position];
-  size_t ref = payload_len_ref_[stream_index][position];
-  return (dual > ref) ? (dual - ref) : (ref - dual);
+int DualStreamTest::EqualPayloadLength(int stream_index, int position) {
+  return abs(
+      payload_len_dual_[stream_index][position]
+          - payload_len_ref_[stream_index][position]);
 }
 
 bool DualStreamTest::EqualPayloadData(int stream_index, int position) {
@@ -266,7 +264,7 @@ bool DualStreamTest::EqualPayloadData(int stream_index, int position) {
       payload_len_dual_[stream_index][position]
           == payload_len_ref_[stream_index][position]);
   int offset = position * MAX_PAYLOAD_SIZE_BYTE;
-  for (size_t n = 0; n < payload_len_dual_[stream_index][position]; n++) {
+  for (int n = 0; n < payload_len_dual_[stream_index][position]; n++) {
     if (payload_data_dual_[stream_index][offset + n]
         != payload_data_ref_[stream_index][offset + n]) {
       return false;
@@ -275,9 +273,9 @@ bool DualStreamTest::EqualPayloadData(int stream_index, int position) {
   return true;
 }
 
-void DualStreamTest::Validate(bool start_in_sync, size_t tolerance) {
+void DualStreamTest::Validate(bool start_in_sync, int tolerance) {
   for (int stream_index = 0; stream_index < kMaxNumStreams; stream_index++) {
-    size_t my_tolerance = stream_index == kPrimary ? 0 : tolerance;
+    int my_tolerance = stream_index == kPrimary ? 0 : tolerance;
     for (int position = 0; position < kMaxNumStoredPayloads; position++) {
       if (payload_ref_is_stored_[stream_index][position] == 1
           && payload_dual_is_stored_[stream_index][position] == 1) {
@@ -298,7 +296,7 @@ void DualStreamTest::Validate(bool start_in_sync, size_t tolerance) {
 int32_t DualStreamTest::SendData(FrameType frameType, uint8_t payload_type,
                                  uint32_t timestamp,
                                  const uint8_t* payload_data,
-                                 size_t payload_size,
+                                 uint16_t payload_size,
                                  const RTPFragmentationHeader* fragmentation) {
   int position;
   int stream_index;

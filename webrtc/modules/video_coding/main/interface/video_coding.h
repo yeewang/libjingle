@@ -68,6 +68,7 @@ public:
         kNone,
         kHardNack,
         kSoftNack,
+        kDualDecoder,
         kReferenceSelection
     };
 
@@ -422,6 +423,17 @@ public:
     virtual int RegisterRenderBufferSizeCallback(
         VCMRenderBufferSizeCallback* callback) = 0;
 
+    // Waits for the next frame in the dual jitter buffer to become complete
+    // (waits no longer than maxWaitTimeMs), then passes it to the dual decoder
+    // for decoding. This will never trigger a render callback. Should be
+    // called frequently, and as long as it returns 1 it should be called again
+    // as soon as possible.
+    //
+    // Return value      : 1,           if a frame was decoded
+    //                     0,           if no frame was decoded
+    //                     < 0,         on error.
+    virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs = 200) = 0;
+
     // Reset the decoder state to the initial state.
     //
     // Return value      : VCM_OK, on success.
@@ -455,8 +467,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                   size_t payloadLength,
-                                   const WebRtcRTPHeader& rtpInfo) = 0;
+                                       uint32_t payloadLength,
+                                       const WebRtcRTPHeader& rtpInfo) = 0;
 
     // Minimum playout delay (Used for lip-sync). This is the minimum delay required
     // to sync with audio. Not included in  VideoCodingModule::Delay()

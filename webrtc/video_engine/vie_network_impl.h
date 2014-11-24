@@ -32,16 +32,16 @@ class ViENetworkImpl
   virtual int DeregisterSendTransport(const int video_channel) OVERRIDE;
   virtual int ReceivedRTPPacket(const int video_channel,
                                 const void* data,
-                                const size_t length,
+                                const int length,
                                 const PacketTime& packet_time) OVERRIDE;
   virtual int ReceivedRTCPPacket(const int video_channel,
                                  const void* data,
-                                 const size_t length) OVERRIDE;
+                                 const int length) OVERRIDE;
   virtual int SetMTU(int video_channel, unsigned int mtu) OVERRIDE;
 
   virtual int ReceivedBWEPacket(const int video_channel,
                                 int64_t arrival_time_ms,
-                                size_t payload_size,
+                                int payload_size,
                                 const RTPHeader& header) OVERRIDE;
 
   virtual bool SetBandwidthEstimationConfig(

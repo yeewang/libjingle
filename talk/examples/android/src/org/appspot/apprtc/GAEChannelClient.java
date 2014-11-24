@@ -141,8 +141,6 @@ public class GAEChannelClient {
 
     @JavascriptInterface
     public void onError(final int code, final String description) {
-      Log.e(TAG, "Channel error. Code: " + code +
-          ". Description: " + description);
       if (!disconnected) {
         handler.onError(code, description);
       }

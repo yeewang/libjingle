@@ -110,13 +110,13 @@ typedef unsigned __int64    uint64_t;
 #endif  // WARN_UNUSED_RESULT
 
 // Put after a variable that might not be used, to prevent compiler warnings:
-//   int result ATTRIBUTE_UNUSED = DoSomething();
+//   int result UNUSED = DoSomething();
 //   assert(result == 17);
-#ifndef ATTRIBUTE_UNUSED
-#if defined(__GNUC__) || defined(__clang__)
-#define ATTRIBUTE_UNUSED __attribute__((unused))
+#ifndef UNUSED
+#ifdef __GNUC__
+#define UNUSED __attribute__((unused))
 #else
-#define ATTRIBUTE_UNUSED
+#define UNUSED
 #endif
 #endif
 

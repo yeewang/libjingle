@@ -129,12 +129,8 @@ class MyTransport : public Transport
 {
 public:
     MyTransport(VoENetwork* veNetwork);
-    virtual int SendPacket(int channel,
-                           const void *data,
-                           size_t len) OVERRIDE;
-    virtual int SendRTCPPacket(int channel,
-                               const void *data,
-                               size_t len) OVERRIDE;
+    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE;
 private:
     VoENetwork* _veNetworkPtr;
 };
@@ -145,14 +141,14 @@ MyTransport::MyTransport(VoENetwork* veNetwork) :
 }
 
 int
-MyTransport::SendPacket(int channel, const void *data, size_t len)
+MyTransport::SendPacket(int channel, const void *data, int len)
 {
     _veNetworkPtr->ReceivedRTPPacket(channel, data, len);
     return len;
 }
 
 int
-MyTransport::SendRTCPPacket(int channel, const void *data, size_t len)
+MyTransport::SendRTCPPacket(int channel, const void *data, int len)
 {
     _veNetworkPtr->ReceivedRTCPPacket(channel, data, len);
     return len;
