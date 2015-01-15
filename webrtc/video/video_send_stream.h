@@ -75,9 +75,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   void SetBitrateConfig(const Call::Config::BitrateConfig& bitrate_config);
   void SignalNetworkState(Call::NetworkState state);
 
-  int64_t GetPacerQueuingDelayMs() const;
+  int GetPacerQueuingDelayMs() const;
 
-  int64_t GetRtt() const;
+  int GetRtt() const;
 
  private:
   void ConfigureSsrcs();

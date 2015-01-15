@@ -116,8 +116,9 @@ struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayers::Factory {
 
 namespace webrtc {
 
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
-    : factory_(factory), encoded_complete_callback_(NULL) {
+SimulcastEncoderAdapter::SimulcastEncoderAdapter(
+    scoped_ptr<VideoEncoderFactory> factory)
+    : factory_(factory.Pass()), encoded_complete_callback_(NULL) {
   memset(&codec_, 0, sizeof(webrtc::VideoCodec));
 }
 
@@ -296,7 +297,7 @@ int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
 }
 
 int SimulcastEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
-                                                  int64_t rtt) {
+                                                  int rtt) {
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
     streaminfos_[stream_idx].encoder->SetChannelParameters(packet_loss, rtt);
   }

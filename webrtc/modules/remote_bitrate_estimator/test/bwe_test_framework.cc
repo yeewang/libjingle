@@ -549,16 +549,18 @@ VideoSender::VideoSender(int flow_id,
                          float fps,
                          uint32_t kbps,
                          uint32_t ssrc,
-                         int64_t first_frame_offset_ms)
+                         float first_frame_offset)
     : PacketSender(listener, FlowIds(1, flow_id)),
       kMaxPayloadSizeBytes(1200),
       kTimestampBase(0xff80ff00ul),
       frame_period_ms_(1000.0 / fps),
       bytes_per_second_((1000 * kbps) / 8),
       frame_size_bytes_(bytes_per_second_ / fps),
-      next_frame_ms_(first_frame_offset_ms),
+      next_frame_ms_(frame_period_ms_ * first_frame_offset),
       now_ms_(0.0),
       prototype_header_() {
+  assert(first_frame_offset >= 0.0f);
+  assert(first_frame_offset < 1.0f);
   memset(&prototype_header_, 0, sizeof(prototype_header_));
   prototype_header_.ssrc = ssrc;
   prototype_header_.sequenceNumber = 0xf000u;
@@ -613,8 +615,8 @@ AdaptiveVideoSender::AdaptiveVideoSender(int flow_id,
                                          float fps,
                                          uint32_t kbps,
                                          uint32_t ssrc,
-                                         int64_t first_frame_offset_ms)
-    : VideoSender(flow_id, listener, fps, kbps, ssrc, first_frame_offset_ms) {
+                                         float first_frame_offset)
+    : VideoSender(flow_id, listener, fps, kbps, ssrc, first_frame_offset) {
 }
 
 void AdaptiveVideoSender::GiveFeedback(const PacketSender::Feedback& feedback) {
@@ -628,14 +630,14 @@ PeriodicKeyFrameSender::PeriodicKeyFrameSender(
     float fps,
     uint32_t kbps,
     uint32_t ssrc,
-    int64_t first_frame_offset_ms,
+    float first_frame_offset,
     int key_frame_interval)
     : AdaptiveVideoSender(flow_id,
                           listener,
                           fps,
                           kbps,
                           ssrc,
-                          first_frame_offset_ms),
+                          first_frame_offset),
       key_frame_interval_(key_frame_interval),
       frame_counter_(0),
       compensation_bytes_(0),

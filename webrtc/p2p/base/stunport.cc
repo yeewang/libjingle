@@ -163,8 +163,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::Network* network,
                  rtc::AsyncPacketSocket* socket,
                  const std::string& username,
-                 const std::string& password,
-                 const std::string& origin)
+                 const std::string& password)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       requests_(thread),
@@ -172,7 +171,6 @@ UDPPort::UDPPort(rtc::Thread* thread,
       error_(0),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY) {
-  requests_.set_origin(origin);
 }
 
 UDPPort::UDPPort(rtc::Thread* thread,
@@ -182,8 +180,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  uint16 min_port,
                  uint16 max_port,
                  const std::string& username,
-                 const std::string& password,
-                 const std::string& origin)
+                 const std::string& password)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       requests_(thread),
@@ -191,7 +188,6 @@ UDPPort::UDPPort(rtc::Thread* thread,
       error_(0),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY) {
-  requests_.set_origin(origin);
 }
 
 bool UDPPort::Init() {

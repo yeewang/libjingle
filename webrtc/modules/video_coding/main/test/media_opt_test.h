@@ -75,7 +75,7 @@ private:
     bool                             _nackEnabled;
     bool                             _fecEnabled;
     bool                             _nackFecEnabled;
-    int64_t                    _rttMS;
+    uint8_t                    _rttMS;
     float                            _bitRate;
     double                           _lossRate;
     uint32_t                   _renderDelayMs;

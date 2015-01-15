@@ -287,7 +287,7 @@ class RtcpBandwidthObserver {
 
   virtual void OnReceivedRtcpReceiverReport(
       const ReportBlockList& report_blocks,
-      int64_t rtt,
+      uint16_t rtt,
       int64_t now_ms) = 0;
 
   virtual ~RtcpBandwidthObserver() {}
@@ -295,9 +295,9 @@ class RtcpBandwidthObserver {
 
 class RtcpRttStats {
  public:
-  virtual void OnRttUpdate(int64_t rtt) = 0;
+  virtual void OnRttUpdate(uint32_t rtt) = 0;
 
-  virtual int64_t LastProcessedRtt() const = 0;
+  virtual uint32_t LastProcessedRtt() const = 0;
 
   virtual ~RtcpRttStats() {};
 };

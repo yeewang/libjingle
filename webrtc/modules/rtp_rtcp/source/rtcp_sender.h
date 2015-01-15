@@ -103,13 +103,13 @@ public:
 
     int32_t RemoveMixedCNAME(uint32_t SSRC);
 
-    int64_t SendTimeOfSendReport(uint32_t sendReport);
+    uint32_t SendTimeOfSendReport(uint32_t sendReport);
 
     bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
 
     bool TimeToSendRTCPReport(bool sendKeyframeBeforeRTP = false) const;
 
-    uint32_t LastSendReport(int64_t& lastRTCPTime);
+    uint32_t LastSendReport(uint32_t& lastRTCPTime);
 
     int32_t SendRTCP(
         const FeedbackState& feedback_state,
@@ -310,7 +310,7 @@ private:
     // Sent
     uint32_t _lastSendReport[RTCP_NUMBER_OF_SR] GUARDED_BY(
         _criticalSectionRTCPSender);  // allow packet loss and RTT above 1 sec
-    int64_t _lastRTCPTime[RTCP_NUMBER_OF_SR] GUARDED_BY(
+    uint32_t _lastRTCPTime[RTCP_NUMBER_OF_SR] GUARDED_BY(
         _criticalSectionRTCPSender);
 
     // Sent XR receiver reference time report.

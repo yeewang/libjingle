@@ -383,14 +383,9 @@ size_t RTPSender::MaxPayloadLength() const {
 
 uint16_t RTPSender::PacketOverHead() const { return packet_over_head_; }
 
-void RTPSender::SetRtxStatus(int mode) {
+void RTPSender::SetRTXStatus(int mode) {
   CriticalSectionScoped cs(send_critsect_);
   rtx_ = mode;
-}
-
-int RTPSender::RtxStatus() const {
-  CriticalSectionScoped cs(send_critsect_);
-  return rtx_;
 }
 
 void RTPSender::SetRtxSsrc(uint32_t ssrc) {
@@ -401,6 +396,14 @@ void RTPSender::SetRtxSsrc(uint32_t ssrc) {
 uint32_t RTPSender::RtxSsrc() const {
   CriticalSectionScoped cs(send_critsect_);
   return ssrc_rtx_;
+}
+
+void RTPSender::RTXStatus(int* mode, uint32_t* ssrc,
+                          int* payload_type) const {
+  CriticalSectionScoped cs(send_critsect_);
+  *mode = rtx_;
+  *ssrc = ssrc_rtx_;
+  *payload_type = payload_type_rtx_;
 }
 
 void RTPSender::SetRtxPayloadType(int payload_type) {
@@ -650,7 +653,7 @@ bool RTPSender::StorePackets() const {
   return packet_history_.StorePackets();
 }
 
-int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
+int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   size_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
   int64_t capture_time_ms;
@@ -717,7 +720,7 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 }
 
 void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
-                               int64_t avg_rtt) {
+                               uint16_t avg_rtt) {
   TRACE_EVENT2("webrtc_rtp", "RTPSender::OnReceivedNACK",
                "num_seqnum", nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   const int64_t now = clock_->TimeInMilliseconds();

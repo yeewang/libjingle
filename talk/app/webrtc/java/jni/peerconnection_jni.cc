@@ -83,6 +83,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -248,11 +249,11 @@ static JNIEnv* AttachCurrentThreadIfNeeded() {
 // because the alternative (of silently passing a 32-bit pointer to a vararg
 // function expecting a 64-bit param) picks up garbage in the high 32 bits.
 static jlong jlongFromPointer(void* ptr) {
-  static_assert(sizeof(intptr_t) <= sizeof(jlong),
-                "Time to rethink the use of jlongs");
+  COMPILE_ASSERT(sizeof(intptr_t) <= sizeof(jlong),
+                 Time_to_rethink_the_use_of_jlongs);
   // Going through intptr_t to be obvious about the definedness of the
   // conversion from pointer to integral type.  intptr_t to jlong is a standard
-  // widening by the static_assert above.
+  // widening by the COMPILE_ASSERT above.
   jlong ret = reinterpret_cast<intptr_t>(ptr);
   assert(reinterpret_cast<void*>(ret) == ptr);
   return ret;
@@ -1270,7 +1271,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
       webrtc::EncodedImageCallback* callback) OVERRIDE;
   virtual int32_t Release() OVERRIDE;
   virtual int32_t SetChannelParameters(uint32_t /* packet_loss */,
-                                       int64_t /* rtt */) OVERRIDE;
+                                       int /* rtt */) OVERRIDE;
   virtual int32_t SetRates(uint32_t new_bit_rate, uint32_t frame_rate) OVERRIDE;
 
   // rtc::MessageHandler implementation.
@@ -1471,7 +1472,7 @@ int32_t MediaCodecVideoEncoder::Release() {
 }
 
 int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
-                                                     int64_t /* rtt */) {
+                                                     int /* rtt */) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

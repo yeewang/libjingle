@@ -889,16 +889,14 @@ void AllocationSequence::CreateUDPPorts() {
     port = UDPPort::Create(session_->network_thread(),
                            session_->socket_factory(), network_,
                            udp_socket_.get(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+                           session_->username(), session_->password());
   } else {
     port = UDPPort::Create(session_->network_thread(),
                            session_->socket_factory(),
                            network_, ip_,
                            session_->allocator()->min_port(),
                            session_->allocator()->max_port(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+                           session_->username(), session_->password());
   }
 
   if (port) {
@@ -975,8 +973,7 @@ void AllocationSequence::CreateStunPorts() {
                                 session_->allocator()->min_port(),
                                 session_->allocator()->max_port(),
                                 session_->username(), session_->password(),
-                                config_->StunServers(),
-                                session_->allocator()->origin());
+                                config_->StunServers());
   if (port) {
     session_->AddAllocatedPort(port, this, true);
     // Since StunPort is not created using shared socket, |port| will not be
@@ -1058,8 +1055,8 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
                               session_->username(), session_->password(),
-                              *relay_port, config.credentials, config.priority,
-                              session_->allocator()->origin());
+                              *relay_port, config.credentials, config.priority);
+
       turn_ports_.push_back(port);
       // Listen to the port destroyed signal, to allow AllocationSequence to
       // remove entrt from it's map.
@@ -1072,8 +1069,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->allocator()->max_port(),
                               session_->username(),
                               session_->password(),
-                              *relay_port, config.credentials, config.priority,
-                              session_->allocator()->origin());
+                              *relay_port, config.credentials, config.priority);
     }
     ASSERT(port != NULL);
     session_->AddAllocatedPort(port, this, true);

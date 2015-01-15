@@ -30,6 +30,7 @@
 #include "webrtc/modules/audio_processing/transient/transient_suppressor.h"
 #include "webrtc/modules/audio_processing/voice_detection_impl.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -54,7 +55,7 @@
 namespace webrtc {
 
 // Throughout webrtc, it's assumed that success is represented by zero.
-static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
+COMPILE_ASSERT(AudioProcessing::kNoError == 0, no_error_must_be_zero);
 
 // This class has two main functionalities:
 //
@@ -134,6 +135,10 @@ class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
   GainControl* real_gain_control_;
   int volume_;
 };
+
+AudioProcessing* AudioProcessing::Create(int id) {
+  return Create();
+}
 
 AudioProcessing* AudioProcessing::Create() {
   Config config;
@@ -497,9 +502,11 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 
   capture_audio_->CopyFrom(src, samples_per_channel, input_layout);
   RETURN_ON_ERR(ProcessStreamLocked());
-  capture_audio_->CopyTo(fwd_out_format_.samples_per_channel(),
-                         output_layout,
-                         dest);
+  if (output_copy_needed(is_data_processed())) {
+    capture_audio_->CopyTo(fwd_out_format_.samples_per_channel(),
+                           output_layout,
+                           dest);
+  }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {

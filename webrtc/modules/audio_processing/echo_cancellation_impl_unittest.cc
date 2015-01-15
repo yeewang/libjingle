@@ -19,7 +19,7 @@ extern "C" {
 namespace webrtc {
 
 TEST(EchoCancellationInternalTest, DelayCorrection) {
-  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
+  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(0));
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 
   EXPECT_EQ(ap->kNoError, ap->echo_cancellation()->Enable(true));
@@ -49,7 +49,7 @@ TEST(EchoCancellationInternalTest, DelayCorrection) {
 }
 
 TEST(EchoCancellationInternalTest, ReportedDelay) {
-  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
+  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(0));
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 
   EXPECT_EQ(ap->kNoError, ap->echo_cancellation()->Enable(true));

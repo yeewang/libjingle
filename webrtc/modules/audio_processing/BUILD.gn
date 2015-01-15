@@ -120,6 +120,8 @@ source_set("audio_processing") {
     "utility/delay_estimator_wrapper.h",
     "utility/fft4g.c",
     "utility/fft4g.h",
+    "utility/ring_buffer.c",
+    "utility/ring_buffer.h",
     "voice_detection_impl.cc",
     "voice_detection_impl.h",
   ]
@@ -170,7 +172,6 @@ source_set("audio_processing") {
   }
 
   if (rtc_use_openmax_dl) {
-    defines += [ "WEBRTC_BEAMFORMER" ]
     sources += [
       "beamformer/beamformer.cc",
       "beamformer/beamformer.h",

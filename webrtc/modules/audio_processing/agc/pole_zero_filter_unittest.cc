@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "webrtc/modules/audio_processing/agc/agc_audio_proc_internal.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

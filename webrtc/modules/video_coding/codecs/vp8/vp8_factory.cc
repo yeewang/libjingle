@@ -32,7 +32,8 @@ class VP8EncoderImplFactory : public VideoEncoderFactory {
 
 VP8Encoder* VP8Encoder::Create() {
   if (VP8EncoderFactoryConfig::use_simulcast_adapter()) {
-    return new SimulcastEncoderAdapter(new VP8EncoderImplFactory());
+    scoped_ptr<VideoEncoderFactory> factory(new VP8EncoderImplFactory());
+    return new SimulcastEncoderAdapter(factory.Pass());
   } else {
     return new VP8EncoderImpl();
   }

@@ -371,8 +371,7 @@ StunPort* ConnectivityChecker::CreateStunPort(
                           0,
                           username,
                           password,
-                          config->stun_servers,
-                          std::string());
+                          config->stun_servers);
 }
 
 RelayPort* ConnectivityChecker::CreateRelayPort(

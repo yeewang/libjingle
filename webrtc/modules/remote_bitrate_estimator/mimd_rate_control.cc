@@ -17,7 +17,7 @@
 
 namespace webrtc {
 
-const int64_t kDefaultRttMs = 200;
+const uint32_t kDefaultRttMs = 200;
 const int64_t kLogIntervalMs = 1000;
 
 MimdRateControl::MimdRateControl(uint32_t min_bitrate_bps)
@@ -61,8 +61,7 @@ int64_t MimdRateControl::GetFeedbackInterval() const {
 
 bool MimdRateControl::TimeToReduceFurther(int64_t time_now,
                                           uint32_t incoming_bitrate_bps) const {
-  const int64_t bitrate_reduction_interval =
-      std::max<int64_t>(std::min<int64_t>(rtt_, 200), 10);
+  const int bitrate_reduction_interval = std::max(std::min(rtt_, 200u), 10u);
   if (time_now - last_bit_rate_change_ >= bitrate_reduction_interval) {
     return true;
   }
@@ -89,7 +88,7 @@ uint32_t MimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
   return current_bit_rate_;
 }
 
-void MimdRateControl::SetRtt(int64_t rtt) {
+void MimdRateControl::SetRtt(uint32_t rtt) {
   rtt_ = rtt;
 }
 
@@ -157,8 +156,8 @@ uint32_t MimdRateControl::ChangeBitRate(uint32_t current_bit_rate,
           ChangeRegion(kRcAboveMax);
         }
       }
-      const int64_t response_time =
-          static_cast<int64_t>(avg_change_period_ + 0.5f) + rtt_ + 300;
+      const uint32_t response_time = static_cast<uint32_t>(avg_change_period_ +
+          0.5f) + rtt_ + 300;
       double alpha = RateIncreaseFactor(now_ms, last_bit_rate_change_,
                                         response_time, noise_var);
 
@@ -216,9 +215,9 @@ uint32_t MimdRateControl::ChangeBitRate(uint32_t current_bit_rate,
 }
 
 double MimdRateControl::RateIncreaseFactor(int64_t now_ms,
-                                           int64_t last_ms,
-                                           int64_t reaction_time_ms,
-                                           double noise_var) const {
+                                             int64_t last_ms,
+                                             uint32_t reaction_time_ms,
+                                             double noise_var) const {
   // alpha = 1.02 + B ./ (1 + exp(b*(tr - (c1*s2 + c2))))
   // Parameters
   const double B = 0.0407;

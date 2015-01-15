@@ -132,7 +132,7 @@ class MockVideoEncoder : public VideoEncoder {
   }
 
   MOCK_METHOD2(SetChannelParameters,
-      int32_t(uint32_t packetLoss, int64_t rtt));
+      int32_t(uint32_t packetLoss, int rtt));
 
   virtual ~MockVideoEncoder() {
   }
@@ -171,10 +171,11 @@ class TestSimulcastEncoderAdapterFakeHelper {
   // Can only be called once as the SimulcastEncoderAdapter will take the
   // ownership of |factory_|.
   VP8Encoder* CreateMockEncoderAdapter() {
-    return new SimulcastEncoderAdapter(factory_);
+    scoped_ptr<VideoEncoderFactory> scoped_factory(factory_);
+    return new SimulcastEncoderAdapter(scoped_factory.Pass());
   }
 
-  void ExpectCallSetChannelParameters(uint32_t packetLoss, int64_t rtt) {
+  void ExpectCallSetChannelParameters(uint32_t packetLoss, int rtt) {
     EXPECT_TRUE(!factory_->encoders().empty());
     for (size_t i = 0; i < factory_->encoders().size(); ++i) {
       EXPECT_CALL(*factory_->encoders()[i],
@@ -294,7 +295,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, InitEncode) {
 TEST_F(TestSimulcastEncoderAdapterFake, SetChannelParameters) {
   SetupCodec();
   const uint32_t packetLoss = 5;
-  const int64_t rtt = 30;
+  const int rtt = 30;
   helper_->ExpectCallSetChannelParameters(packetLoss, rtt);
   adapter_->SetChannelParameters(packetLoss, rtt);
 }

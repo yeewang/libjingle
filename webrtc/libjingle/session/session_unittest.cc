@@ -598,8 +598,7 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
       ports_[i] = cricket::UDPPort::Create(
           rtc::Thread::Current(), &socket_factory_,
           &network_, address_.ipaddr(), GetPort(index), GetPort(index),
-          GetUsername(index), GetPassword(index),
-          std::string());
+          GetUsername(index), GetPassword(index));
       AddPort(ports_[i]);
     }
     running_ = true;

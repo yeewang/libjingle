@@ -167,10 +167,6 @@ class PortAllocator : public sigslot::has_slots<> {
     return true;
   }
 
-  // Gets/Sets the Origin value used for WebRTC STUN requests.
-  const std::string& origin() const { return origin_; }
-  void set_origin(const std::string& origin) { origin_ = origin; }
-
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
@@ -189,7 +185,6 @@ class PortAllocator : public sigslot::has_slots<> {
   SessionMuxerMap muxers_;
   bool allow_tcp_listen_;
   uint32 candidate_filter_;
-  std::string origin_;
 };
 
 }  // namespace cricket

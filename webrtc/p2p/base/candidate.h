@@ -20,7 +20,6 @@
 
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/helpers.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/socketaddress.h"
 
@@ -33,13 +32,13 @@ class Candidate {
   // TODO: Match the ordering and param list as per RFC 5245
   // candidate-attribute syntax. http://tools.ietf.org/html/rfc5245#section-15.1
   Candidate()
-      : id_(rtc::CreateRandomString(8)),
-        component_(0),
+      : component_(0),
         priority_(0),
         network_type_(rtc::ADAPTER_TYPE_UNKNOWN),
         generation_(0) {}
 
-  Candidate(int component,
+  Candidate(const std::string& id,
+            int component,
             const std::string& protocol,
             const rtc::SocketAddress& address,
             uint32 priority,
@@ -48,7 +47,7 @@ class Candidate {
             const std::string& type,
             uint32 generation,
             const std::string& foundation)
-      : id_(rtc::CreateRandomString(8)),
+      : id_(id),
         component_(component),
         protocol_(protocol),
         address_(address),
@@ -155,10 +154,15 @@ class Candidate {
     // We ignore the network name, since that is just debug information, and
     // the priority, since that should be the same if the rest is (and it's
     // a float so equality checking is always worrisome).
-    return (component_ == c.component_) && (protocol_ == c.protocol_) &&
-           (address_ == c.address_) && (username_ == c.username_) &&
-           (password_ == c.password_) && (type_ == c.type_) &&
-           (generation_ == c.generation_) && (foundation_ == c.foundation_) &&
+    return (id_ == c.id_) &&
+           (component_ == c.component_) &&
+           (protocol_ == c.protocol_) &&
+           (address_ == c.address_) &&
+           (username_ == c.username_) &&
+           (password_ == c.password_) &&
+           (type_ == c.type_) &&
+           (generation_ == c.generation_) &&
+           (foundation_ == c.foundation_) &&
            (related_address_ == c.related_address_);
   }
 

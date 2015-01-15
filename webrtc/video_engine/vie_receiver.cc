@@ -24,7 +24,6 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -63,24 +62,10 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
 }
 
 ViEReceiver::~ViEReceiver() {
-  UpdateHistograms();
   if (rtp_dump_) {
     rtp_dump_->Stop();
     RtpDump::DestroyRtpDump(rtp_dump_);
     rtp_dump_ = NULL;
-  }
-}
-
-void ViEReceiver::UpdateHistograms() {
-  FecPacketCounter counter = fec_receiver_->GetPacketCounter();
-  if (counter.num_packets > 0) {
-    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedFecPacketsInPercent",
-        counter.num_fec_packets * 100 / counter.num_packets);
-  }
-  if (counter.num_fec_packets > 0) {
-    RTC_HISTOGRAM_PERCENTAGE(
-        "WebRTC.Video.RecoveredMediaPacketsInPercentOfFec",
-            counter.num_recovered_packets * 100 / counter.num_fec_packets);
   }
 }
 
@@ -380,7 +365,7 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
     return ret;
   }
 
-  int64_t rtt = 0;
+  uint16_t rtt = 0;
   rtp_rtcp_->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
   if (rtt == 0) {
     // Waiting for valid rtt.
@@ -469,7 +454,7 @@ bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header,
   if (!statistician)
     return false;
   // Check if this is a retransmission.
-  int64_t min_rtt = 0;
+  uint16_t min_rtt = 0;
   rtp_rtcp_->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
   return !in_order &&
       statistician->IsRetransmitOfOldPacket(header, min_rtt);

@@ -106,7 +106,8 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/move.h"
-#include "webrtc/base/template_util.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
+#include "webrtc/system_wrappers/interface/template_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -123,7 +124,7 @@ struct DefaultDeleter {
     //
     // Correct implementation should use SFINAE to disable this
     // constructor. However, since there are no other 1-argument constructors,
-    // using a static_assert based on is_convertible<> and requiring
+    // using a COMPILE_ASSERT() based on is_convertible<> and requiring
     // complete types is simpler and will cause compile failures for equivalent
     // misuses.
     //
@@ -132,8 +133,8 @@ struct DefaultDeleter {
     // cannot convert to T*.
     enum { T_must_be_complete = sizeof(T) };
     enum { U_must_be_complete = sizeof(U) };
-    static_assert(rtc::is_convertible<U*, T*>::value,
-                  "U* must implicitly convert to T*");
+    COMPILE_ASSERT((webrtc::is_convertible<U*, T*>::value),
+                   U_ptr_must_implicitly_convert_to_T_ptr);
   }
   inline void operator()(T* ptr) const {
     enum { type_must_be_complete = sizeof(T) };
@@ -163,7 +164,7 @@ struct DefaultDeleter<T[]> {
 template <class T, int n>
 struct DefaultDeleter<T[n]> {
   // Never allow someone to declare something like scoped_ptr<int[10]>.
-  static_assert(sizeof(T) == -1, "do not use array with size as type");
+  COMPILE_ASSERT(sizeof(T) == -1, do_not_use_array_with_size_as_type);
 };
 
 // Function object which invokes 'free' on its parameter, which must be
@@ -182,13 +183,12 @@ namespace internal {
 template <typename T>
 struct ShouldAbortOnSelfReset {
   template <typename U>
-  static rtc::internal::NoType Test(const typename U::AllowSelfReset*);
+  static NoType Test(const typename U::AllowSelfReset*);
 
   template <typename U>
-  static rtc::internal::YesType Test(...);
+  static YesType Test(...);
 
-  static const bool value =
-      sizeof(Test<T>(0)) == sizeof(rtc::internal::YesType);
+  static const bool value = sizeof(Test<T>(0)) == sizeof(YesType);
 };
 
 // Minimal implementation of the core logic of scoped_ptr, suitable for
@@ -317,8 +317,8 @@ class scoped_ptr {
 
   // TODO(ajm): If we ever import RefCountedBase, this check needs to be
   // enabled.
-  //static_assert(webrtc::internal::IsNotRefCounted<T>::value,
-  //              "T is refcounted type and needs scoped refptr");
+  //COMPILE_ASSERT(webrtc::internal::IsNotRefCounted<T>::value,
+  //               T_is_refcounted_type_and_needs_scoped_refptr);
 
  public:
   // The element and deleter types.
@@ -350,7 +350,7 @@ class scoped_ptr {
   template <typename U, typename V>
   scoped_ptr(scoped_ptr<U, V>&& other)
       : impl_(&other.impl_) {
-    static_assert(!rtc::is_array<U>::value, "U cannot be an array");
+    COMPILE_ASSERT(!webrtc::is_array<U>::value, U_cannot_be_an_array);
   }
 
   // operator=.  Allows assignment from a scoped_ptr rvalue for a convertible
@@ -365,7 +365,7 @@ class scoped_ptr {
   // scoped_ptr.
   template <typename U, typename V>
   scoped_ptr& operator=(scoped_ptr<U, V>&& rhs) {
-    static_assert(!rtc::is_array<U>::value, "U cannot be an array");
+    COMPILE_ASSERT(!webrtc::is_array<U>::value, U_cannot_be_an_array);
     impl_.TakeState(&rhs.impl_);
     return *this;
   }

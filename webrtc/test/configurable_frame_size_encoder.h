@@ -38,8 +38,7 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   virtual int32_t Release() OVERRIDE;
 
-  virtual int32_t SetChannelParameters(uint32_t packet_loss,
-                                       int64_t rtt) OVERRIDE;
+  virtual int32_t SetChannelParameters(uint32_t packet_loss, int rtt) OVERRIDE;
 
   virtual int32_t SetRates(uint32_t new_bit_rate, uint32_t frame_rate) OVERRIDE;
 

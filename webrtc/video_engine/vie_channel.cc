@@ -51,7 +51,7 @@ class ChannelStatsObserver : public CallStatsObserver {
   virtual ~ChannelStatsObserver() {}
 
   // Implements StatsObserver.
-  virtual void OnRttUpdate(int64_t rtt) {
+  virtual void OnRttUpdate(uint32_t rtt) {
     owner_->OnRttUpdate(rtt);
   }
 
@@ -364,7 +364,12 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
       rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
       rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
-      rtp_rtcp->SetRtxSendStatus(rtp_rtcp_->RtxSendStatus());
+
+      int mode;
+      uint32_t ssrc;
+      int payload_type;
+      rtp_rtcp_->RTXSendStatus(&mode, &ssrc, &payload_type);
+      rtp_rtcp->SetRTXSendStatus(mode);
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
 
       // Silently ignore error.
@@ -907,11 +912,11 @@ int ViEChannel::SetRtxSendPayloadType(int payload_type) {
 void ViEChannel::SetRtxSendStatus(bool enable) {
   int rtx_settings =
       enable ? kRtxRetransmitted | kRtxRedundantPayloads : kRtxOff;
-  rtp_rtcp_->SetRtxSendStatus(rtx_settings);
+  rtp_rtcp_->SetRTXSendStatus(rtx_settings);
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
-    (*it)->SetRtxSendStatus(rtx_settings);
+    (*it)->SetRTXSendStatus(rtx_settings);
   }
 }
 
@@ -1001,7 +1006,7 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
                                           uint32_t* cumulative_lost,
                                           uint32_t* extended_max,
                                           uint32_t* jitter_samples,
-                                          int64_t* rtt_ms) {
+                                          int32_t* rtt_ms) {
   // Aggregate the report blocks associated with streams sent on this channel.
   std::vector<RTCPReportBlock> report_blocks;
   rtp_rtcp_->RemoteRTCPStat(&report_blocks);
@@ -1041,8 +1046,8 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
   *extended_max = report.extendedHighSeqNum;
   *jitter_samples = report.jitter;
 
-  int64_t dummy;
-  int64_t rtt = 0;
+  uint16_t dummy;
+  uint16_t rtt = 0;
   if (rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) != 0) {
     return -1;
   }
@@ -1068,7 +1073,7 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
                                               uint32_t* cumulative_lost,
                                               uint32_t* extended_max,
                                               uint32_t* jitter_samples,
-                                              int64_t* rtt_ms) {
+                                              int32_t* rtt_ms) {
   uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
   StreamStatistician* statistician =
       vie_receiver_.GetReceiveStatistics()->GetStatistician(remote_ssrc);
@@ -1086,8 +1091,8 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   // GetReceivedRtcpStatistics to be called.
   report_block_stats_receiver_->Store(receive_stats, remote_ssrc, 0);
 
-  int64_t dummy = 0;
-  int64_t rtt = 0;
+  uint16_t dummy = 0;
+  uint16_t rtt = 0;
   rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy);
   *rtt_ms = rtt;
   return 0;
@@ -1594,7 +1599,7 @@ bool ViEChannel::ChannelDecodeProcess() {
   return true;
 }
 
-void ViEChannel::OnRttUpdate(int64_t rtt) {
+void ViEChannel::OnRttUpdate(uint32_t rtt) {
   vcm_->SetReceiveChannelParameters(rtt);
 }
 
