@@ -67,8 +67,7 @@ static long stream_ctrl(BIO* h, int cmd, long arg1, void* arg2);
 static int stream_new(BIO* h);
 static int stream_free(BIO* data);
 
-// TODO(davidben): This should be const once BoringSSL is assumed.
-static BIO_METHOD methods_stream = {
+static const BIO_METHOD methods_stream = {
   BIO_TYPE_BIO,
   "stream",
   stream_write,
@@ -81,7 +80,7 @@ static BIO_METHOD methods_stream = {
   NULL,
 };
 
-static BIO_METHOD* BIO_s_stream() { return(&methods_stream); }
+static const BIO_METHOD* BIO_s_stream() { return(&methods_stream); }
 
 static BIO* BIO_new_stream(StreamInterface* stream) {
   BIO* ret = BIO_new(BIO_s_stream());

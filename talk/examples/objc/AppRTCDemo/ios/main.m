@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,11 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ARDAppDelegate.h"
+#import "APPRTCAppDelegate.h"
 
 int main(int argc, char* argv[]) {
   @autoreleasepool {
     return UIApplicationMain(
-        argc, argv, nil, NSStringFromClass([ARDAppDelegate class]));
+        argc, argv, nil, NSStringFromClass([APPRTCAppDelegate class]));
   }
 }

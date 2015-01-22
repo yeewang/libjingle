@@ -438,7 +438,8 @@ From RFC 3550
     return false;
 }
 
-uint32_t RTCPSender::LastSendReport(int64_t& lastRTCPTime)
+uint32_t
+RTCPSender::LastSendReport( uint32_t& lastRTCPTime)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -446,7 +447,7 @@ uint32_t RTCPSender::LastSendReport(int64_t& lastRTCPTime)
     return _lastSendReport[0];
 }
 
-int64_t RTCPSender::SendTimeOfSendReport(uint32_t sendReport) {
+uint32_t RTCPSender::SendTimeOfSendReport(uint32_t sendReport) {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
     // This is only saved when we are the sender

@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2015 Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,9 +27,14 @@
 
 #import <UIKit/UIKit.h>
 
-@interface UIImage (ARDUtilities)
+// The view controller that is displayed when AppRTCDemo is loaded.
+@interface APPRTCViewController : UIViewController<UITextFieldDelegate>
 
-// Returns an color tinted version for the given image resource.
-+ (UIImage *)imageForName:(NSString *)name color:(UIColor *)color;
+@property(weak, nonatomic) IBOutlet UITextField* roomInput;
+@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
+@property(weak, nonatomic) IBOutlet UITextView* logView;
+@property(weak, nonatomic) IBOutlet UIView* blackView;
+
+- (void)applicationWillResignActive:(UIApplication*)application;
 
 @end

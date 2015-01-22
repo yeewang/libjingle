@@ -84,9 +84,9 @@ void BundleFilter::AddPayloadType(int payload_type) {
 }
 
 bool BundleFilter::AddStream(const StreamParams& stream) {
-  if (GetStreamBySsrc(streams_, stream.first_ssrc())) {
-    LOG(LS_WARNING) << "Stream already added to filter";
-    return false;
+  if (GetStreamBySsrc(streams_, stream.first_ssrc(), NULL)) {
+      LOG(LS_WARNING) << "Stream already added to filter";
+      return false;
   }
   streams_.push_back(stream);
   return true;
@@ -101,7 +101,10 @@ bool BundleFilter::HasStreams() const {
 }
 
 bool BundleFilter::FindStream(uint32 ssrc) const {
-  return ssrc == 0 ? false : GetStreamBySsrc(streams_, ssrc) != nullptr;
+  if (ssrc == 0) {
+    return false;
+  }
+  return (GetStreamBySsrc(streams_, ssrc, NULL));
 }
 
 bool BundleFilter::FindPayloadType(int pl_type) const {

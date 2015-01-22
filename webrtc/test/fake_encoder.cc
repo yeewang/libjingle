@@ -119,7 +119,7 @@ int32_t FakeEncoder::RegisterEncodeCompleteCallback(
 
 int32_t FakeEncoder::Release() { return 0; }
 
-int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
+int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int rtt) {
   return 0;
 }
 

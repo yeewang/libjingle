@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011 Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,9 +35,6 @@
 
 #include "talk/examples/peerconnection/server/data_socket.h"
 #include "talk/examples/peerconnection/server/utils.h"
-#include "webrtc/base/stringutils.h"
-
-using rtc::sprintfn;
 
 // Set to the peer id of the originator when messages are being
 // exchanged between peers, but set to the id of the receiving peer
@@ -111,11 +108,8 @@ bool ChannelMember::NotifyOfOtherMember(const ChannelMember& other) {
 // Returns a string in the form "name,id,connected\n".
 std::string ChannelMember::GetEntry() const {
   assert(name_.length() <= kMaxNameLength);
-
-  // name, 11-digit int, 1-digit bool, newline, null
-  char entry[kMaxNameLength + 15];
-  sprintfn(entry, sizeof(entry), "%s%d%d\n",
-           name_.substr(0, kMaxNameLength).c_str(), id_, connected_);
+  char entry[1024] = {0};
+  sprintf(entry, "%s,%i,%i\n", name_.c_str(), id_, connected_);  // NOLINT
   return entry;
 }
 

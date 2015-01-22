@@ -1,6 +1,6 @@
 #
 # libjingle
-# Copyright 2012 Google Inc.
+# Copyright 2012, Google Inc.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -23,6 +23,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 {
   'includes': [
@@ -215,28 +216,16 @@
           'conditions': [
             ['OS=="ios"', {
               'mac_bundle_resources': [
-                'examples/objc/AppRTCDemo/ios/resources/Default-568h.png',
-                'examples/objc/AppRTCDemo/ios/resources/Roboto-Regular.ttf',
-                'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp.png',
-                'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png',
-                'examples/objc/AppRTCDemo/ios/resources/ic_clear_black_24dp.png',
-                'examples/objc/AppRTCDemo/ios/resources/ic_clear_black_24dp@2x.png',
+                'examples/objc/AppRTCDemo/ios/ResourceRules.plist',
+                'examples/objc/AppRTCDemo/ios/en.lproj/APPRTCViewController.xib',
                 'examples/objc/Icon.png',
               ],
               'sources': [
-                'examples/objc/AppRTCDemo/ios/ARDAppDelegate.h',
-                'examples/objc/AppRTCDemo/ios/ARDAppDelegate.m',
-                'examples/objc/AppRTCDemo/ios/ARDMainView.h',
-                'examples/objc/AppRTCDemo/ios/ARDMainView.m',
-                'examples/objc/AppRTCDemo/ios/ARDMainViewController.h',
-                'examples/objc/AppRTCDemo/ios/ARDMainViewController.m',
-                'examples/objc/AppRTCDemo/ios/ARDVideoCallView.h',
-                'examples/objc/AppRTCDemo/ios/ARDVideoCallView.m',
-                'examples/objc/AppRTCDemo/ios/ARDVideoCallViewController.h',
-                'examples/objc/AppRTCDemo/ios/ARDVideoCallViewController.m',
+                'examples/objc/AppRTCDemo/ios/APPRTCAppDelegate.h',
+                'examples/objc/AppRTCDemo/ios/APPRTCAppDelegate.m',
+                'examples/objc/AppRTCDemo/ios/APPRTCViewController.h',
+                'examples/objc/AppRTCDemo/ios/APPRTCViewController.m',
                 'examples/objc/AppRTCDemo/ios/AppRTCDemo-Prefix.pch',
-                'examples/objc/AppRTCDemo/ios/UIImage+ARDUtilities.h',
-                'examples/objc/AppRTCDemo/ios/UIImage+ARDUtilities.m',
                 'examples/objc/AppRTCDemo/ios/main.m',
               ],
               'xcode_settings': {

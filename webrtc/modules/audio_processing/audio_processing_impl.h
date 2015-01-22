@@ -86,8 +86,6 @@ class AudioFormat : public AudioRate {
 class AudioProcessingImpl : public AudioProcessing {
  public:
   explicit AudioProcessingImpl(const Config& config);
-  // Only for testing.
-  AudioProcessingImpl(const Config& config, Beamformer* beamformer);
   virtual ~AudioProcessingImpl();
 
   // AudioProcessing methods.

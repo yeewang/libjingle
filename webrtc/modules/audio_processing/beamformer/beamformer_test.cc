@@ -59,8 +59,9 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < FLAGS_num_input_channels; ++i) {
     array_geometry.push_back(webrtc::Point(i * FLAGS_mic_spacing, 0.f, 0.f));
   }
-  webrtc::Beamformer bf(array_geometry);
-  bf.Initialize(kChunkTimeMilliseconds, FLAGS_sample_rate);
+  webrtc::Beamformer bf(kChunkTimeMilliseconds,
+                        FLAGS_sample_rate,
+                        array_geometry);
   while (true) {
     size_t samples_read = webrtc::PcmReadToFloat(read_file,
                                                  kInputSamplesPerChunk,

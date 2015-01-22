@@ -28,9 +28,11 @@
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
+      'libjingle/xmllite/xmllite.gyp:*',
+      'libjingle/xmpp/xmpp.gyp:*',
       'modules/modules.gyp:*',
       'p2p/p2p.gyp:*',
-      'system_wrappers/system_wrappers.gyp:*',
+      'system_wrappers/source/system_wrappers.gyp:*',
       'video_engine/video_engine.gyp:*',
       'voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
@@ -49,7 +51,7 @@
         ['include_tests==1', {
           'dependencies': [
             'common_video/common_video_unittests.gyp:*',
-            'system_wrappers/system_wrappers_tests.gyp:*',
+            'system_wrappers/source/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',
             'test/webrtc_test_common.gyp:webrtc_test_common_unittests',

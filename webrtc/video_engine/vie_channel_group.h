@@ -31,7 +31,8 @@ class VieRemb;
 // group are assumed to send/receive data to the same end-point.
 class ChannelGroup {
  public:
-  ChannelGroup(ProcessThread* process_thread, const Config* config);
+  ChannelGroup(int engine_id, ProcessThread* process_thread,
+               const Config* config);
   ~ChannelGroup();
 
   void AddChannel(int channel_id);

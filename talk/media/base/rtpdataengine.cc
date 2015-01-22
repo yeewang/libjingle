@@ -174,7 +174,8 @@ bool RtpDataMediaChannel::AddSendStream(const StreamParams& stream) {
     return false;
   }
 
-  if (GetStreamBySsrc(send_streams_, stream.first_ssrc())) {
+  StreamParams found_stream;
+  if (GetStreamBySsrc(send_streams_, stream.first_ssrc(), &found_stream)) {
     LOG(LS_WARNING) << "Not adding data send stream '" << stream.id
                     << "' with ssrc=" << stream.first_ssrc()
                     << " because stream already exists.";
@@ -194,7 +195,8 @@ bool RtpDataMediaChannel::AddSendStream(const StreamParams& stream) {
 }
 
 bool RtpDataMediaChannel::RemoveSendStream(uint32 ssrc) {
-  if (!GetStreamBySsrc(send_streams_, ssrc)) {
+  StreamParams found_stream;
+  if (!GetStreamBySsrc(send_streams_, ssrc, &found_stream)) {
     return false;
   }
 
@@ -209,7 +211,8 @@ bool RtpDataMediaChannel::AddRecvStream(const StreamParams& stream) {
     return false;
   }
 
-  if (GetStreamBySsrc(recv_streams_, stream.first_ssrc())) {
+  StreamParams found_stream;
+  if (GetStreamBySsrc(recv_streams_, stream.first_ssrc(), &found_stream)) {
     LOG(LS_WARNING) << "Not adding data recv stream '" << stream.id
                     << "' with ssrc=" << stream.first_ssrc()
                     << " because stream already exists.";
@@ -266,13 +269,13 @@ void RtpDataMediaChannel::OnPacketReceived(
     return;
   }
 
-  if (!GetStreamBySsrc(recv_streams_, header.ssrc)) {
+  StreamParams found_stream;
+  if (!GetStreamBySsrc(recv_streams_, header.ssrc, &found_stream)) {
     LOG(LS_WARNING) << "Received packet for unknown ssrc: " << header.ssrc;
     return;
   }
 
   // Uncomment this for easy debugging.
-  // const auto* found_stream = GetStreamBySsrc(recv_streams_, header.ssrc);
   // LOG(LS_INFO) << "Received packet"
   //              << " groupid=" << found_stream.groupid
   //              << ", ssrc=" << header.ssrc
@@ -315,9 +318,8 @@ bool RtpDataMediaChannel::SendData(
     return false;
   }
 
-  const StreamParams* found_stream =
-      GetStreamBySsrc(send_streams_, params.ssrc);
-  if (!found_stream) {
+  StreamParams found_stream;
+  if (!GetStreamBySsrc(send_streams_, params.ssrc, &found_stream)) {
     LOG(LS_WARNING) << "Not sending data because ssrc is unknown: "
                     << params.ssrc;
     return false;
@@ -361,7 +363,7 @@ bool RtpDataMediaChannel::SendData(
   packet.AppendData(payload.data(), payload.length());
 
   LOG(LS_VERBOSE) << "Sent RTP data packet: "
-                  << " stream=" << found_stream->id
+                  << " stream=" << found_stream.id
                   << " ssrc=" << header.ssrc
                   << ", seqnum=" << header.seq_num
                   << ", timestamp=" << header.timestamp

@@ -33,10 +33,9 @@ class UDPPort : public Port {
                          rtc::Network* network,
                          rtc::AsyncPacketSocket* socket,
                          const std::string& username,
-                         const std::string& password,
-                         const std::string& origin) {
-    UDPPort* port = new UDPPort(thread, factory, network, socket,
-                                username, password, origin);
+                         const std::string& password) {
+    UDPPort* port =
+        new UDPPort(thread, factory, network, socket, username, password);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -51,18 +50,15 @@ class UDPPort : public Port {
                          uint16 min_port,
                          uint16 max_port,
                          const std::string& username,
-                         const std::string& password,
-                         const std::string& origin) {
-    UDPPort* port = new UDPPort(thread, factory, network,
-                                ip, min_port, max_port,
-                                username, password, origin);
+                         const std::string& password) {
+    UDPPort* port = new UDPPort(thread, factory, network, ip, min_port,
+                                max_port, username, password);
     if (!port->Init()) {
       delete port;
       port = NULL;
     }
     return port;
   }
-
   virtual ~UDPPort();
 
   rtc::SocketAddress GetLocalAddress() const {
@@ -109,16 +105,14 @@ class UDPPort : public Port {
           uint16 min_port,
           uint16 max_port,
           const std::string& username,
-          const std::string& password,
-          const std::string& origin);
+          const std::string& password);
 
   UDPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,
           rtc::Network* network,
           rtc::AsyncPacketSocket* socket,
           const std::string& username,
-          const std::string& password,
-          const std::string& origin);
+          const std::string& password);
 
   bool Init();
 
@@ -214,12 +208,9 @@ class StunPort : public UDPPort {
                           uint16 min_port, uint16 max_port,
                           const std::string& username,
                           const std::string& password,
-                          const ServerAddresses& servers,
-                          const std::string& origin) {
-    StunPort* port = new StunPort(thread, factory, network,
-                                  ip, min_port, max_port,
-                                  username, password, servers,
-                                  origin);
+                          const ServerAddresses& servers) {
+    StunPort* port = new StunPort(thread, factory, network, ip, min_port,
+                                  max_port, username, password, servers);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -242,10 +233,9 @@ class StunPort : public UDPPort {
            uint16 max_port,
            const std::string& username,
            const std::string& password,
-           const ServerAddresses& servers,
-           const std::string& origin)
+           const ServerAddresses& servers)
      : UDPPort(thread, factory, network, ip, min_port, max_port, username,
-               password, origin) {
+               password) {
     // UDPPort will set these to local udp, updating these to STUN.
     set_type(STUN_PORT_TYPE);
     set_server_addresses(servers);

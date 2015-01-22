@@ -14,6 +14,7 @@
 #include <cstring>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 
@@ -68,9 +69,8 @@ Histogram::Histogram()
       buffer_is_full_(false),
       len_circular_buffer_(0),
       len_high_activity_(0) {
-  static_assert(
-      kHistSize == sizeof(kHistBinCenters) / sizeof(kHistBinCenters[0]),
-      "histogram bin centers incorrect size");
+  COMPILE_ASSERT(kHistSize == sizeof(kHistBinCenters) /
+      sizeof(kHistBinCenters[0]), histogram_bin_centers_incorrect_size);
 }
 
 Histogram::Histogram(int window_size)

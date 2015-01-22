@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2015 Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,23 +27,8 @@
 
 #import <UIKit/UIKit.h>
 
-#import "RTCEAGLVideoView.h"
-
-@class ARDVideoCallView;
-@protocol ARDVideoCallViewDelegate <NSObject>
-
-// Called when the hangup button is pressed.
-- (void)videoCallViewDidHangup:(ARDVideoCallView *)view;
-
-@end
-
-// Video call view that shows local and remote video, provides a label to
-// display status, and also a hangup button.
-@interface ARDVideoCallView : UIView
-
-@property(nonatomic, readonly) UILabel *statusLabel;
-@property(nonatomic, readonly) RTCEAGLVideoView *localVideoView;
-@property(nonatomic, readonly) RTCEAGLVideoView *remoteVideoView;
-@property(nonatomic, weak) id<ARDVideoCallViewDelegate> delegate;
-
+// The main application class of the AppRTCDemo iOS app demonstrating
+// interoperability between the Objective C implementation of PeerConnection
+// and the apprtc.appspot.com demo webapp.
+@interface APPRTCAppDelegate : NSObject<UIApplicationDelegate>
 @end

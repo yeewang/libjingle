@@ -78,11 +78,9 @@ class TurnRefreshRequest : public StunRequest {
   virtual void OnResponse(StunMessage* response);
   virtual void OnErrorResponse(StunMessage* response);
   virtual void OnTimeout();
-  void set_lifetime(int lifetime) { lifetime_ = lifetime; }
 
  private:
   TurnPort* port_;
-  int lifetime_;
 };
 
 class TurnCreatePermissionRequest : public StunRequest,
@@ -166,8 +164,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const std::string& password,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
-                   int server_priority,
-                   const std::string& origin)
+                   int server_priority)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       server_address_(server_address),
@@ -181,7 +178,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
-  request_manager_.set_origin(origin);
 }
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -194,8 +190,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const std::string& password,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
-                   int server_priority,
-                   const std::string& origin)
+                   int server_priority)
     : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       server_address_(server_address),
@@ -209,20 +204,10 @@ TurnPort::TurnPort(rtc::Thread* thread,
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
-  request_manager_.set_origin(origin);
 }
 
 TurnPort::~TurnPort() {
   // TODO(juberti): Should this even be necessary?
-
-  // release the allocation by sending a refresh with
-  // lifetime 0.
-  if (connected_) {
-    TurnRefreshRequest bye(this);
-    bye.set_lifetime(0);
-    SendRequest(&bye, 0);
-  }
-
   while (!entries_.empty()) {
     DestroyEntry(entries_.front()->address());
   }
@@ -232,10 +217,6 @@ TurnPort::~TurnPort() {
   if (!SharedSocket()) {
     delete socket_;
   }
-}
-
-rtc::SocketAddress TurnPort::GetLocalAddress() const {
-  return socket_ ? socket_->GetLocalAddress() : rtc::SocketAddress();
 }
 
 void TurnPort::PrepareAddress() {
@@ -359,11 +340,9 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
 void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   LOG_J(LS_WARNING, this) << "Connection with server failed, error=" << error;
-  ASSERT(socket == socket_);
   if (!connected_) {
     OnAllocateError();
   }
-  connected_ = false;
 }
 
 void TurnPort::OnAllocateMismatch() {
@@ -657,22 +636,6 @@ void TurnPort::OnMessage(rtc::Message* message) {
     return;
   } else if (message->message_id == MSG_ALLOCATE_MISMATCH) {
     OnAllocateMismatch();
-    return;
-  } else if (message->message_id == MSG_TRY_ALTERNATE_SERVER) {
-    if (server_address().proto == PROTO_UDP) {
-      // Send another allocate request to alternate server, with the received
-      // realm and nonce values.
-      SendRequest(new TurnAllocateRequest(this), 0);
-    } else {
-      // Since it's TCP, we have to delete the connected socket and reconnect
-      // with the alternate server. PrepareAddress will send stun binding once
-      // the new socket is connected.
-      ASSERT(server_address().proto == PROTO_TCP);
-      ASSERT(!SharedSocket());
-      delete socket_;
-      socket_ = NULL;
-      PrepareAddress();
-    }
     return;
   }
 
@@ -988,6 +951,15 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
 }
 
 void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
+  // TODO(guoweis): Currently, we only support UDP redirect
+  if (port_->server_address().proto != PROTO_UDP) {
+    LOG_J(LS_WARNING, port_) << "Receiving 300 Alternate Server on non-UDP "
+                         << "allocating request from ["
+                         << port_->server_address().address.ToSensitiveString()
+                         << "], failed as currently not supported";
+    port_->OnAllocateError();
+    return;
+  }
 
   // According to RFC 5389 section 11, there are use cases where
   // authentication of response is not possible, we're not validating
@@ -1024,27 +996,20 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
     port_->set_nonce(nonce_attr->GetString());
   }
 
-  // For TCP, we can't close the original Tcp socket during handling a 300 as
-  // we're still inside that socket's event handler. Doing so will cause
-  // deadlock.
-  port_->thread()->Post(port_, TurnPort::MSG_TRY_ALTERNATE_SERVER);
+  // Send another allocate request to alternate server,
+  // with the received realm and nonce values.
+  port_->SendRequest(new TurnAllocateRequest(port_), 0);
 }
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port)
     : StunRequest(new TurnMessage()),
-      port_(port),
-      lifetime_(-1) {
+      port_(port) {
 }
 
 void TurnRefreshRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC 5766, Section 7.1.
   // No attributes need to be included.
   request->SetType(TURN_REFRESH_REQUEST);
-  if (lifetime_ > -1) {
-    VERIFY(request->AddAttribute(new StunUInt32Attribute(
-        STUN_ATTR_LIFETIME, lifetime_)));
-  }
-
   port_->AddRequestAuthInfo(request);
 }
 

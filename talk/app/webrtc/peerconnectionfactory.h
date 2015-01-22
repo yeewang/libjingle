@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011 Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,6 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #ifndef TALK_APP_WEBRTC_PEERCONNECTIONFACTORY_H_
 #define TALK_APP_WEBRTC_PEERCONNECTIONFACTORY_H_
 
@@ -38,7 +37,8 @@
 
 namespace webrtc {
 
-class PeerConnectionFactory : public PeerConnectionFactoryInterface {
+class PeerConnectionFactory : public PeerConnectionFactoryInterface,
+                              public rtc::MessageHandler {
  public:
   virtual void SetOptions(const Options& options) {
     options_ = options;
@@ -54,25 +54,25 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool Initialize();
 
-  rtc::scoped_refptr<MediaStreamInterface>
-      CreateLocalMediaStream(const std::string& label) override;
+  virtual rtc::scoped_refptr<MediaStreamInterface>
+      CreateLocalMediaStream(const std::string& label);
 
-  rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
-      const MediaConstraintsInterface* constraints) override;
+  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+      const MediaConstraintsInterface* constraints);
 
-  rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
-      const MediaConstraintsInterface* constraints) override;
+      const MediaConstraintsInterface* constraints);
 
-  rtc::scoped_refptr<VideoTrackInterface>
+  virtual rtc::scoped_refptr<VideoTrackInterface>
       CreateVideoTrack(const std::string& id,
-                       VideoSourceInterface* video_source) override;
+                       VideoSourceInterface* video_source);
 
-  rtc::scoped_refptr<AudioTrackInterface>
+  virtual rtc::scoped_refptr<AudioTrackInterface>
       CreateAudioTrack(const std::string& id,
-                       AudioSourceInterface* audio_source) override;
+                       AudioSourceInterface* audio_source);
 
-  bool StartAecDump(rtc::PlatformFile file) override;
+  virtual bool StartAecDump(rtc::PlatformFile file);
 
   virtual cricket::ChannelManager* channel_manager();
   virtual rtc::Thread* signaling_thread();
@@ -90,8 +90,27 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual ~PeerConnectionFactory();
 
  private:
+  bool Initialize_s();
+  void Terminate_s();
+  rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource_s(
+      const MediaConstraintsInterface* constraints);
+  rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource_s(
+      cricket::VideoCapturer* capturer,
+      const MediaConstraintsInterface* constraints);
+
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_s(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      const MediaConstraintsInterface* constraints,
+      PortAllocatorFactoryInterface* allocator_factory,
+      DTLSIdentityServiceInterface* dtls_identity_service,
+      PeerConnectionObserver* observer);
+
+  bool StartAecDump_s(rtc::PlatformFile file);
+
+  // Implements rtc::MessageHandler.
+  void OnMessage(rtc::Message* msg);
+
   bool owns_ptrs_;
-  bool wraps_current_thread_;
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;
   Options options_;

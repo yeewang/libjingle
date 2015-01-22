@@ -1510,7 +1510,7 @@ void PrintRTCCPStatistics(webrtc::ViERTP_RTCP* vie_rtp_rtcp,
   int error = 0;
   int number_of_errors = 0;
   webrtc::RtcpStatistics rtcp_stats;
-  int64_t rtt_ms = 0;
+  int rtt_ms = 0;
 
   switch (stat_type) {
     case kReceivedStatistic:
@@ -1564,13 +1564,13 @@ void PrintRTPStatistics(webrtc::ViERTP_RTCP* vie_rtp_rtcp,
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
   std::cout << "\tRTP bytes sent: "
-            << sent.transmitted.payload_bytes << std::endl;
+            << sent.bytes << std::endl;
   std::cout << "\tRTP packets sent: "
-            << sent.transmitted.packets << std::endl;
+            << sent.packets << std::endl;
   std::cout << "\tRTP bytes received: "
-            << received.transmitted.payload_bytes << std::endl;
+            << received.bytes << std::endl;
   std::cout << "\tRTP packets received: "
-            << received.transmitted.packets << std::endl;
+            << received.packets << std::endl;
 }
 
 void PrintBandwidthUsage(webrtc::ViERTP_RTCP* vie_rtp_rtcp,

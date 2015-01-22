@@ -160,10 +160,10 @@ template <class Base> class RtpHelper : public Base {
     return receive_streams_;
   }
   bool HasRecvStream(uint32 ssrc) const {
-    return GetStreamBySsrc(receive_streams_, ssrc) != nullptr;
+    return GetStreamBySsrc(receive_streams_, ssrc, NULL);
   }
   bool HasSendStream(uint32 ssrc) const {
-    return GetStreamBySsrc(send_streams_, ssrc) != nullptr;
+    return GetStreamBySsrc(send_streams_, ssrc, NULL);
   }
   // TODO(perkj): This is to support legacy unit test that only check one
   // sending stream.

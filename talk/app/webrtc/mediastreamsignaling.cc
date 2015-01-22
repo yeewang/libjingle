@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2012 Google Inc.
+ * Copyright 2012, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -594,9 +594,9 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
   TrackInfos::iterator track_it = current_tracks->begin();
   while (track_it != current_tracks->end()) {
     const TrackInfo& info = *track_it;
-    const cricket::StreamParams* params =
-        cricket::GetStreamBySsrc(streams, info.ssrc);
-    if (!params || params->id != info.track_id) {
+    cricket::StreamParams params;
+    if (!cricket::GetStreamBySsrc(streams, info.ssrc, &params) ||
+        params.id != info.track_id) {
       OnRemoteTrackRemoved(info.stream_label, info.track_id, media_type);
       track_it = current_tracks->erase(track_it);
     } else {
@@ -781,10 +781,9 @@ void MediaStreamSignaling::UpdateLocalTracks(
   TrackInfos::iterator track_it = current_tracks->begin();
   while (track_it != current_tracks->end()) {
     const TrackInfo& info = *track_it;
-    const cricket::StreamParams* params =
-        cricket::GetStreamBySsrc(streams, info.ssrc);
-    if (!params || params->id != info.track_id ||
-        params->sync_label != info.stream_label) {
+    cricket::StreamParams params;
+    if (!cricket::GetStreamBySsrc(streams, info.ssrc, &params) ||
+        params.id != info.track_id || params.sync_label != info.stream_label) {
       OnLocalTrackRemoved(info.stream_label, info.track_id, info.ssrc,
                           media_type);
       track_it = current_tracks->erase(track_it);

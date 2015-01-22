@@ -39,7 +39,7 @@ class AgcManagerTest : public ::testing::Test {
         manager_(new AgcManager(VoEExternalMedia::GetInterface(voe_),
                                 VoEVolumeControl::GetInterface(voe_),
                                 agc_,
-                                AudioProcessing::Create())),
+                                AudioProcessing::Create(0))),
         channel_(-1) {
   }
 

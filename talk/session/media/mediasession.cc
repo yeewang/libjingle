@@ -222,11 +222,12 @@ static bool GenerateCname(const StreamParamsVec& params_vec,
     if (synch_label != stream_it->sync_label)
       continue;
 
+    StreamParams param;
     // groupid is empty for StreamParams generated using
     // MediaSessionDescriptionFactory.
-    const StreamParams* param = GetStreamByIds(params_vec, "", stream_it->id);
-    if (param) {
-      *cname = param->cname;
+    if (GetStreamByIds(params_vec, "", stream_it->id,
+                       &param)) {
+      *cname = param.cname;
       return true;
     }
   }
@@ -253,7 +254,7 @@ static void GenerateSsrcs(const StreamParamsVec& params_vec,
     uint32 candidate;
     do {
       candidate = rtc::CreateRandomNonZeroId();
-    } while (GetStreamBySsrc(params_vec, candidate) ||
+    } while (GetStreamBySsrc(params_vec, candidate, NULL) ||
              std::count(ssrcs->begin(), ssrcs->end(), candidate) > 0);
     ssrcs->push_back(candidate);
   }
@@ -269,7 +270,7 @@ static bool GenerateSctpSid(const StreamParamsVec& params_vec,
   }
   while (true) {
     uint32 candidate = rtc::CreateRandomNonZeroId() % kMaxSctpSid;
-    if (!GetStreamBySsrc(params_vec, candidate)) {
+    if (!GetStreamBySsrc(params_vec, candidate, NULL)) {
       *sid = candidate;
       return true;
     }
@@ -461,11 +462,11 @@ static bool AddStreamParams(
     if (stream_it->type != media_type)
       continue;  // Wrong media type.
 
-    const StreamParams* param =
-        GetStreamByIds(*current_streams, "", stream_it->id);
+    StreamParams param;
     // groupid is empty for StreamParams generated using
     // MediaSessionDescriptionFactory.
-    if (!param) {
+    if (!GetStreamByIds(*current_streams, "", stream_it->id,
+                        &param)) {
       // This is a new stream.
       // Get a CNAME. Either new or same as one of the other synched streams.
       std::string cname;
@@ -505,7 +506,7 @@ static bool AddStreamParams(
       // This is necessary so that we can use the CNAME for other media types.
       current_streams->push_back(stream_param);
     } else {
-      content_description->AddStream(*param);
+      content_description->AddStream(param);
     }
   }
   return true;

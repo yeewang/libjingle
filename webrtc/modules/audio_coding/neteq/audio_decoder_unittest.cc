@@ -447,7 +447,6 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.payload_type = payload_type_;
-    config.application = AudioEncoderOpus::kVoip;
     audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
@@ -462,7 +461,6 @@ class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.num_channels = 2;
     config.payload_type = payload_type_;
-    config.application = AudioEncoderOpus::kAudio;
     audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
@@ -530,13 +528,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   DecodePlcTest();
 }
 
-// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4198
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
-#define MAYBE_EncodeDecode DISABLED_EncodeDecode
-#else
-#define MAYBE_EncodeDecode EncodeDecode
-#endif
-TEST_F(AudioDecoderIsacFixTest, MAYBE_EncodeDecode) {
+TEST_F(AudioDecoderIsacFixTest, EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
   int delay = 54;  // Delay from input to output.

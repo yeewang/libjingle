@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,35 +25,41 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDAppDelegate.h"
+#import "APPRTCAppDelegate.h"
 
-#import "ARDMainViewController.h"
+#import "APPRTCViewController.h"
 #import "RTCPeerConnectionFactory.h"
 
-@implementation ARDAppDelegate {
-  UIWindow *_window;
+@implementation APPRTCAppDelegate {
+  UIWindow* _window;
 }
 
 #pragma mark - UIApplicationDelegate methods
 
-- (BOOL)application:(UIApplication *)application
-    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+- (BOOL)application:(UIApplication*)application
+    didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   [RTCPeerConnectionFactory initializeSSL];
   _window =  [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-  [_window makeKeyAndVisible];
-  ARDMainViewController *viewController = [[ARDMainViewController alloc] init];
+  APPRTCViewController* viewController =
+      [[APPRTCViewController alloc] initWithNibName:@"APPRTCViewController"
+                                             bundle:nil];
   _window.rootViewController = viewController;
+  [_window makeKeyAndVisible];
   return YES;
 }
 
-- (void)applicationWillResignActive:(UIApplication *)application {
-  ARDMainViewController *viewController =
-      (ARDMainViewController *)_window.rootViewController;
-  [viewController applicationWillResignActive:application];
+- (void)applicationWillResignActive:(UIApplication*)application {
+  [[self appRTCViewController] applicationWillResignActive:application];
 }
 
-- (void)applicationWillTerminate:(UIApplication *)application {
+- (void)applicationWillTerminate:(UIApplication*)application {
   [RTCPeerConnectionFactory deinitializeSSL];
+}
+
+#pragma mark - Private
+
+- (APPRTCViewController*)appRTCViewController {
+  return (APPRTCViewController*)_window.rootViewController;
 }
 
 @end

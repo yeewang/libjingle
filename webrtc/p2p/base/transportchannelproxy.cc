@@ -33,9 +33,8 @@ TransportChannelProxy::TransportChannelProxy(const std::string& content_name,
 TransportChannelProxy::~TransportChannelProxy() {
   // Clearing any pending signal.
   worker_thread_->Clear(this);
-  if (impl_) {
+  if (impl_)
     impl_->GetTransport()->DestroyChannel(impl_->component());
-  }
 }
 
 void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {

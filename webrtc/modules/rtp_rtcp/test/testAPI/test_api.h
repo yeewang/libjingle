@@ -25,45 +25,96 @@ namespace webrtc {
 class LoopBackTransport : public webrtc::Transport {
  public:
   LoopBackTransport()
-      : count_(0),
-        packet_loss_(0),
-        rtp_payload_registry_(NULL),
-        rtp_receiver_(NULL),
-        rtp_rtcp_module_(NULL) {}
-  void SetSendModule(RtpRtcp* rtp_rtcp_module,
+    : _count(0),
+      _packetLoss(0),
+      rtp_payload_registry_(NULL),
+      rtp_receiver_(NULL),
+      _rtpRtcpModule(NULL) {
+  }
+  void SetSendModule(RtpRtcp* rtpRtcpModule,
                      RTPPayloadRegistry* payload_registry,
                      RtpReceiver* receiver,
-                     ReceiveStatistics* receive_statistics);
-  void DropEveryNthPacket(int n);
-  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE;
+                     ReceiveStatistics* receive_statistics) {
+    _rtpRtcpModule = rtpRtcpModule;
+    rtp_payload_registry_ = payload_registry;
+    rtp_receiver_ = receiver;
+    receive_statistics_ = receive_statistics;
+  }
+  void DropEveryNthPacket(int n) {
+    _packetLoss = n;
+  }
+  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE {
+    _count++;
+    if (_packetLoss > 0) {
+      if ((_count % _packetLoss) == 0) {
+        return len;
+      }
+    }
+    RTPHeader header;
+    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+      return -1;
+    }
+    PayloadUnion payload_specific;
+    if (!rtp_payload_registry_->GetPayloadSpecifics(
+        header.payloadType, &payload_specific)) {
+      return -1;
+    }
+    receive_statistics_->IncomingPacket(header, len, false);
+    if (!rtp_receiver_->IncomingRtpPacket(header,
+                                          static_cast<const uint8_t*>(data),
+                                          len, payload_specific, true)) {
+      return -1;
+    }
+    return len;
+  }
   virtual int SendRTCPPacket(int channel,
-                             const void* data,
-                             size_t len) OVERRIDE;
-
+                             const void *data,
+                             size_t len) OVERRIDE {
+    if (_rtpRtcpModule->IncomingRtcpPacket((const uint8_t*)data, len) < 0) {
+      return -1;
+    }
+    return static_cast<int>(len);
+  }
  private:
-  int count_;
-  int packet_loss_;
+  int _count;
+  int _packetLoss;
   ReceiveStatistics* receive_statistics_;
   RTPPayloadRegistry* rtp_payload_registry_;
   RtpReceiver* rtp_receiver_;
-  RtpRtcp* rtp_rtcp_module_;
+  RtpRtcp* _rtpRtcpModule;
 };
 
 class TestRtpReceiver : public NullRtpData {
  public:
-  virtual int32_t OnReceivedPayloadData(
-      const uint8_t* payload_data,
-      const size_t payload_size,
-      const webrtc::WebRtcRTPHeader* rtp_header) OVERRIDE;
 
-  const uint8_t* payload_data() const { return payload_data_; }
-  size_t payload_size() const { return payload_size_; }
-  webrtc::WebRtcRTPHeader rtp_header() const { return rtp_header_; }
+  virtual int32_t OnReceivedPayloadData(
+      const uint8_t* payloadData,
+      const size_t payloadSize,
+      const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE {
+    EXPECT_LE(payloadSize, sizeof(_payloadData));
+    memcpy(_payloadData, payloadData, payloadSize);
+    memcpy(&_rtpHeader, rtpHeader, sizeof(_rtpHeader));
+    _payloadSize = payloadSize;
+    return 0;
+  }
+
+  const uint8_t* payload_data() const {
+    return _payloadData;
+  }
+
+  size_t payload_size() const {
+    return _payloadSize;
+  }
+
+  webrtc::WebRtcRTPHeader rtp_header() const {
+    return _rtpHeader;
+  }
 
  private:
-  uint8_t payload_data_[1500];
-  size_t payload_size_;
-  webrtc::WebRtcRTPHeader rtp_header_;
+  uint8_t _payloadData[1500];
+  size_t _payloadSize;
+  webrtc::WebRtcRTPHeader _rtpHeader;
 };
 
 }  // namespace webrtc

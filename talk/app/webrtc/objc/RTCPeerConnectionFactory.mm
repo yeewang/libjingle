@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -82,11 +82,9 @@
 - (id)init {
   if ((self = [super init])) {
     _signalingThread.reset(new rtc::Thread());
-    BOOL result = _signalingThread->Start();
-    NSAssert(result, @"Failed to start signaling thread.");
+    NSAssert(_signalingThread->Start(), @"Failed to start signaling thread.");
     _workerThread.reset(new rtc::Thread());
-    result = _workerThread->Start();
-    NSAssert(result, @"Failed to start worker thread.");
+    NSAssert(_workerThread->Start(), @"Failed to start worker thread.");
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
         _signalingThread.get(), _workerThread.get(), NULL, NULL, NULL);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");

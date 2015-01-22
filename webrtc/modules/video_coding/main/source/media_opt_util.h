@@ -41,7 +41,10 @@ enum FilterPacketLossMode {
 
 // Thresholds for hybrid NACK/FEC
 // common to media optimization and the jitter buffer.
-const int64_t kLowRttNackMs = 20;
+enum HybridNackTH {
+    kHighRttNackMs = 100,
+    kLowRttNackMs = 20
+};
 
 struct VCMProtectionParameters
 {
@@ -52,7 +55,7 @@ struct VCMProtectionParameters
         numLayers(1)
         {}
 
-    int64_t             rtt;
+    int                 rtt;
     float               lossPr;
     float               bitRate;
     float               packetsPerFrame;
@@ -208,14 +211,16 @@ protected:
     enum { kMaxBytesPerFrameForFecLow = 400 };
     // Max bytes/frame for frame size larger than VGA, ~200k at 25fps.
     enum { kMaxBytesPerFrameForFecHigh = 1000 };
+    // Max round trip time threshold in ms.
+    enum { kMaxRttTurnOffFec = 200 };
 };
 
 
 class VCMNackFecMethod : public VCMFecMethod
 {
 public:
-    VCMNackFecMethod(int64_t lowRttNackThresholdMs,
-                     int64_t highRttNackThresholdMs);
+    VCMNackFecMethod(int lowRttNackThresholdMs,
+                     int highRttNackThresholdMs);
     virtual ~VCMNackFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss for ER
@@ -229,8 +234,8 @@ public:
 private:
     int ComputeMaxFramesFec(const VCMProtectionParameters* parameters);
 
-    int64_t _lowRttNackMs;
-    int64_t _highRttNackMs;
+    int _lowRttNackMs;
+    int _highRttNackMs;
     int _maxFramesFec;
 };
 
@@ -262,7 +267,7 @@ public:
     //
     // Input:
     //          - rtt           : Round-trip time in seconds.
-    void UpdateRtt(int64_t rtt);
+    void UpdateRtt(uint32_t rtt);
 
     // Update residual packet loss
     //
@@ -364,7 +369,7 @@ private:
     uint8_t MaxFilteredLossPr(int64_t nowMs) const;
     VCMProtectionMethod* _selectedMethod;
     VCMProtectionParameters _currentParameters;
-    int64_t _rtt;
+    uint32_t _rtt;
     float _lossPr;
     float _bitRate;
     float _frameRate;

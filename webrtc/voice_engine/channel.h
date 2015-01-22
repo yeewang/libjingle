@@ -206,6 +206,11 @@ public:
     int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
     int SetOpusMaxPlaybackRate(int frequency_hz);
 
+    // VoE dual-streaming.
+    int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);
+    void RemoveSecondarySendCodec();
+    int GetSecondarySendCodec(CodecInst* codec);
+
     // VoENetwork
     int32_t RegisterExternalTransport(Transport& transport);
     int32_t DeRegisterExternalTransport();
@@ -452,7 +457,7 @@ public:
     // From BitrateObserver (called by the RTP/RTCP module).
     void OnNetworkChanged(const uint32_t bitrate_bps,
                           const uint8_t fraction_lost,  // 0 - 255.
-                          const int64_t rtt);
+                          const uint32_t rtt);
 
 private:
     bool ReceivePacket(const uint8_t* packet, size_t packet_length,
@@ -476,7 +481,7 @@ private:
                                   unsigned char id);
 
     int32_t GetPlayoutFrequency();
-    int64_t GetRTT() const;
+    int GetRTT() const;
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;

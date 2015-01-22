@@ -15,7 +15,7 @@
       'target_name': 'common_audio',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         'resampler/include',
@@ -32,7 +32,6 @@
         'audio_converter.cc',
         'audio_converter.h',
         'audio_util.cc',
-        'audio_util.h',
         'blocker.cc',
         'blocker.h',
         'fir_filter.cc',
@@ -48,8 +47,6 @@
         'resampler/resampler.cc',
         'resampler/sinc_resampler.cc',
         'resampler/sinc_resampler.h',
-        'ring_buffer.c',
-        'ring_buffer.h',
         'signal_processing/include/real_fft.h',
         'signal_processing/include/signal_processing_library.h',
         'signal_processing/include/spl_inl.h',
@@ -238,7 +235,6 @@
             'resampler/sinc_resampler_unittest.cc',
             'resampler/sinusoidal_linear_chirp_source.cc',
             'resampler/sinusoidal_linear_chirp_source.h',
-            'ring_buffer_unittest.cc',
             'signal_processing/real_fft_unittest.cc',
             'signal_processing/signal_processing_unittest.cc',
             'vad/vad_core_unittest.cc',

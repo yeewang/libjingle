@@ -24,7 +24,7 @@ class StunRequest;
 // Manages a set of STUN requests, sending and resending until we receive a
 // response or determine that the request has timed out.
 class StunRequestManager {
- public:
+public:
   StunRequestManager(rtc::Thread* thread);
   ~StunRequestManager();
 
@@ -46,18 +46,14 @@ class StunRequestManager {
 
   bool empty() { return requests_.empty(); }
 
-  // Set the Origin header for outgoing stun messages.
-  void set_origin(const std::string& origin) { origin_ = origin; }
-
   // Raised when there are bytes to be sent.
   sigslot::signal3<const void*, size_t, StunRequest*> SignalSendPacket;
 
- private:
+private:
   typedef std::map<std::string, StunRequest*> RequestMap;
 
   rtc::Thread* thread_;
   RequestMap requests_;
-  std::string origin_;
 
   friend class StunRequest;
 };
@@ -65,7 +61,7 @@ class StunRequestManager {
 // Represents an individual request to be sent.  The STUN message can either be
 // constructed beforehand or built on demand.
 class StunRequest : public rtc::MessageHandler {
- public:
+public:
   StunRequest();
   StunRequest(StunMessage* request);
   virtual ~StunRequest();
@@ -79,10 +75,6 @@ class StunRequest : public rtc::MessageHandler {
   // Returns the transaction ID of this request.
   const std::string& id() { return msg_->transaction_id(); }
 
-  // the origin value
-  const std::string& origin() const { return origin_; }
-  void set_origin(const std::string& origin) { origin_ = origin; }
-
   // Returns the STUN type of the request message.
   int type();
 
@@ -92,10 +84,9 @@ class StunRequest : public rtc::MessageHandler {
   // Time elapsed since last send (in ms)
   uint32 Elapsed() const;
 
- protected:
+protected:
   int count_;
   bool timeout_;
-  std::string origin_;
 
   // Fills in a request object to be sent.  Note that request's transaction ID
   // will already be set and cannot be changed.
@@ -107,7 +98,7 @@ class StunRequest : public rtc::MessageHandler {
   virtual void OnTimeout() {}
   virtual int GetNextDelay();
 
- private:
+private:
   void set_manager(StunRequestManager* manager);
 
   // Handles messages for sending and timeout.

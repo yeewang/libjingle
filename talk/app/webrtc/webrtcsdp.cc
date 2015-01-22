@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011 Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -1090,7 +1090,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     }
   }
 
-  *candidate = Candidate(component_id, cricket::ProtoToString(protocol),
+  const std::string id;
+  *candidate = Candidate(id, component_id, cricket::ProtoToString(protocol),
                          address, priority, username, password, candidate_type,
                          generation, foundation);
   candidate->set_related_address(related_address);

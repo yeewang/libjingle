@@ -198,7 +198,7 @@ source_set("webrtc") {
 
   deps = [
     ":webrtc_common",
-    "base:rtc_base",
+    "base:webrtc_base",
     "common_audio",
     "common_video",
     "modules/audio_coding",

@@ -744,7 +744,7 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithUnknownReportBlock) {
 }
 
 TEST_F(RtcpReceiverTest, TestXrRrRttInitiallyFalse) {
-  int64_t rtt_ms;
+  uint16_t rtt_ms;
   EXPECT_FALSE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));
 }
 

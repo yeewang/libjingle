@@ -45,15 +45,88 @@ inline bool IsTurnChannelData(uint16 msg_type) {
   return ((msg_type & 0xC000) == 0x4000);
 }
 
-// IDs used for posted messages for TurnServerAllocation.
+// IDs used for posted messages for TurnServer::Allocation.
 enum {
   MSG_ALLOCATION_TIMEOUT,
+};
+
+// Encapsulates a TURN allocation.
+// The object is created when an allocation request is received, and then
+// handles TURN messages (via HandleTurnMessage) and channel data messages
+// (via HandleChannelData) for this allocation when received by the server.
+// The object self-deletes and informs the server if its lifetime timer expires.
+class TurnServer::Allocation : public rtc::MessageHandler,
+                               public sigslot::has_slots<> {
+ public:
+  Allocation(TurnServer* server_,
+             rtc::Thread* thread, const Connection& conn,
+             rtc::AsyncPacketSocket* server_socket,
+             const std::string& key);
+  virtual ~Allocation();
+
+  Connection* conn() { return &conn_; }
+  const std::string& key() const { return key_; }
+  const std::string& transaction_id() const { return transaction_id_; }
+  const std::string& username() const { return username_; }
+  const std::string& last_nonce() const { return last_nonce_; }
+  void set_last_nonce(const std::string& nonce) { last_nonce_ = nonce; }
+
+  std::string ToString() const;
+
+  void HandleTurnMessage(const TurnMessage* msg);
+  void HandleChannelData(const char* data, size_t size);
+
+  sigslot::signal1<Allocation*> SignalDestroyed;
+
+ private:
+  typedef std::list<Permission*> PermissionList;
+  typedef std::list<Channel*> ChannelList;
+
+  void HandleAllocateRequest(const TurnMessage* msg);
+  void HandleRefreshRequest(const TurnMessage* msg);
+  void HandleSendIndication(const TurnMessage* msg);
+  void HandleCreatePermissionRequest(const TurnMessage* msg);
+  void HandleChannelBindRequest(const TurnMessage* msg);
+
+  void OnExternalPacket(rtc::AsyncPacketSocket* socket,
+                        const char* data, size_t size,
+                        const rtc::SocketAddress& addr,
+                        const rtc::PacketTime& packet_time);
+
+  static int ComputeLifetime(const TurnMessage* msg);
+  bool HasPermission(const rtc::IPAddress& addr);
+  void AddPermission(const rtc::IPAddress& addr);
+  Permission* FindPermission(const rtc::IPAddress& addr) const;
+  Channel* FindChannel(int channel_id) const;
+  Channel* FindChannel(const rtc::SocketAddress& addr) const;
+
+  void SendResponse(TurnMessage* msg);
+  void SendBadRequestResponse(const TurnMessage* req);
+  void SendErrorResponse(const TurnMessage* req, int code,
+                         const std::string& reason);
+  void SendExternal(const void* data, size_t size,
+                    const rtc::SocketAddress& peer);
+
+  void OnPermissionDestroyed(Permission* perm);
+  void OnChannelDestroyed(Channel* channel);
+  virtual void OnMessage(rtc::Message* msg);
+
+  TurnServer* server_;
+  rtc::Thread* thread_;
+  Connection conn_;
+  rtc::scoped_ptr<rtc::AsyncPacketSocket> external_socket_;
+  std::string key_;
+  std::string transaction_id_;
+  std::string username_;
+  std::string last_nonce_;
+  PermissionList perms_;
+  ChannelList channels_;
 };
 
 // Encapsulates a TURN permission.
 // The object is created when a create permission request is received by an
 // allocation, and self-deletes when its lifetime timer expires.
-class TurnServerAllocation::Permission : public rtc::MessageHandler {
+class TurnServer::Permission : public rtc::MessageHandler {
  public:
   Permission(rtc::Thread* thread, const rtc::IPAddress& peer);
   ~Permission();
@@ -73,7 +146,7 @@ class TurnServerAllocation::Permission : public rtc::MessageHandler {
 // Encapsulates a TURN channel binding.
 // The object is created when a channel bind request is received by an
 // allocation, and self-deletes when its lifetime timer expires.
-class TurnServerAllocation::Channel : public rtc::MessageHandler {
+class TurnServer::Channel : public rtc::MessageHandler {
  public:
   Channel(rtc::Thread* thread, int id,
                      const rtc::SocketAddress& peer);
@@ -113,7 +186,6 @@ static bool InitErrorResponse(const StunMessage* req, int code,
       STUN_ATTR_ERROR_CODE, code, reason)));
   return true;
 }
-
 
 TurnServer::TurnServer(rtc::Thread* thread)
     : thread_(thread),
@@ -199,21 +271,21 @@ void TurnServer::OnInternalPacket(rtc::AsyncPacketSocket* socket,
   }
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   ASSERT(iter != server_sockets_.end());
-  TurnServerConnection conn(addr, iter->second, socket);
+  Connection conn(addr, iter->second, socket);
   uint16 msg_type = rtc::GetBE16(data);
   if (!IsTurnChannelData(msg_type)) {
     // This is a STUN message.
     HandleStunMessage(&conn, data, size);
   } else {
     // This is a channel message; let the allocation handle it.
-    TurnServerAllocation* allocation = FindAllocation(&conn);
+    Allocation* allocation = FindAllocation(&conn);
     if (allocation) {
       allocation->HandleChannelData(data, size);
     }
   }
 }
 
-void TurnServer::HandleStunMessage(TurnServerConnection* conn, const char* data,
+void TurnServer::HandleStunMessage(Connection* conn, const char* data,
                                    size_t size) {
   TurnMessage msg;
   rtc::ByteBuffer buf(data, size);
@@ -239,7 +311,7 @@ void TurnServer::HandleStunMessage(TurnServerConnection* conn, const char* data,
 
   // Look up the key that we'll use to validate the M-I. If we have an
   // existing allocation, the key will already be cached.
-  TurnServerAllocation* allocation = FindAllocation(conn);
+  Allocation* allocation = FindAllocation(conn);
   std::string key;
   if (!allocation) {
     GetKey(&msg, &key);
@@ -287,7 +359,7 @@ bool TurnServer::GetKey(const StunMessage* msg, std::string* key) {
   return (auth_hook_ != NULL && auth_hook_->GetKey(username, realm_, key));
 }
 
-bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
+bool TurnServer::CheckAuthorization(Connection* conn,
                                     const StunMessage* msg,
                                     const char* data, size_t size,
                                     const std::string& key) {
@@ -332,7 +404,7 @@ bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
   }
 
   // Fail if one-time-use nonce feature is enabled.
-  TurnServerAllocation* allocation = FindAllocation(conn);
+  Allocation* allocation = FindAllocation(conn);
   if (enable_otu_nonce_ && allocation &&
       allocation->last_nonce() == nonce_attr->GetString()) {
     SendErrorResponseWithRealmAndNonce(conn, msg, STUN_ERROR_STALE_NONCE,
@@ -347,7 +419,7 @@ bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
   return true;
 }
 
-void TurnServer::HandleBindingRequest(TurnServerConnection* conn,
+void TurnServer::HandleBindingRequest(Connection* conn,
                                       const StunMessage* req) {
   StunMessage response;
   InitResponse(req, &response);
@@ -361,7 +433,7 @@ void TurnServer::HandleBindingRequest(TurnServerConnection* conn,
   SendStun(conn, &response);
 }
 
-void TurnServer::HandleAllocateRequest(TurnServerConnection* conn,
+void TurnServer::HandleAllocateRequest(Connection* conn,
                                        const TurnMessage* msg,
                                        const std::string& key) {
   // Check the parameters in the request.
@@ -383,7 +455,7 @@ void TurnServer::HandleAllocateRequest(TurnServerConnection* conn,
 
   // Create the allocation and let it send the success response.
   // If the actual socket allocation fails, send an internal error.
-  TurnServerAllocation* alloc = CreateAllocation(conn, proto, key);
+  Allocation* alloc = CreateAllocation(conn, proto, key);
   if (alloc) {
     alloc->HandleTurnMessage(msg);
   } else {
@@ -427,14 +499,14 @@ bool TurnServer::ValidateNonce(const std::string& nonce) const {
   return rtc::TimeSince(then) < kNonceTimeout;
 }
 
-TurnServerAllocation* TurnServer::FindAllocation(TurnServerConnection* conn) {
+TurnServer::Allocation* TurnServer::FindAllocation(Connection* conn) {
   AllocationMap::const_iterator it = allocations_.find(*conn);
   return (it != allocations_.end()) ? it->second : NULL;
 }
 
-TurnServerAllocation* TurnServer::CreateAllocation(TurnServerConnection* conn,
-                                                   int proto,
-                                                   const std::string& key) {
+TurnServer::Allocation* TurnServer::CreateAllocation(Connection* conn,
+                                                     int proto,
+                                                     const std::string& key) {
   rtc::AsyncPacketSocket* external_socket = (external_socket_factory_) ?
       external_socket_factory_->CreateUdpSocket(external_addr_, 0, 0) : NULL;
   if (!external_socket) {
@@ -442,14 +514,14 @@ TurnServerAllocation* TurnServer::CreateAllocation(TurnServerConnection* conn,
   }
 
   // The Allocation takes ownership of the socket.
-  TurnServerAllocation* allocation = new TurnServerAllocation(this,
+  Allocation* allocation = new Allocation(this,
       thread_, *conn, external_socket, key);
   allocation->SignalDestroyed.connect(this, &TurnServer::OnAllocationDestroyed);
   allocations_[*conn] = allocation;
   return allocation;
 }
 
-void TurnServer::SendErrorResponse(TurnServerConnection* conn,
+void TurnServer::SendErrorResponse(Connection* conn,
                                    const StunMessage* req,
                                    int code, const std::string& reason) {
   TurnMessage resp;
@@ -460,7 +532,7 @@ void TurnServer::SendErrorResponse(TurnServerConnection* conn,
 }
 
 void TurnServer::SendErrorResponseWithRealmAndNonce(
-    TurnServerConnection* conn, const StunMessage* msg,
+    Connection* conn, const StunMessage* msg,
     int code, const std::string& reason) {
   TurnMessage resp;
   InitErrorResponse(msg, code, reason, &resp);
@@ -472,7 +544,7 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(
 }
 
 void TurnServer::SendErrorResponseWithAlternateServer(
-    TurnServerConnection* conn, const StunMessage* msg,
+    Connection* conn, const StunMessage* msg,
     const rtc::SocketAddress& addr) {
   TurnMessage resp;
   InitErrorResponse(msg, STUN_ERROR_TRY_ALTERNATE,
@@ -482,7 +554,7 @@ void TurnServer::SendErrorResponseWithAlternateServer(
   SendStun(conn, &resp);
 }
 
-void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
+void TurnServer::SendStun(Connection* conn, StunMessage* msg) {
   rtc::ByteBuffer buf;
   // Add a SOFTWARE attribute if one is set.
   if (!software_.empty()) {
@@ -493,13 +565,13 @@ void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
   Send(conn, buf);
 }
 
-void TurnServer::Send(TurnServerConnection* conn,
+void TurnServer::Send(Connection* conn,
                       const rtc::ByteBuffer& buf) {
   rtc::PacketOptions options;
   conn->socket()->SendTo(buf.Data(), buf.Length(), conn->src(), options);
 }
 
-void TurnServer::OnAllocationDestroyed(TurnServerAllocation* allocation) {
+void TurnServer::OnAllocationDestroyed(Allocation* allocation) {
   // Removing the internal socket if the connection is not udp.
   rtc::AsyncPacketSocket* socket = allocation->conn()->socket();
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
@@ -526,24 +598,24 @@ void TurnServer::DestroyInternalSocket(rtc::AsyncPacketSocket* socket) {
   }
 }
 
-TurnServerConnection::TurnServerConnection(const rtc::SocketAddress& src,
-                                           ProtocolType proto,
-                                           rtc::AsyncPacketSocket* socket)
+TurnServer::Connection::Connection(const rtc::SocketAddress& src,
+                                   ProtocolType proto,
+                                   rtc::AsyncPacketSocket* socket)
     : src_(src),
       dst_(socket->GetRemoteAddress()),
       proto_(proto),
       socket_(socket) {
 }
 
-bool TurnServerConnection::operator==(const TurnServerConnection& c) const {
+bool TurnServer::Connection::operator==(const Connection& c) const {
   return src_ == c.src_ && dst_ == c.dst_ && proto_ == c.proto_;
 }
 
-bool TurnServerConnection::operator<(const TurnServerConnection& c) const {
+bool TurnServer::Connection::operator<(const Connection& c) const {
   return src_ < c.src_ || dst_ < c.dst_ || proto_ < c.proto_;
 }
 
-std::string TurnServerConnection::ToString() const {
+std::string TurnServer::Connection::ToString() const {
   const char* const kProtos[] = {
       "unknown", "udp", "tcp", "ssltcp"
   };
@@ -552,21 +624,21 @@ std::string TurnServerConnection::ToString() const {
   return ost.str();
 }
 
-TurnServerAllocation::TurnServerAllocation(TurnServer* server,
-                                           rtc::Thread* thread,
-                                           const TurnServerConnection& conn,
-                                           rtc::AsyncPacketSocket* socket,
-                                           const std::string& key)
+TurnServer::Allocation::Allocation(TurnServer* server,
+                                   rtc::Thread* thread,
+                                   const Connection& conn,
+                                   rtc::AsyncPacketSocket* socket,
+                                   const std::string& key)
     : server_(server),
       thread_(thread),
       conn_(conn),
       external_socket_(socket),
       key_(key) {
   external_socket_->SignalReadPacket.connect(
-      this, &TurnServerAllocation::OnExternalPacket);
+      this, &TurnServer::Allocation::OnExternalPacket);
 }
 
-TurnServerAllocation::~TurnServerAllocation() {
+TurnServer::Allocation::~Allocation() {
   for (ChannelList::iterator it = channels_.begin();
        it != channels_.end(); ++it) {
     delete *it;
@@ -579,13 +651,13 @@ TurnServerAllocation::~TurnServerAllocation() {
   LOG_J(LS_INFO, this) << "Allocation destroyed";
 }
 
-std::string TurnServerAllocation::ToString() const {
+std::string TurnServer::Allocation::ToString() const {
   std::ostringstream ost;
   ost << "Alloc[" << conn_.ToString() << "]";
   return ost.str();
 }
 
-void TurnServerAllocation::HandleTurnMessage(const TurnMessage* msg) {
+void TurnServer::Allocation::HandleTurnMessage(const TurnMessage* msg) {
   ASSERT(msg != NULL);
   switch (msg->type()) {
     case STUN_ALLOCATE_REQUEST:
@@ -610,18 +682,13 @@ void TurnServerAllocation::HandleTurnMessage(const TurnMessage* msg) {
   }
 }
 
-void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
+void TurnServer::Allocation::HandleAllocateRequest(const TurnMessage* msg) {
   // Copy the important info from the allocate request.
   transaction_id_ = msg->transaction_id();
   const StunByteStringAttribute* username_attr =
       msg->GetByteString(STUN_ATTR_USERNAME);
   ASSERT(username_attr != NULL);
   username_ = username_attr->GetString();
-  const StunByteStringAttribute* origin_attr =
-      msg->GetByteString(STUN_ATTR_ORIGIN);
-  if (origin_attr) {
-    origin_ = origin_attr->GetString();
-  }
 
   // Figure out the lifetime and start the allocation timer.
   int lifetime_secs = ComputeLifetime(msg);
@@ -647,7 +714,7 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
   SendResponse(&response);
 }
 
-void TurnServerAllocation::HandleRefreshRequest(const TurnMessage* msg) {
+void TurnServer::Allocation::HandleRefreshRequest(const TurnMessage* msg) {
   // Figure out the new lifetime.
   int lifetime_secs = ComputeLifetime(msg);
 
@@ -668,7 +735,7 @@ void TurnServerAllocation::HandleRefreshRequest(const TurnMessage* msg) {
   SendResponse(&response);
 }
 
-void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
+void TurnServer::Allocation::HandleSendIndication(const TurnMessage* msg) {
   // Check mandatory attributes.
   const StunByteStringAttribute* data_attr = msg->GetByteString(STUN_ATTR_DATA);
   const StunAddressAttribute* peer_attr =
@@ -688,7 +755,7 @@ void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
   }
 }
 
-void TurnServerAllocation::HandleCreatePermissionRequest(
+void TurnServer::Allocation::HandleCreatePermissionRequest(
     const TurnMessage* msg) {
   // Check mandatory attributes.
   const StunAddressAttribute* peer_attr =
@@ -710,7 +777,7 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   SendResponse(&response);
 }
 
-void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
+void TurnServer::Allocation::HandleChannelBindRequest(const TurnMessage* msg) {
   // Check mandatory attributes.
   const StunUInt32Attribute* channel_attr =
       msg->GetUInt32(STUN_ATTR_CHANNEL_NUMBER);
@@ -741,7 +808,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
   if (!channel1) {
     channel1 = new Channel(thread_, channel_id, peer_attr->GetAddress());
     channel1->SignalDestroyed.connect(this,
-        &TurnServerAllocation::OnChannelDestroyed);
+        &TurnServer::Allocation::OnChannelDestroyed);
     channels_.push_back(channel1);
   } else {
     channel1->Refresh();
@@ -759,7 +826,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
   SendResponse(&response);
 }
 
-void TurnServerAllocation::HandleChannelData(const char* data, size_t size) {
+void TurnServer::Allocation::HandleChannelData(const char* data, size_t size) {
   // Extract the channel number from the data.
   uint16 channel_id = rtc::GetBE16(data);
   Channel* channel = FindChannel(channel_id);
@@ -773,7 +840,7 @@ void TurnServerAllocation::HandleChannelData(const char* data, size_t size) {
   }
 }
 
-void TurnServerAllocation::OnExternalPacket(
+void TurnServer::Allocation::OnExternalPacket(
     rtc::AsyncPacketSocket* socket,
     const char* data, size_t size,
     const rtc::SocketAddress& addr,
@@ -804,7 +871,7 @@ void TurnServerAllocation::OnExternalPacket(
   }
 }
 
-int TurnServerAllocation::ComputeLifetime(const TurnMessage* msg) {
+int TurnServer::Allocation::ComputeLifetime(const TurnMessage* msg) {
   // Return the smaller of our default lifetime and the requested lifetime.
   uint32 lifetime = kDefaultAllocationTimeout / 1000;  // convert to seconds
   const StunUInt32Attribute* lifetime_attr = msg->GetUInt32(STUN_ATTR_LIFETIME);
@@ -814,23 +881,23 @@ int TurnServerAllocation::ComputeLifetime(const TurnMessage* msg) {
   return lifetime;
 }
 
-bool TurnServerAllocation::HasPermission(const rtc::IPAddress& addr) {
+bool TurnServer::Allocation::HasPermission(const rtc::IPAddress& addr) {
   return (FindPermission(addr) != NULL);
 }
 
-void TurnServerAllocation::AddPermission(const rtc::IPAddress& addr) {
+void TurnServer::Allocation::AddPermission(const rtc::IPAddress& addr) {
   Permission* perm = FindPermission(addr);
   if (!perm) {
     perm = new Permission(thread_, addr);
     perm->SignalDestroyed.connect(
-        this, &TurnServerAllocation::OnPermissionDestroyed);
+        this, &TurnServer::Allocation::OnPermissionDestroyed);
     perms_.push_back(perm);
   } else {
     perm->Refresh();
   }
 }
 
-TurnServerAllocation::Permission* TurnServerAllocation::FindPermission(
+TurnServer::Permission* TurnServer::Allocation::FindPermission(
     const rtc::IPAddress& addr) const {
   for (PermissionList::const_iterator it = perms_.begin();
        it != perms_.end(); ++it) {
@@ -840,8 +907,7 @@ TurnServerAllocation::Permission* TurnServerAllocation::FindPermission(
   return NULL;
 }
 
-TurnServerAllocation::Channel* TurnServerAllocation::FindChannel(
-    int channel_id) const {
+TurnServer::Channel* TurnServer::Allocation::FindChannel(int channel_id) const {
   for (ChannelList::const_iterator it = channels_.begin();
        it != channels_.end(); ++it) {
     if ((*it)->id() == channel_id)
@@ -850,7 +916,7 @@ TurnServerAllocation::Channel* TurnServerAllocation::FindChannel(
   return NULL;
 }
 
-TurnServerAllocation::Channel* TurnServerAllocation::FindChannel(
+TurnServer::Channel* TurnServer::Allocation::FindChannel(
     const rtc::SocketAddress& addr) const {
   for (ChannelList::const_iterator it = channels_.begin();
        it != channels_.end(); ++it) {
@@ -860,83 +926,83 @@ TurnServerAllocation::Channel* TurnServerAllocation::FindChannel(
   return NULL;
 }
 
-void TurnServerAllocation::SendResponse(TurnMessage* msg) {
+void TurnServer::Allocation::SendResponse(TurnMessage* msg) {
   // Success responses always have M-I.
   msg->AddMessageIntegrity(key_);
   server_->SendStun(&conn_, msg);
 }
 
-void TurnServerAllocation::SendBadRequestResponse(const TurnMessage* req) {
+void TurnServer::Allocation::SendBadRequestResponse(const TurnMessage* req) {
   SendErrorResponse(req, STUN_ERROR_BAD_REQUEST, STUN_ERROR_REASON_BAD_REQUEST);
 }
 
-void TurnServerAllocation::SendErrorResponse(const TurnMessage* req, int code,
+void TurnServer::Allocation::SendErrorResponse(const TurnMessage* req, int code,
                                        const std::string& reason) {
   server_->SendErrorResponse(&conn_, req, code, reason);
 }
 
-void TurnServerAllocation::SendExternal(const void* data, size_t size,
+void TurnServer::Allocation::SendExternal(const void* data, size_t size,
                                   const rtc::SocketAddress& peer) {
   rtc::PacketOptions options;
   external_socket_->SendTo(data, size, peer, options);
 }
 
-void TurnServerAllocation::OnMessage(rtc::Message* msg) {
+void TurnServer::Allocation::OnMessage(rtc::Message* msg) {
   ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;
 }
 
-void TurnServerAllocation::OnPermissionDestroyed(Permission* perm) {
+void TurnServer::Allocation::OnPermissionDestroyed(Permission* perm) {
   PermissionList::iterator it = std::find(perms_.begin(), perms_.end(), perm);
   ASSERT(it != perms_.end());
   perms_.erase(it);
 }
 
-void TurnServerAllocation::OnChannelDestroyed(Channel* channel) {
+void TurnServer::Allocation::OnChannelDestroyed(Channel* channel) {
   ChannelList::iterator it =
       std::find(channels_.begin(), channels_.end(), channel);
   ASSERT(it != channels_.end());
   channels_.erase(it);
 }
 
-TurnServerAllocation::Permission::Permission(rtc::Thread* thread,
+TurnServer::Permission::Permission(rtc::Thread* thread,
                                    const rtc::IPAddress& peer)
     : thread_(thread), peer_(peer) {
   Refresh();
 }
 
-TurnServerAllocation::Permission::~Permission() {
+TurnServer::Permission::~Permission() {
   thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
 }
 
-void TurnServerAllocation::Permission::Refresh() {
+void TurnServer::Permission::Refresh() {
   thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
   thread_->PostDelayed(kPermissionTimeout, this, MSG_ALLOCATION_TIMEOUT);
 }
 
-void TurnServerAllocation::Permission::OnMessage(rtc::Message* msg) {
+void TurnServer::Permission::OnMessage(rtc::Message* msg) {
   ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;
 }
 
-TurnServerAllocation::Channel::Channel(rtc::Thread* thread, int id,
+TurnServer::Channel::Channel(rtc::Thread* thread, int id,
                              const rtc::SocketAddress& peer)
     : thread_(thread), id_(id), peer_(peer) {
   Refresh();
 }
 
-TurnServerAllocation::Channel::~Channel() {
+TurnServer::Channel::~Channel() {
   thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
 }
 
-void TurnServerAllocation::Channel::Refresh() {
+void TurnServer::Channel::Refresh() {
   thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
   thread_->PostDelayed(kChannelTimeout, this, MSG_ALLOCATION_TIMEOUT);
 }
 
-void TurnServerAllocation::Channel::OnMessage(rtc::Message* msg) {
+void TurnServer::Channel::OnMessage(rtc::Message* msg) {
   ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;

@@ -19,6 +19,7 @@
 #include "webrtc/modules/audio_coding/neteq/mock/mock_external_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -359,11 +360,11 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
   static const uint32_t kStartTimestamp = 2880;
   static const uint32_t kJumpFromTimestamp = 7200;
   static const uint32_t kJumpToTimestamp = 2869342376;
-  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
-                "timestamp jump should not result in wrap");
-  static_assert(
+  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
+                 timestamp_jump_should_not_result_in_wrap);
+  COMPILE_ASSERT(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      "jump should be larger than half range");
+      jump_should_be_larger_than_half_range);
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -383,11 +384,11 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221223116;
   static const uint32_t kJumpFromTimestamp = 3221223216;
   static const uint32_t kJumpToTimestamp = 1073744278;
-  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
-                "timestamp jump should result in wrap");
-  static_assert(
+  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
+                 timestamp_jump_should_result_in_wrap);
+  COMPILE_ASSERT(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      "jump should be larger than half range");
+      jump_should_be_larger_than_half_range);
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -442,11 +443,11 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
   static const uint32_t kStartTimestamp = 4711;
   static const uint32_t kJumpFromTimestamp = 4811;
   static const uint32_t kJumpToTimestamp = 2147483747;
-  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
-                "timestamp jump should not result in wrap");
-  static_assert(
+  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
+                 timestamp_jump_should_not_result_in_wrap);
+  COMPILE_ASSERT(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      "jump should be smaller than half range");
+      jump_should_be_smaller_than_half_range);
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -466,11 +467,11 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221227827;
   static const uint32_t kJumpFromTimestamp = 3221227927;
   static const uint32_t kJumpToTimestamp = 1073739567;
-  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
-                "timestamp jump should result in wrap");
-  static_assert(
+  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
+                 timestamp_jump_should_result_in_wrap);
+  COMPILE_ASSERT(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      "jump should be smaller than half range");
+      jump_should_be_smaller_than_half_range);
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,

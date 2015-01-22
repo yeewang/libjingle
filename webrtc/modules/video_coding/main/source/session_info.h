@@ -22,7 +22,7 @@ namespace webrtc {
 // Used to pass data from jitter buffer to session info.
 // This data is then used in determining whether a frame is decodable.
 struct FrameData {
-  int64_t rtt_ms;
+  int rtt_ms;
   float rolling_average_packets_per_frame;
 };
 
