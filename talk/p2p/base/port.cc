@@ -246,6 +246,7 @@ Connection* Port::GetConnection(const talk_base::SocketAddress& remote_addr) {
     return NULL;
 }
 
+// Add relay ip:port
 void Port::AddAddress(const talk_base::SocketAddress& address,
                       const talk_base::SocketAddress& base_address,
                       const std::string& protocol,
@@ -271,6 +272,10 @@ void Port::AddAddress(const talk_base::SocketAddress& address,
   if (final) {
     SignalPortComplete(this);
   }
+
+  LOG_J(LS_INFO, this) << "Port::AddAddress: " << address.ToString()
+		  << " base_address: " << base_address.ToString()
+		  << " candidates_szie: " << candidates_.size();
 }
 
 void Port::AddConnection(Connection* conn) {

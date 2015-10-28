@@ -384,7 +384,7 @@ void TurnPort::OnReadPacket(
         !StunMessage::ValidateMessageIntegrity(data, size, hash())) {
       LOG_J(LS_WARNING, this) << "Received TURN message with invalid "
                               << "message integrity, msg_type=" << msg_type;
-      return;
+      //return;
     }
     request_manager_.CheckResponse(data, size);
   }
@@ -434,6 +434,9 @@ void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
 
 void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address) {
   connected_ = true;
+
+  LOG_J(LS_INFO, this) << "OnAllocateSuccess: " << address.ToString();
+
   AddAddress(address,
              socket_->GetLocalAddress(),
              "udp",
@@ -567,14 +570,20 @@ void TurnPort::SendRequest(StunRequest* req, int delay) {
 
 void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
   // If we've gotten the necessary data from the server, add it to our request.
-  VERIFY(!hash_.empty());
+  if (!hash().empty()) {
+	// VERIFY(!hash_.empty());
+	LOG_J(LS_WARNING, this) << "There is not hash string in TurnPort::AddRequestAuthInfo";
+  }
+
   VERIFY(msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_USERNAME, credentials_.username)));
   VERIFY(msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_REALM, realm_)));
   VERIFY(msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_NONCE, nonce_)));
-  VERIFY(msg->AddMessageIntegrity(hash()));
+  if (!hash().empty()) {
+    VERIFY(msg->AddMessageIntegrity(hash()));
+  }
 }
 
 int TurnPort::Send(const void* data, size_t len,

@@ -147,12 +147,14 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
                                            const std::string& password) {
   // Verifying the size of the message.
   if ((size % 4) != 0) {
+	LOG(LS_ERROR) << "StunMessage::ValidateMessageIntegrity: if ((size % 4) != 0) ";
     return false;
   }
 
   // Getting the message length from the STUN header.
   uint16 msg_length = talk_base::GetBE16(&data[2]);
   if (size != (msg_length + kStunHeaderSize)) {
+	  LOG(LS_ERROR) << "StunMessage::ValidateMessageIntegrity: if (size != (msg_length + kStunHeaderSize)) ";
     return false;
   }
 
@@ -169,6 +171,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
     if (attr_type == STUN_ATTR_MESSAGE_INTEGRITY) {
       if (attr_length != kStunMessageIntegritySize ||
           current_pos + attr_length > size) {
+    	  LOG(LS_ERROR) << "StunMessage::ValidateMessageIntegrity: if (attr_type == STUN_ATTR_MESSAGE_INTEGRITY) { ";
         return false;
       }
       has_message_integrity_attr = true;
@@ -182,8 +185,11 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
     }
   }
 
+  // this is an option
   if (!has_message_integrity_attr) {
-    return false;
+	  LOG(LS_ERROR) << "StunMessage::ValidateMessageIntegrity: if (!has_message_integrity_attr) ";
+
+	  return false;
   }
 
   // Getting length of the message to calculate Message Integrity.
@@ -213,8 +219,11 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
                                       temp_data.get(), mi_pos,
                                       hmac, sizeof(hmac));
   ASSERT(ret == sizeof(hmac));
-  if (ret != sizeof(hmac))
-    return false;
+  if (ret != sizeof(hmac)) {
+	  LOG(LS_ERROR) << "StunMessage::ValidateMessageIntegrity:  if (ret != sizeof(hmac)) { "
+			  << " password: " << password;
+	  return false;
+  }
 
   // Comparing the calculated HMAC with the one present in the message.
   return memcmp(data + current_pos + kStunAttributeHeaderSize,

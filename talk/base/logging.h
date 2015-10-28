@@ -272,7 +272,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
 #if defined(_DEBUG) && !defined(NDEBUG)
 #define LOGGING 1
 #else
-#define LOGGING 0
+#define LOGGING 0 // release log trigger
 #endif
 #endif  // !defined(LOGGING)
 
